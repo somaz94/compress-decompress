@@ -13,7 +13,7 @@ pids
 
 # dotenv environment variables file
 .env
-.env.test
+#.env.test
 
 # OS metadata
 .DS_Store

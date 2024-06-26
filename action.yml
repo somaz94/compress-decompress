@@ -1,21 +1,25 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
-
-# Define your inputs here.
+name: 'Compress/Decompress'
+description: 'GitHub Action to compress or decompress files using various formats like zip, tar, gzip, tar.gz, and bzip2.'
+author: 'somaz94'
 inputs:
-  who-to-greet:
-    description: 'Your input description here'
+  command:
+    description: 'Command to perform ("compress" or "decompress").'
     required: true
-    default: 'World'
-
-# Define your outputs here.
+  source:
+    description: 'Source directory or file to compress or decompress.'
+    required: true
+  dest:
+    description: 'Destination directory or file for the output.'
+    required: false
+  format:
+    description: 'Compression format to use. Supported formats include zip, tar, gzip, tar.gz, and bzip2.'
+    required: true
 outputs:
-  greeting:
-    description: 'Your output description here'
-
+  file_path:
+    description: 'The path to the compressed or decompressed file.'
 runs:
-  using: docker
-  image: Dockerfile
-  env:
-    INPUT_WHO_TO_GREET: ${{ inputs.who-to-greet }}
+  using: 'docker'
+  image: 'Dockerfile'
+# branding:
+#   icon: 'check-circle'
+#   color: 'yellow'
