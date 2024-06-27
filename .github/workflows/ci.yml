@@ -84,9 +84,6 @@ jobs:
         with:
           name: compressed-data
 
-      - name: List downloaded files
-        run: ls -lR ${{ github.workspace }}/compressed-data
-
       - name: List contents in the workspace
         run: ls -la ${{ github.workspace }}
 
