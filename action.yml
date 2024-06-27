@@ -20,6 +20,11 @@ outputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
+  env:
+    COMMAND: ${{ inputs.command }}
+    SOURCE: ${{ inputs.source }}
+    DEST: ${{ inputs.dest }}
+    FORMAT: ${{ inputs.format }}
 # branding:
 #   icon: 'check-circle'
 #   color: 'yellow'

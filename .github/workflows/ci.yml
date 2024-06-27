@@ -75,39 +75,42 @@ jobs:
           source: './test2'
           format: 'tgz'
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: compressed-data-2
-          path: ./test2.tgz
-
-      - name: Print Output
-        run: |
-          echo "compress file path result: ${{ steps.compress-decompress.outputs.file_path }}"
-
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: compressed-data
-
       - name: List contents in the workspace
         run: ls -la ${{ github.workspace }}
 
-      - name: Test Local Decompress Action
-        uses: ./
-        with:
-          command: 'decompress'
-          source: './test.zip'
-          format: 'zip'
-          dest: './unpacked'        
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: compressed-data-2
+      #     path: ./test2.tgz
+
+      # - name: Print Output
+      #   run: |
+      #     echo "compress file path result: ${{ steps.compress-decompress.outputs.file_path }}"
+
+      # - name: Download Artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: compressed-data
+
+      # - name: List contents in the workspace
+      #   run: ls -la ${{ github.workspace }}
+
+      # - name: Test Local Decompress Action
+      #   uses: ./
+      #   with:
+      #     command: 'decompress'
+      #     source: './test.zip'
+      #     format: 'zip'
+      #     dest: './unpacked'        
 
       # - name: Unzip Artifact
       #   run: |
       #     unzip ${{ github.workspace }}/test.zip -d ${{ github.workspace }}/unpacked
 
-      - name: Display Content of the Unpacked Files
-        run: |
-          ls -la ${{ github.workspace }}
+      # - name: Display Content of the Unpacked Files
+      #   run: |
+      #     ls -la ${{ github.workspace }}
       
       # - name: Display Content of the Unpacked Files
       #   run: |
