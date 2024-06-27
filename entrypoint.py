@@ -87,13 +87,13 @@ def set_output(name, value):
 
 if __name__ == "__main__":
 
-    print("Received command:", os.getenv('COMMAND'))
-    print("Received source:", os.getenv('SOURCE'))
-    print("Received format:", os.getenv('FORMAT'))
+    print("Received command:", os.getenv('command'))
+    print("Received source:", os.getenv('source'))
+    print("Received format:", os.getenv('format'))
     
-    command = os.getenv('COMMAND')
-    source = os.getenv('SOURCE')
-    format = os.getenv('FORMAT')
+    command = os.getenv('command')
+    source = os.getenv('source')
+    format = os.getenv('format')
 
     if not source:
         print("Error: The 'SOURCE' environment variable is not set.")
