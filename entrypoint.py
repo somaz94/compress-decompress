@@ -88,9 +88,5 @@ if __name__ == "__main__":
     source = os.getenv('SOURCE')
     format = os.getenv('FORMAT')
 
-    if command == 'compress':
-        file_path = compress(source, format)
-    elif command == 'decompress':
-        file_path = decompress(source, format)
-
+    file_path = compress(source, format) if command == 'compress' else decompress(source, format)
     set_output("file_path", file_path)
