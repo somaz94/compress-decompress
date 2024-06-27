@@ -19,12 +19,8 @@ def get_extension(format):
     }.get(format, '')
 
 def adjust_path(path):
-    if not os.path.isabs(path):
-        adjusted_path = os.path.join(os.getenv('GITHUB_WORKSPACE', os.getcwd()), path)
-    else:
-        adjusted_path = path
-
-    print(f"Adjusted path: {adjusted_path}")
+    adjusted_path = path if os.path.isabs(path) else os.path.join(os.getenv('GITHUB_WORKSPACE', os.getcwd()), path)
+    print(f"Adjusted path: {adjusted_path}") 
     return adjusted_path
 
 def compress(source, format):
@@ -33,6 +29,8 @@ def compress(source, format):
     os.chdir(os.path.dirname(source))  # Change to directory of the source
 
     dest = os.getenv('DEST', os.getenv('GITHUB_WORKSPACE', os.getcwd()))
+    if dest and not os.path.exists(dest):
+        os.makedirs(dest)
     base_name = os.path.basename(source)
     extension = get_extension(format)
     full_dest = os.path.join(dest, f"{base_name}{extension}")
@@ -53,6 +51,7 @@ def compress(source, format):
     print(f"file_path={full_dest}", file=open(os.getenv('GITHUB_OUTPUT', '/dev/stdout'), 'a'))
 
 def decompress(source, format):
+    source = adjust_path(source)
     dest = os.getenv('DEST', os.getenv('GITHUB_WORKSPACE', os.getcwd()))
     if dest and not os.path.exists(dest):
         os.makedirs(dest)
