@@ -86,11 +86,11 @@ jobs:
 
       - name: Unzip Artifact
         run: |
-          unzip compressed-data/test.zip -d ./unpacked
+          unzip ${{ github.workspace }}/compressed-data/test.zip -d ${{ github.workspace }}/unpacked
 
       - name: Display Content of Text File
         run: |
-          cat ./unpacked/test2.txt
+          cat ${{ github.workspace }}/unpacked/test2.txt
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
