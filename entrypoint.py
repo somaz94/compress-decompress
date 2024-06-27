@@ -51,6 +51,7 @@ def compress(source, format):
         sys.exit(f"Unsupported format: {format}")
     
     os.chdir(cwd)  # Restore original working directory
+    print(f"file_path={full_dest}", file=open(os.getenv('GITHUB_OUTPUT', '/dev/stdout'), 'a'))
     return full_dest
 
 def decompress(source, format):
@@ -75,10 +76,12 @@ def decompress(source, format):
     else:
         sys.exit(f"Unsupported format: {format}")
 
+    print(f"file_path={dest if dest else 'current directory'}", file=open(os.getenv('GITHUB_OUTPUT', '/dev/stdout'), 'a'))
     return dest
 
 def set_output(name, value):
-    print(f"::set-output name={name}::{value}")
+    with open(os.getenv('GITHUB_OUTPUT', '/dev/stdout'), 'a') as f:
+        f.write(f"{name}={value}\n")
 
 if __name__ == "__main__":
     command = os.getenv('COMMAND')
