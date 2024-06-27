@@ -67,7 +67,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test Local Action
+      - name: Test Local Compress Action
         id: compress-decompress
         uses: ./
         with:
@@ -87,17 +87,24 @@ jobs:
       - name: List contents in the workspace
         run: ls -la ${{ github.workspace }}
 
-      - name: Unzip Artifact
-        run: |
-          unzip ${{ github.workspace }}/test.zip -d ${{ github.workspace }}/unpacked
+      - name: Test Local Decompress Action
+        uses: ./
+        with:
+          command: 'decompress'
+          source: '${{ github.workspace }}/test.zip'
+          format: 'zip'        
+
+      # - name: Unzip Artifact
+      #   run: |
+      #     unzip ${{ github.workspace }}/test.zip -d ${{ github.workspace }}/unpacked
 
       - name: Display Content of the Unpacked Files
         run: |
           ls -la ${{ github.workspace }}/unpacked
-          # cat ${{ github.workspace }}/unpacked/test.txt
+          cat ${{ github.workspace }}/unpacked/test
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: compressed-data-2
-          path: ./test2.zip  
+          path: ./test2.tgz
