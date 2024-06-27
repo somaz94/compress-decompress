@@ -51,8 +51,7 @@ def compress(source, format):
         run_command(f"tar -P -cjvf {full_dest} {base_name}")
     else:
         sys.exit(f"Unsupported format: {format}")
-    
-    os.chdir(cwd)  # Restore original working directory
+    os.chdir(cwd)  # Restore original working directory.
     print(
         f"file_path={full_dest}",
         file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"),
