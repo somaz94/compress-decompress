@@ -72,15 +72,28 @@ jobs:
         uses: ./
         with:
           command: 'compress'
-          source: 'test'
-          format: 'zip'
+          source: './test2'
+          format: 'tgz'
 
       - name: Print Output
         run: |
-          echo "compress result: ${{ steps.compress-decompress.outputs.file_path }}"
+          echo "compress file path result: ${{ steps.compress-decompress.outputs.file_path }}"
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: compressed-data
+
+      - name: Unzip Artifact
+        run: |
+          unzip compressed-data/test.zip -d ./unpacked
+
+      - name: Display Content of Text File
+        run: |
+          cat ./unpacked/your_text_file.txt
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compressed-data
-          path: ./test.zip  
+          name: compressed-data-2
+          path: ./test2.zip  

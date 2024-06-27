@@ -4,11 +4,14 @@ import sys
 
 def run_command(command):
     print(f"Executing command: {command}")
-    result = subprocess.run(command, shell=True, text=True, capture_output=True)
-    if result.stdout:
-        print(f"Command output: {result.stdout.strip()}")
-    if result.stderr:
-        print(f"Command errors: {result.stderr.strip()}")
+    try:
+        result = subprocess.run(command, shell=True, text=True, capture_output=True, check=True)
+        if result.stdout:
+            print(f"Command output: {result.stdout.strip()}")
+        if result.stderr:
+            print(f"Command errors: {result.stderr.strip()}")
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed with error: {e}")
 
 def get_extension(format):
     return {
@@ -48,7 +51,7 @@ def compress(source, format):
         sys.exit(f"Unsupported format: {format}")
     
     os.chdir(cwd)  # Restore original working directory
-    print(f"file_path={full_dest}", file=open(os.getenv('GITHUB_OUTPUT', '/dev/stdout'), 'a'))
+    return full_dest
 
 def decompress(source, format):
     source = adjust_path(source)
@@ -72,7 +75,10 @@ def decompress(source, format):
     else:
         sys.exit(f"Unsupported format: {format}")
 
-    print(f"file_path={dest if dest else 'current directory'}", file=open(os.getenv('GITHUB_OUTPUT', '/dev/stdout'), 'a'))
+    return dest
+
+def set_output(name, value):
+    print(f"::set-output name={name}::{value}")
 
 if __name__ == "__main__":
     command = os.getenv('COMMAND')
@@ -80,6 +86,8 @@ if __name__ == "__main__":
     format = os.getenv('FORMAT')
 
     if command == 'compress':
-        compress(source, format)
+        file_path = compress(source, format)
     elif command == 'decompress':
-        decompress(source, format)
+        file_path = decompress(source, format)
+
+    set_output("file_path", file_path)

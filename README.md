@@ -5,8 +5,8 @@
 
 ## Description
 
-This GitHub Action provides the functionality to compress or decompress files using various 
-compression formats including zip, tar, tgz, and tbz2. It is designed to be easy to use within 
+This GitHub Action provides the functionality to compress or decompress files using various
+compression formats including `zip`, `tar`, `tgz`, and `tbz2`. It is designed to be easy to use within
 GitHub workflows for handling file compression and decompression tasks efficiently.
 
 ## Inputs
@@ -16,7 +16,7 @@ GitHub workflows for handling file compression and decompression tasks efficient
 | `command`  | The operation to perform. It can be either "compress" or "decompress"                                            | Yes      |
 | `source`   | The source directory or file to compress or decompress.                                                          | Yes      |
 | `dest`     | The destination directory or file for the output. If not provided, it defaults to the current working directory. | No       |
-| `format`   | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2.                             | Yes      |
+| `format`   | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2`.                            | Yes      |
 
 ## Outputs
 
@@ -73,7 +73,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Download Artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: compressed-data
 
