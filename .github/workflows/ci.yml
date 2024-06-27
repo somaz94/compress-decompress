@@ -93,7 +93,7 @@ jobs:
           command: 'decompress'
           source: '${{ github.workspace }}/test.zip'
           format: 'zip'
-          dest: './unpacked'        
+          dest: '${{ github.workspace }}/unpacked'        
 
       # - name: Unzip Artifact
       #   run: |
