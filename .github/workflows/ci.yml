@@ -84,13 +84,16 @@ jobs:
         with:
           name: compressed-data
 
-      - name: Unzip Artifact
-        run: |
-          unzip ${{ github.workspace }}/compressed-data.zip -d ${{ github.workspace }}/unpacked
+      - name: List downloaded files
+        run: ls -lR ${{ github.workspace }}/compressed-data
 
-      - name: Display Content of Text File
-        run: |
-          cat ${{ github.workspace }}/unpacked/test2.txt
+      # - name: Unzip Artifact
+      #   run: |
+      #     unzip ${{ github.workspace }}/compressed-data.zip -d ${{ github.workspace }}/unpacked
+
+      # - name: Display Content of Text File
+      #   run: |
+      #     cat ${{ github.workspace }}/unpacked/test2.txt
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
