@@ -4,14 +4,11 @@ import sys
 
 def run_command(command):
     print(f"Executing command: {command}")
-    try:
-        result = subprocess.run(command, shell=True, text=True, capture_output=True, check=True)
-        if result.stdout:
-            print(f"Command output: {result.stdout.strip()}")
-        if result.stderr:
-            print(f"Command errors: {result.stderr.strip()}")
-    except subprocess.CalledProcessError as e:
-        print(f"Command failed with error: {e}")
+    result = subprocess.run(command, shell=True, text=True, capture_output=True)
+    if result.stdout:
+        print(f"Command output: {result.stdout.strip()}")
+    if result.stderr:
+        print(f"Command errors: {result.stderr.strip()}")
 
 def get_extension(format):
     return {
@@ -22,8 +19,6 @@ def get_extension(format):
     }.get(format, '')
 
 def adjust_path(path):
-    if not path:
-        raise ValueError("Source path is not provided or is None.")
     adjusted_path = path if os.path.isabs(path) else os.path.join(os.getenv('GITHUB_WORKSPACE', os.getcwd()), path)
     print(f"Adjusted path: {adjusted_path}") 
     return adjusted_path
@@ -54,7 +49,6 @@ def compress(source, format):
     
     os.chdir(cwd)  # Restore original working directory
     print(f"file_path={full_dest}", file=open(os.getenv('GITHUB_OUTPUT', '/dev/stdout'), 'a'))
-    return full_dest
 
 def decompress(source, format):
     source = adjust_path(source)
@@ -79,25 +73,13 @@ def decompress(source, format):
         sys.exit(f"Unsupported format: {format}")
 
     print(f"file_path={dest if dest else 'current directory'}", file=open(os.getenv('GITHUB_OUTPUT', '/dev/stdout'), 'a'))
-    return dest
-
-def set_output(name, value):
-    with open(os.getenv('GITHUB_OUTPUT', '/dev/stdout'), 'a') as f:
-        f.write(f"{name}={value}\n")
 
 if __name__ == "__main__":
+    command = os.getenv('COMMAND')
+    source = os.getenv('SOURCE')
+    format = os.getenv('FORMAT')
 
-    print("Received command:", os.getenv('command'))
-    print("Received source:", os.getenv('source'))
-    print("Received format:", os.getenv('format'))
-    
-    command = os.getenv('command')
-    source = os.getenv('source')
-    format = os.getenv('format')
-
-    if not source:
-        print("Error: The 'SOURCE' environment variable is not set.")
-        sys.exit(1)
-
-    file_path = compress(source, format) if command == 'compress' else decompress(source, format)
-    set_output("file_path", file_path)
+    if command == 'compress':
+        compress(source, format)
+    elif command == 'decompress':
+        decompress(source, format)
