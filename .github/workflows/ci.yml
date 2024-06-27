@@ -103,14 +103,6 @@ jobs:
           source: './test.zip'
           format: 'zip'
           dest: './unpacked'        
-
-      - name: Unzip Artifact
-        run: |
-          unzip ${{ github.workspace }}/test.zip -d ${{ github.workspace }}/unpacked
-
-      - name: Display Content of the Unpacked Files
-        run: |
-          ls -la ${{ github.workspace }}
       
       - name: Display Content of the Unpacked Files
         run: |

@@ -70,12 +70,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
         name: compressed-data
+
+    - name: List contents in the workspace
+      run: ls -la ${{ github.workspace }}
 
     - name: Decompress Directory
       uses: somaz94/compress-decompress@v1
@@ -83,6 +86,13 @@ jobs:
         command: decompress
         source: ./data-folder.zip
         format: zip
+        dest: './unpacked'
+    
+    - name: Display Content of the Unpacked Files
+      run: |
+        ls -la ${{ github.workspace }}/unpacked
+        cat ${{ github.workspace }}/unpacked/data-folder
+
 ```
 
 ## License
