@@ -86,7 +86,7 @@ jobs:
 
       - name: Unzip Artifact
         run: |
-          unzip ${{ github.workspace }}/compressed-data/test.zip -d ${{ github.workspace }}/unpacked
+          unzip ${{ github.workspace }}/compressed-data.zip -d ${{ github.workspace }}/unpacked
 
       - name: Display Content of Text File
         run: |
