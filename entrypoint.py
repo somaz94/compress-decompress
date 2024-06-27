@@ -22,6 +22,8 @@ def get_extension(format):
     }.get(format, '')
 
 def adjust_path(path):
+    if not path:
+        raise ValueError("Source path is not provided or is None.")
     adjusted_path = path if os.path.isabs(path) else os.path.join(os.getenv('GITHUB_WORKSPACE', os.getcwd()), path)
     print(f"Adjusted path: {adjusted_path}") 
     return adjusted_path
@@ -84,9 +86,18 @@ def set_output(name, value):
         f.write(f"{name}={value}\n")
 
 if __name__ == "__main__":
+
+    print("Received command:", os.getenv('COMMAND'))
+    print("Received source:", os.getenv('SOURCE'))
+    print("Received format:", os.getenv('FORMAT'))
+    
     command = os.getenv('COMMAND')
     source = os.getenv('SOURCE')
     format = os.getenv('FORMAT')
+
+    if not source:
+        print("Error: The 'SOURCE' environment variable is not set.")
+        sys.exit(1)
 
     file_path = compress(source, format) if command == 'compress' else decompress(source, format)
     set_output("file_path", file_path)
