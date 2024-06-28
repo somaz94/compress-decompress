@@ -25,6 +25,6 @@ runs:
     SOURCE: ${{ inputs.source }}
     DEST: ${{ inputs.dest }}
     FORMAT: ${{ inputs.format }}
-# branding:
-#   icon: 'check-circle'
-#   color: 'yellow'
+branding:
+  icon: 'at-sign'
+  color: 'white'
