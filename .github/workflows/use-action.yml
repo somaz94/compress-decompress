@@ -1,0 +1,74 @@
+name: Example Workflow using Compress Decompress
+
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: "workflow run"
+        required: true
+        default: "true"
+
+permissions:
+  contents: read
+
+jobs:
+  acton-module-compress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+    
+      - name: Test Local Compress Action
+        uses: somaz94/compress-decompress@v1
+        id: compress
+        with:
+          command: 'compress'
+          source: './test'
+          format: 'zip'        
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compressed-data
+          path: ./test.zip   
+  acton-module-decompress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+    
+      - name: Test Local Decompress Action
+        uses: somaz94/compress-decompress@v1
+        id: decompress
+        with:
+          command: 'decompress'
+          source: './test.zip'
+          format: 'zip'
+          dest: './unpacked'         
+
+      - name: Display Content of the Unpacked Files
+        run: |
+          ls -la ${{ github.workspace }}/unpacked
+          cat ${{ github.workspace }}/unpacked/test
+
+      - name: Test Local Compress Action
+        id: compress
+        uses: ./
+        with:
+          command: 'compress'
+          source: './test2'
+          format: 'tgz'
+
+      - name: List contents in the workspace
+        run: ls -la ${{ github.workspace }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compressed-data-2
+          path: ./test2.tgz
+
+      - name: Print Output
+        run: |
+          echo "compress file path result: ${{ steps.compress.outputs.file_path }}"
+        
