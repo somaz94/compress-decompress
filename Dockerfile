@@ -1,6 +1,6 @@
 # Use an official lightweight Python image.
 # Python is used here for the entry script; you could use any other lightweight base image.
-FROM python:3.8-slim
+FROM python:3.12-slim
 
 # Install compression and decompression tools
 # Specify versions as available. Note: Debian-based versions may not match Alpine directly and need to be verified.
