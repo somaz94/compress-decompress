@@ -3,8 +3,8 @@
 [![GitHub Super-Linter](https://github.com/somaz94/compress-decompress/actions/workflows/linter.yml/badge.svg)](https://github.com/somaz94/compress-decompress)
 ![CI](https://github.com/somaz94/compress-decompress/actions/workflows/ci.yml/badge.svg)
 [![License](https://img.shields.io/github/license/somaz94/compress-decompress)](https://github.com/somaz94/compress-decompress)
-![](https://img.shields.io/github/v/tag/somaz94/compress-decompress)
-![](https://img.shields.io/github/languages/top/somaz94/compress-decompress?color=green&logo=terraform&logoColor=blue)
+![Latest Tag](https://img.shields.io/github/v/tag/somaz94/compress-decompress)
+![Top Language](https://img.shields.io/github/languages/top/somaz94/compress-decompress?color=green&logo=terraform&logoColor=blue)
 
 ## Description
 
