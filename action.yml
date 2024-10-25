@@ -17,7 +17,7 @@ inputs:
   includeRoot:
     description: 'Whether to include the root folder itself in the compressed file.'
     required: false
-    default: 'true'
+    default: true
 outputs:
   file_path:
     description: 'The path to the compressed or decompressed file.'
