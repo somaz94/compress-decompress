@@ -30,7 +30,7 @@ jobs:
           includeRoot: 'false'       
 
       - name: Verify File Existence
-        run: ls -la  # Ensures file is in the directory before upload
+        run: ls -la ${{ github.workspace }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
