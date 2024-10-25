@@ -45,11 +45,13 @@ jobs:
           COMMAND: 'compress'
           SOURCE: '${{ env.TEST_SOURCE }}'
           FORMAT: 'zip'
+          INCLUDEROOT: 'false'
         run: |
           docker run \
             --env COMMAND="${{ env.COMMAND }}" \
             --env SOURCE="${{ env.SOURCE }}" \
             --env FORMAT="${{ env.FORMAT }}" \
+            --env INCLUDEROOT="${{ env.INCLUDEROOT }}" \
             --volume "${{ github.workspace }}:/usr/src" \
             --rm ${{ env.TEST_TAG }}
 
@@ -110,5 +112,5 @@ jobs:
       - name: Display Content of the Unpacked Files
         run: |
           ls -la ${{ github.workspace }}/unpacked
-          ls -l ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}
-          # cat ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}
+          # ls -l ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}
+          cat ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}
