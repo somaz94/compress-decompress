@@ -40,29 +40,15 @@ def compress(source, format):
     extension = get_extension(format)
     full_dest = os.path.join(dest, f"{base_name}{extension}")
 
-    if os.path.isdir(source):
-        # Compress a directory with the option of including root
-        print(f"Attempting to compress directory {source} to {full_dest}")
-        if include_root == "true":
-            compress_target = base_name
-            os.chdir(os.path.dirname(source))  # Change to directory of the source
-        else:
-            compress_target = "."
-            os.chdir(source)  # Change to the source directory itself to include only its contents
-    else:
-        # Compress a file - include_root has no effect here
-        print(f"Attempting to compress file {source} to {full_dest}")
-        compress_target = base_name
-        os.chdir(os.path.dirname(source))  # Change to directory of the source
-
+    print(f"Attempting to compress {source} to {full_dest}")
     if format == "zip":
-        run_command(f"zip -r {full_dest} {compress_target}")
+        run_command(f"zip -r {full_dest} {base_name}")
     elif format == "tar":
-        run_command(f"tar --absolute-names -cvf {full_dest} {compress_target}")
+        run_command(f"tar --absolute-names -cvf {full_dest} {base_name}")
     elif format == "tgz":
-        run_command(f"tar -P -czvf {full_dest} {compress_target}")
+        run_command(f"tar -P -czvf {full_dest} {base_name}")
     elif format == "tbz2":
-        run_command(f"tar -P -cjvf {full_dest} {compress_target}")
+        run_command(f"tar -P -cjvf {full_dest} {base_name}")
     else:
         sys.exit(f"Unsupported format: {format}")
     os.chdir(cwd)  # Restore original working directory.
@@ -107,7 +93,7 @@ if __name__ == "__main__":
     command = os.getenv("COMMAND")
     source = os.getenv("SOURCE")
     format = os.getenv("FORMAT")
-    include_root = os.getenv("INCLUDEROOT", "false")
+
     if command == "compress":
         compress(source, format)
     elif command == "decompress":

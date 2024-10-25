@@ -14,10 +14,6 @@ inputs:
   format:
     description: 'Compression format to use. Supported formats include zip, tar, tgz, and tbz2.'
     required: true
-  includeRoot:
-    description: 'Whether to include the root folder itself in the compressed file.'
-    required: false
-    default: 'true'
 outputs:
   file_path:
     description: 'The path to the compressed or decompressed file.'
@@ -29,7 +25,6 @@ runs:
     SOURCE: ${{ inputs.source }}
     DEST: ${{ inputs.dest }}
     FORMAT: ${{ inputs.format }}
-    INCLUDEROOT: ${{ inputs.includeRoot }}
 branding:
   icon: 'at-sign'
   color: 'white'
