@@ -21,7 +21,6 @@ jobs:
 
     env:
       TEST_TAG: localhost:5001/actions/compress-decompress:latest
-      TEST_SOURCE: test3
 
     steps:
       - name: Checkout
@@ -43,7 +42,7 @@ jobs:
       - name: Run the Container
         env:
           COMMAND: 'compress'
-          SOURCE: '${{ env.TEST_SOURCE }}'
+          SOURCE: './test'
           FORMAT: 'zip'
         run: |
           docker run \
@@ -57,15 +56,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: compressed-data
-          path: ./${{ env.TEST_SOURCE }}.zip           
+          path: ./test.zip           
 
 
   test-action:
     name: Test Extract Commit Action
     runs-on: ubuntu-latest
     needs: build-and-push-docker
-    env:
-      TEST_SOURCE: test3
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,12 +100,11 @@ jobs:
         uses: ./
         with:
           command: 'decompress'
-          source: '${{ env.TEST_SOURCE }}.zip'
+          source: './test.zip'
           format: 'zip'
           dest: './unpacked'        
       
       - name: Display Content of the Unpacked Files
         run: |
           ls -la ${{ github.workspace }}/unpacked
-          ls -l ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}
-          # cat ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}
+          cat ${{ github.workspace }}/unpacked/test

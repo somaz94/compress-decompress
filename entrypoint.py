@@ -48,7 +48,9 @@ def compress(source, format):
             os.chdir(os.path.dirname(source))  # Change to directory of the source
         else:
             compress_target = "."
-            os.chdir(source)  # Change to the source directory itself to include only its contents
+            os.chdir(
+                source
+            )  # Change to the source directory itself to include only its contents
     else:
         # Compress a file - include_root has no effect here
         print(f"Attempting to compress file {source} to {full_dest}")
@@ -107,7 +109,7 @@ if __name__ == "__main__":
     command = os.getenv("COMMAND")
     source = os.getenv("SOURCE")
     format = os.getenv("FORMAT")
-    include_root = os.getenv("INCLUDEROOT", "false")
+    include_root = os.getenv("INCLUDEROOT", "true")
     if command == "compress":
         compress(source, format)
     elif command == "decompress":
