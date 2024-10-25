@@ -51,7 +51,6 @@ jobs:
             --env COMMAND="${{ env.COMMAND }}" \
             --env SOURCE="${{ env.SOURCE }}" \
             --env FORMAT="${{ env.FORMAT }}" \
-            # --env INCLUDEROOT="${{ env.INCLUDEROOT }}" \
             --volume "${{ github.workspace }}:/usr/src" \
             --rm ${{ env.TEST_TAG }}
 
