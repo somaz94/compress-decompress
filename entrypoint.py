@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 
+
 def run_command(command):
     print(f"Executing command: {command}")
     result = subprocess.run(command, shell=True, text=True, capture_output=True)
@@ -10,112 +11,104 @@ def run_command(command):
     if result.stderr:
         print(f"Command errors: {result.stderr.strip()}")
 
+
 def get_extension(format):
-    return {"zip": ".zip", "tar": ".tar", "tgz": ".tgz", "tbz2": ".tbz2"}.get(format, "")
+    return {"zip": ".zip", "tar": ".tar", "tgz": ".tgz", "tbz2": ".tbz2"}.get(
+        format, ""
+    )
+
 
 def adjust_path(path):
-    adjusted_path = (path if os.path.isabs(path) else os.path.join(os.getenv("GITHUB_WORKSPACE", os.getcwd()), path))
+    adjusted_path = (
+        path
+        if os.path.isabs(path)
+        else os.path.join(os.getenv("GITHUB_WORKSPACE", os.getcwd()), path)
+    )
     print(f"Adjusted path: {adjusted_path}")
     return adjusted_path
 
-def compress(source, format, include_root):
+
+def compress(source, format):
     source = adjust_path(source)
     cwd = os.getcwd()  # Save current directory
+    os.chdir(os.path.dirname(source))  # Change to directory of the source
+
     dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
     if dest and not os.path.exists(dest):
         os.makedirs(dest)
-    
     base_name = os.path.basename(source)
     extension = get_extension(format)
     full_dest = os.path.join(dest, f"{base_name}{extension}")
-    
-    # Check if source is a file or directory
     if os.path.isdir(source):
+        # Compress a directory with the option of including root
         print(f"Attempting to compress directory {source} to {full_dest}")
-        # Zip format
-        if format == "zip":
-            if include_root == 'true':
-                run_command(f"cd {os.path.dirname(source)} && zip -r {full_dest} {base_name}")
-            else:
-                run_command(f"cd {source} && zip -r {full_dest} *")
-        # Tar format
-        elif format == "tar":
-            if include_root == 'true':
-                run_command(f"tar -cvf {full_dest} -C {os.path.dirname(source)} {base_name}")
-            else:
-                run_command(f"tar -C {source} -cvf {full_dest} .")
-        # Tgz format
-        elif format == "tgz":
-            if include_root == 'true':
-                run_command(f"tar -czvf {full_dest} -C {os.path.dirname(source)} {base_name}")
-            else:
-                run_command(f"tar -C {source} -czvf {full_dest} .")
-        # Tbz2 format
-        elif format == "tbz2":
-            if include_root == 'true':
-                run_command(f"tar -cjvf {full_dest} -C {os.path.dirname(source)} {base_name}")
-            else:
-                run_command(f"tar -C {source} -cjvf {full_dest} .")
+        if include_root == 'true':
+            compress_target = base_name
+            os.chdir(os.path.dirname(source))  # Change to directory of the source
         else:
-            sys.exit(f"Unsupported format: {format}")
-    elif os.path.isfile(source):
-        print(f"Attempting to compress file {source} to {full_dest}")
-        # Zip format
-        if format == "zip":
-            run_command(f"zip {full_dest} {source}")
-        # Tar format
-        elif format == "tar":
-            run_command(f"tar -cvf {full_dest} -C {os.path.dirname(source)} {base_name}")
-        # Tgz format
-        elif format == "tgz":
-            run_command(f"tar -czvf {full_dest} -C {os.path.dirname(source)} {base_name}")
-        # Tbz2 format
-        elif format == "tbz2":
-            run_command(f"tar -cjvf {full_dest} -C {os.path.dirname(source)} {base_name}")
-        else:
-            sys.exit(f"Unsupported format: {format}")
+            compress_target = "."
+            os.chdir(source)  # Change to the source directory itself to include only its contents
     else:
-        sys.exit(f"Source {source} is neither a file nor a directory. Ensure the source exists.")
-    
+        # Compress a file - include_root has no effect here
+        print(f"Attempting to compress file {source} to {full_dest}")
+        compress_target = base_name
+        os.chdir(os.path.dirname(source))  # Change to directory of the source
+
+    if format == "zip":
+        run_command(f"zip -r {full_dest} {base_name}")
+    elif format == "tar":
+        run_command(f"tar --absolute-names -cvf {full_dest} {base_name}")
+    elif format == "tgz":
+        run_command(f"tar -P -czvf {full_dest} {base_name}")
+    elif format == "tbz2":
+        run_command(f"tar -P -cjvf {full_dest} {base_name}")
+    else:
+        sys.exit(f"Unsupported format: {format}")
     os.chdir(cwd)  # Restore original working directory.
-    print(f"file_path={full_dest}", file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"))
+    print(
+        f"file_path={full_dest}",
+        file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"),
+    )
+
 
 def decompress(source, format):
     source = adjust_path(source)
     dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
     if dest and not os.path.exists(dest):
         os.makedirs(dest)
-    
-    print(f"Attempting to decompress {source} to {dest if dest else 'current directory'}")
-    
+
+    print(
+        f"Attempting to decompress {source} to {dest if dest else 'current directory'}"
+    )
+
     if format == "zip":
         unzip_options = f"-d {dest}" if dest else "-j -d ."
         run_command(f"unzip {unzip_options} {source}")
-    
     elif format == "tar":
         tar_options = f"-C {dest}" if dest else "-C ."
         run_command(f"tar --absolute-names -xvf {source} {tar_options}")
-    
     elif format == "tgz":
         tar_options = f"-C {dest}" if dest else "-C ."
         run_command(f"tar -P -xzvf {source} {tar_options}")
-    
     elif format == "tbz2":
         tar_options = f"-C {dest}" if dest else "-C ."
         run_command(f"tar -P -xjvf {source} {tar_options}")
-    
     else:
         sys.exit(f"Unsupported format: {format}")
-    
-    print(f"file_path={dest if dest else 'current directory'}", file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"))
+
+    print(
+        f"file_path={dest if dest else 'current directory'}",
+        file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"),
+    )
+
 
 if __name__ == "__main__":
     command = os.getenv("COMMAND")
     source = os.getenv("SOURCE")
     format = os.getenv("FORMAT")
-    include_root = os.getenv("INCLUDEROOT", "false")  # default to false if not set
+    include_root = os.getenv("INCLUDEROOT", "false")
 
     if command == "compress":
-        compress(source, format, include_root)
+        compress(source, format)
     elif command == "decompress":
         decompress(source, format)
