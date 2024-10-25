@@ -20,39 +20,53 @@ def adjust_path(path):
 
 def compress(source, format, include_root):
     source = adjust_path(source)
+
+    # If the source is a file, we do not need to change the directory.
+    if not os.path.isdir(source):
+        sys.exit(f"Source {source} is not a directory, but a file. Ensure the source is a directory.")
+
     cwd = os.getcwd()  # Save current directory
     dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
     if dest and not os.path.exists(dest):
         os.makedirs(dest)
+        
     base_name = os.path.basename(source)
     extension = get_extension(format)
     full_dest = os.path.join(dest, f"{base_name}{extension}")
-
-    # Change directory for compression
-    if include_root == 'true':
-        compress_target = base_name
-        os.chdir(os.path.dirname(source))
-    else:
-        compress_target = '.'
-        os.chdir(source)
-
+    
     print(f"Attempting to compress {source} to {full_dest}")
-
+    
     # Zip format
     if format == "zip":
-        run_command(f"zip -r {full_dest} {compress_target}")
+        if include_root == 'true':
+            run_command(f"cd {os.path.dirname(source)} && zip -r {full_dest} {base_name}")
+        else:
+            run_command(f"cd {source} && zip -r {full_dest} *")
+    
     # Tar format
     elif format == "tar":
-        run_command(f"tar -cvf {full_dest} -C {os.path.dirname(source) if include_root == 'true' else source} {compress_target}")
+        if include_root == 'true':
+            run_command(f"tar -cvf {full_dest} -C {os.path.dirname(source)} {base_name}")
+        else:
+            run_command(f"tar -C {source} -cvf {full_dest} .")
+    
     # Tgz format
     elif format == "tgz":
-        run_command(f"tar -czvf {full_dest} -C {os.path.dirname(source) if include_root == 'true' else source} {compress_target}")
+        if include_root == 'true':
+            run_command(f"tar -czvf {full_dest} -C {os.path.dirname(source)} {base_name}")
+        else:
+            run_command(f"tar -C {source} -czvf {full_dest} .")
+    
     # Tbz2 format
     elif format == "tbz2":
-        run_command(f"tar -cjvf {full_dest} -C {os.path.dirname(source) if include_root == 'true' else source} {compress_target}")
+        if include_root == 'true':
+            run_command(f"tar -cjvf {full_dest} -C {os.path.dirname(source)} {base_name}")
+        else:
+            run_command(f"tar -C {source} -cjvf {full_dest} .")
+    
     else:
         sys.exit(f"Unsupported format: {format}")
-
+    
     os.chdir(cwd)  # Restore original working directory.
     print(f"file_path={full_dest}", file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"))
 
@@ -61,23 +75,28 @@ def decompress(source, format):
     dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
     if dest and not os.path.exists(dest):
         os.makedirs(dest)
+    
     print(f"Attempting to decompress {source} to {dest if dest else 'current directory'}")
-
+    
     if format == "zip":
         unzip_options = f"-d {dest}" if dest else "-j -d ."
         run_command(f"unzip {unzip_options} {source}")
+    
     elif format == "tar":
         tar_options = f"-C {dest}" if dest else "-C ."
         run_command(f"tar --absolute-names -xvf {source} {tar_options}")
+    
     elif format == "tgz":
         tar_options = f"-C {dest}" if dest else "-C ."
         run_command(f"tar -P -xzvf {source} {tar_options}")
+    
     elif format == "tbz2":
         tar_options = f"-C {dest}" if dest else "-C ."
         run_command(f"tar -P -xjvf {source} {tar_options}")
+    
     else:
         sys.exit(f"Unsupported format: {format}")
-
+    
     print(f"file_path={dest if dest else 'current directory'}", file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"))
 
 if __name__ == "__main__":
@@ -85,6 +104,7 @@ if __name__ == "__main__":
     source = os.getenv("SOURCE")
     format = os.getenv("FORMAT")
     include_root = os.getenv("INCLUDEROOT", "false")  # default to false if not set
+
     if command == "compress":
         compress(source, format, include_root)
     elif command == "decompress":
