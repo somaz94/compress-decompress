@@ -31,14 +31,16 @@ def adjust_path(path):
 def compress(source, format, include_root):
     source = adjust_path(source)
     cwd = os.getcwd()  # Save current directory
-    os.chdir(os.path.dirname(source))  # Change to directory of the source
+    print(f"Initial CWD: {cwd}")  # Debug: Show initial working directory
 
     dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
     if dest and not os.path.exists(dest):
         os.makedirs(dest)
+
     base_name = os.path.basename(source)
     extension = get_extension(format)
     full_dest = os.path.join(dest, f"{base_name}{extension}")
+    print(f"Destination Path: {full_dest}")  # Debug: Show full destination path
 
     if os.path.isdir(source):
         # Compress a directory with the option of including root
@@ -51,6 +53,7 @@ def compress(source, format, include_root):
             os.chdir(
                 source
             )  # Change to the source directory itself to compress its contents
+        print(f"Changed CWD for Compression: {os.getcwd()}")  # Debug: Show CWD for compression
     else:
         # Compress a file - include_root has no effect here
         print(f"Attempting to compress file {source} to {full_dest}")
@@ -68,6 +71,7 @@ def compress(source, format, include_root):
     else:
         sys.exit(f"Unsupported format: {format}")
     os.chdir(cwd)  # Restore original working directory.
+    print(f"Restored CWD: {os.getcwd()}")  # Debug: Show restored working directory
     print(
         f"file_path={full_dest}",
         file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"),
