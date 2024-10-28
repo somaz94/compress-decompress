@@ -1,6 +1,4 @@
 {
   "absolute": true,
-  "ignore": [
-    ".github/workflows/*"
-  ]
+  "ignore": [".github/workflows/*"]
 }
