@@ -26,6 +26,9 @@ jobs:
           source: './test'
           format: 'zip'        
 
+      - name: Verify File Existence
+        run: ls -la ${{ github.workspace }}
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

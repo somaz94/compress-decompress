@@ -47,7 +47,7 @@ def compress(source, format):
             compress_target = base_name
             os.chdir(os.path.dirname(source))  # Change to directory of the source
         else:
-            compress_target = "*"
+            compress_target = "."
             os.chdir(
                 source
             )  # Change to the source directory itself to compress its contents
