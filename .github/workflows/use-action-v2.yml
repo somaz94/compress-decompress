@@ -27,7 +27,7 @@ jobs:
           command: 'compress'
           source: './${{ env.TEST_SOURCE }}'
           format: 'zip'
-          # includeRoot: 'false'       
+          includeRoot: 'false'       
 
       - name: Verify File Existence
         run: ls -la ${{ github.workspace }}
@@ -63,7 +63,7 @@ jobs:
       - name: Display Content of the Unpacked Files
         run: |
           ls -la ${{ github.workspace }}/unpacked
-          # cat ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}.txt
+          cat ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}.txt
 
       - name: Test Local Compress Action
         id: compress
