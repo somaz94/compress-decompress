@@ -55,7 +55,7 @@ def compress(source, format, include_root):
             )  # Change to the source directory itself to compress its contents
         print(
             f"Changed CWD for Compression: {os.getcwd()}"
-            )  # Debug: Show CWD for compression
+        )  # Debug: Show CWD for compression
     else:
         # Compress a file - include_root has no effect here
         print(f"Attempting to compress file {source} to {full_dest}")

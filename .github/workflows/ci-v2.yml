@@ -62,8 +62,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: compressed-data
-          path: ./${{ env.TEST_SOURCE }}.zip           
-
+          path: ./${{ env.TEST_SOURCE }}.zip
 
   test-action:
     name: Test Extract Commit Action
@@ -110,8 +109,8 @@ jobs:
           command: 'decompress'
           source: '${{ env.TEST_SOURCE }}.zip'
           format: 'zip'
-          dest: './unpacked'        
-      
+          dest: './unpacked'
+
       - name: Display Content of the Unpacked Files
         run: |
           ls -la ${{ github.workspace }}/unpacked

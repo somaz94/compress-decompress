@@ -1,5 +1,7 @@
 name: 'Compress/Decompress'
-description: 'GitHub Action to compress or decompress files using various formats like zip, tar, tgz, and tbz2.'
+description:
+  'GitHub Action to compress or decompress files using various formats like zip,
+  tar, tgz, and tbz2.'
 author: 'somaz94'
 inputs:
   command:
@@ -12,10 +14,13 @@ inputs:
     description: 'Destination directory or file for the output.'
     required: false
   format:
-    description: 'Compression format to use. Supported formats include zip, tar, tgz, and tbz2.'
+    description:
+      'Compression format to use. Supported formats include zip, tar, tgz, and
+      tbz2.'
     required: true
   includeRoot:
-    description: 'Whether to include the root folder itself in the compressed file.'
+    description:
+      'Whether to include the root folder itself in the compressed file.'
     required: false
     default: true
 outputs:
