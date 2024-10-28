@@ -44,13 +44,13 @@ def compress(source, format):
         # Compress a directory with the option of including root
         print(f"Attempting to compress directory {source} to {full_dest}")
         if include_root == "true":
-            compress_target = base_name
-            os.chdir(os.path.dirname(source))  # Change to directory of the source
-        else:
-            compress_target = base_name
+            compress_target = "*"
             os.chdir(
                 source
-            )  # Change to the source directory itself to include only its contents
+            )  # Change to the source directory itself to compress its contents
+        else:
+            compress_target = base_name
+            os.chdir(os.path.dirname(source))  # Change to directory of the source
     else:
         # Compress a file - include_root has no effect here
         print(f"Attempting to compress file {source} to {full_dest}")
