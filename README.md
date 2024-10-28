@@ -34,6 +34,8 @@ You can use this action in your GitHub workflow by specifying the action with it
 
 ## Example Workflow
 
+### includeRoot: true(default)
+
 This example demonstrates how to use the Compress-Decompress action to compress a directory:
 
 ```yaml
@@ -96,6 +98,74 @@ jobs:
       run: |
         ls -la ${{ github.workspace }}/unpacked
         cat ${{ github.workspace }}/unpacked/data-folder
+
+```
+
+### includeRoot: false(option)
+
+This example demonstrates how to use the Compress-Decompress action to compress a directory:
+
+```yaml
+name: Compress Files
+
+on: [push]
+
+jobs:
+  compress-job:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Compress Directory
+      uses: somaz94/compress-decompress@v1
+      with:
+        command: compress
+        source: ./data-folder
+        format: zip
+        includeRoot: 'false'
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: compressed-data
+        path: ./data-folder/data-folder.zip
+```
+
+To decompress files, you can modify the workflow like so:
+
+```yaml
+name: Decompress Files
+
+on: [push]
+
+jobs:
+  decompress-job:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: compressed-data
+
+    - name: List contents in the workspace
+      run: ls -la ${{ github.workspace }}
+
+    - name: Decompress Directory
+      uses: somaz94/compress-decompress@v1
+      with:
+        command: decompress
+        source: ./data-folder.zip
+        format: zip
+        dest: './unpacked'
+    
+    - name: Display Content of the Unpacked Files
+      run: |
+        ls -la ${{ github.workspace }}/unpacked
+        cat ${{ github.workspace }}/unpacked/data-folder.txt # You'll have all the files in that directory. This is an example
 
 ```
 
