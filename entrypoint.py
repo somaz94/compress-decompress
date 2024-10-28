@@ -111,6 +111,6 @@ if __name__ == "__main__":
     format = os.getenv("FORMAT")
     include_root = os.getenv("INCLUDEROOT", "true")
     if command == "compress":
-        compress(source, format)
+        compress(source, format, include_root)
     elif command == "decompress":
         decompress(source, format)
