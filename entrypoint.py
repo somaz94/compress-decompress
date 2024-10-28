@@ -28,7 +28,7 @@ def adjust_path(path):
     return adjusted_path
 
 
-def compress(source, format):
+def compress(source, format, include_root):
     source = adjust_path(source)
     cwd = os.getcwd()  # Save current directory
     os.chdir(os.path.dirname(source))  # Change to directory of the source
