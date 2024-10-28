@@ -55,6 +55,9 @@ jobs:
             --volume "${{ github.workspace }}:/usr/src" \
             --rm ${{ env.TEST_TAG }}
 
+      - name: Verify File Existence
+        run: ls -la ${{ github.workspace }}
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
