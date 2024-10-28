@@ -15,11 +15,22 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Set the working directory inside the container    
+# Create a user and group
+RUN addgroup --system app && adduser --system --group app
+
+# Set the working directory and permissions
 WORKDIR /usr/src
+RUN chown app:app /usr/src
 
 # Copies your code file from your action repository to the filesystem path `/` of the container
-COPY entrypoint.py .
+COPY --chown=app:app entrypoint.py .
+
+# Switch to non-root user
+USER app
 
 # File to execute when the docker container starts up (`entrypoint.py`)
 ENTRYPOINT ["python", "/usr/src/entrypoint.py"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -fs http://localhost:80/ || exit 1

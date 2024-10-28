@@ -8,35 +8,38 @@
 
 ## Description
 
-This GitHub Action provides the functionality to compress or decompress files using various
-compression formats including `zip`, `tar`, `tgz`, and `tbz2`. It is designed to be easy to use within
-GitHub workflows for handling file compression and decompression tasks efficiently.
+This GitHub Action provides the functionality to compress or decompress files
+using various compression formats including `zip`, `tar`, `tgz`, and `tbz2`. It
+is designed to be easy to use within GitHub workflows for handling file
+compression and decompression tasks efficiently.
 
 ## Inputs
 
 | Input         | Description                                                                                                      | Required | Default |
-|---------------|------------------------------------------------------------------------------------------------------------------|----------|    -    |
-| `command`     | The operation to perform. It can be either "compress" or "decompress"                                            | Yes      |    -    |
-| `source`      | The source directory or file to compress or decompress.                                                          | Yes      |    -    |
-| `dest`        | The destination directory or file for the output. If not provided, it defaults to the current working directory. | No       |    -    |
-| `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2`.                            | Yes      |    -    |
-| `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       |   yes   |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- | -------- | ------- |
+| `command`     | The operation to perform. It can be either "compress" or "decompress"                                            | Yes      | -       |
+| `source`      | The source directory or file to compress or decompress.                                                          | Yes      | -       |
+| `dest`        | The destination directory or file for the output. If not provided, it defaults to the current working directory. | No       | -       |
+| `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2`.                            | Yes      | -       |
+| `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | yes     |
 
 ## Outputs
 
-| Output       | Description                                      |
-|--------------|--------------------------------------------------|
-| `file_path`  | The path to the compressed or decompressed file. |
+| Output      | Description                                      |
+| ----------- | ------------------------------------------------ |
+| `file_path` | The path to the compressed or decompressed file. |
 
 ## Usage
 
-You can use this action in your GitHub workflow by specifying the action with its required inputs.
+You can use this action in your GitHub workflow by specifying the action with
+its required inputs.
 
 ## Example Workflow
 
 ### includeRoot: true(default)
 
-This example demonstrates how to use the Compress-Decompress action to compress a directory:
+This example demonstrates how to use the Compress-Decompress action to compress
+a directory:
 
 ```yaml
 name: Compress Files
@@ -47,21 +50,21 @@ jobs:
   compress-job:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-    - name: Compress Directory
-      uses: somaz94/compress-decompress@v1
-      with:
-        command: compress
-        source: ./data-folder
-        format: zip
+      - name: Compress Directory
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: ./data-folder
+          format: zip
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: compressed-data
-        path: ./data-folder.zip
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compressed-data
+          path: ./data-folder.zip
 ```
 
 To decompress files, you can modify the workflow like so:
@@ -75,35 +78,35 @@ jobs:
   decompress-job:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: compressed-data
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: compressed-data
 
-    - name: List contents in the workspace
-      run: ls -la ${{ github.workspace }}
+      - name: List contents in the workspace
+        run: ls -la ${{ github.workspace }}
 
-    - name: Decompress Directory
-      uses: somaz94/compress-decompress@v1
-      with:
-        command: decompress
-        source: ./data-folder.zip
-        format: zip
-        dest: './unpacked'
-    
-    - name: Display Content of the Unpacked Files
-      run: |
-        ls -la ${{ github.workspace }}/unpacked
-        cat ${{ github.workspace }}/unpacked/data-folder
+      - name: Decompress Directory
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: decompress
+          source: ./data-folder.zip
+          format: zip
+          dest: './unpacked'
 
+      - name: Display Content of the Unpacked Files
+        run: |
+          ls -la ${{ github.workspace }}/unpacked
+          cat ${{ github.workspace }}/unpacked/data-folder
 ```
 
 ### includeRoot: false(option)
 
-This example demonstrates how to use the Compress-Decompress action to compress a directory:
+This example demonstrates how to use the Compress-Decompress action to compress
+a directory:
 
 ```yaml
 name: Compress Files
@@ -114,22 +117,22 @@ jobs:
   compress-job:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-    - name: Compress Directory
-      uses: somaz94/compress-decompress@v1
-      with:
-        command: compress
-        source: ./data-folder
-        format: zip
-        includeRoot: 'false'
+      - name: Compress Directory
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: ./data-folder
+          format: zip
+          includeRoot: 'false'
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: compressed-data
-        path: ./data-folder/data-folder.zip
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compressed-data
+          path: ./data-folder/data-folder.zip
 ```
 
 To decompress files, you can modify the workflow like so:
@@ -143,30 +146,29 @@ jobs:
   decompress-job:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: compressed-data
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: compressed-data
 
-    - name: List contents in the workspace
-      run: ls -la ${{ github.workspace }}
+      - name: List contents in the workspace
+        run: ls -la ${{ github.workspace }}
 
-    - name: Decompress Directory
-      uses: somaz94/compress-decompress@v1
-      with:
-        command: decompress
-        source: ./data-folder.zip
-        format: zip
-        dest: './unpacked'
-    
-    - name: Display Content of the Unpacked Files
-      run: |
-        ls -la ${{ github.workspace }}/unpacked
-        cat ${{ github.workspace }}/unpacked/data-folder.txt # You'll have all the files in that directory. This is an example
+      - name: Decompress Directory
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: decompress
+          source: ./data-folder.zip
+          format: zip
+          dest: './unpacked'
 
+      - name: Display Content of the Unpacked Files
+        run: |
+          ls -la ${{ github.workspace }}/unpacked
+          cat ${{ github.workspace }}/unpacked/data-folder.txt # You'll have all the files in that directory. This is an example
 ```
 
 ## License
