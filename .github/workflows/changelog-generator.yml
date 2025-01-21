@@ -15,11 +15,13 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Get latest tag
-      id: get_tag
+    - name: Get first tag
+      id: get_first_tag
       run: |
-        latest_tag=$(git describe --tags --abbrev=0 || echo "v1")
-        echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+        first_tag="$(git tag -l | sort -V | head -n 1)"
+        echo "FIRST_TAG=${first_tag}" >> "$GITHUB_ENV"
+        latest_tag="$(git describe --tags --abbrev=0 || echo "${first_tag}")"
+        echo "LATEST_TAG=${latest_tag}" >> "$GITHUB_ENV"
     - name: Generate changelog
       uses: janheinrichmerker/action-github-changelog-generator@v2.3
       with:
@@ -27,7 +29,7 @@ jobs:
         futureRelease: ${{ github.event.release.tag_name || env.LATEST_TAG }}
         base: CHANGELOG.md
         output: CHANGELOG.md
-        sinceTag: v1  # first release tag
+        sinceTag: ${{ env.FIRST_TAG }}
     - name: Commit files
       run: |
         git config --local user.email "action@github.com"
