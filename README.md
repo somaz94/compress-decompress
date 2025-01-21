@@ -1,6 +1,6 @@
 # Compress-Decompress Action
 
-[![GitHub Super-Linter](https://github.com/somaz94/compress-decompress/actions/workflows/linter.yml/badge.svg)](https://github.com/somaz94/compress-decompress)
+<!-- [![GitHub Super-Linter](https://github.com/somaz94/compress-decompress/actions/workflows/linter.yml/badge.svg)](https://github.com/somaz94/compress-decompress) -->
 ![CI](https://github.com/somaz94/compress-decompress/actions/workflows/ci.yml/badge.svg)
 [![License](https://img.shields.io/github/license/somaz94/compress-decompress)](https://github.com/somaz94/compress-decompress)
 ![Latest Tag](https://img.shields.io/github/v/tag/somaz94/compress-decompress)
