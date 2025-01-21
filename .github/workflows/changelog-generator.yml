@@ -1,0 +1,41 @@
+name: Generate changelog
+on:
+  release:
+    types: [created, edited]
+  workflow_dispatch:  
+
+permissions: 
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-changelog:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Get latest tag
+      id: get_tag
+      run: |
+        latest_tag=$(git describe --tags --abbrev=0 || echo "v1")
+        echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+    - name: Generate changelog
+      uses: janheinrichmerker/action-github-changelog-generator@v2.3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        futureRelease: ${{ github.event.release.tag_name || env.LATEST_TAG }}
+        base: CHANGELOG.md
+        output: CHANGELOG.md
+        sinceTag: v1  # first release tag
+    - name: Commit files
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add CHANGELOG.md
+        git commit -m "Update changelog" || echo "No changes to commit"
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: main
