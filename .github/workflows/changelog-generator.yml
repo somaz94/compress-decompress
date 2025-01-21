@@ -15,6 +15,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        
     - name: Get first tag
       id: get_first_tag
       run: |
@@ -22,20 +23,23 @@ jobs:
         echo "FIRST_TAG=${first_tag}" >> "$GITHUB_ENV"
         latest_tag="$(git describe --tags --abbrev=0 || echo "${first_tag}")"
         echo "LATEST_TAG=${latest_tag}" >> "$GITHUB_ENV"
+
     - name: Generate changelog
       uses: janheinrichmerker/action-github-changelog-generator@v2.3
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         futureRelease: ${{ github.event.release.tag_name || env.LATEST_TAG }}
-        base: CHANGELOG.md
         output: CHANGELOG.md
         sinceTag: ${{ env.FIRST_TAG }}
+        excludeTagsRegex: '^v[0-9]+$'  # v1, v2와 같은 메이저 버전 태그 제외
+
     - name: Commit files
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add CHANGELOG.md
         git commit -m "Update changelog" || echo "No changes to commit"
+        
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
