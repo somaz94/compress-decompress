@@ -19,7 +19,8 @@ jobs:
     - name: Get first tag
       id: get_first_tag
       run: |
-        first_tag="$(git tag -l | sort -V | head -n 1)"
+        # 메이저 버전이 아닌 첫 번째 태그 찾기
+        first_tag="$(git tag -l | grep -E 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -V | head -n 1)"
         echo "FIRST_TAG=${first_tag}" >> "$GITHUB_ENV"
         latest_tag="$(git describe --tags --abbrev=0 || echo "${first_tag}")"
         echo "LATEST_TAG=${latest_tag}" >> "$GITHUB_ENV"
@@ -30,8 +31,8 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         futureRelease: ${{ github.event.release.tag_name || env.LATEST_TAG }}
         output: CHANGELOG.md
-        sinceTag: ${{ env.FIRST_TAG }}
-        excludeTagsRegex: '^v[0-9]+$'  # v1, v2와 같은 메이저 버전 태그 제외
+        sinceTag: ${{ env.FIRST_TAG }}  # v1.0.0과 같은 구체적인 버전 태그
+        exclude-tags-regex: '^v[0-9]+$'  # v1, v2와 같은 메이저 버전 태그 제외
 
     - name: Commit files
       run: |
