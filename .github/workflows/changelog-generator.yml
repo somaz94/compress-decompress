@@ -32,7 +32,6 @@ jobs:
         futureRelease: ${{ github.event.release.tag_name || env.LATEST_TAG }}
         output: CHANGELOG.md
         sinceTag: ${{ env.FIRST_TAG }}  # v1.0.0과 같은 구체적인 버전 태그
-        exclude-tags-regex: '^v[0-9]+$'  # v1, v2와 같은 메이저 버전 태그 제외
 
     - name: Commit files
       run: |
