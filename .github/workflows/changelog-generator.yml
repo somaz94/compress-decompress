@@ -26,7 +26,7 @@ jobs:
         echo "LATEST_TAG=${latest_tag}" >> "$GITHUB_ENV"
 
     - name: Generate changelog
-      uses: janheinrichmerker/action-github-changelog-generator@v2.3
+      uses: janheinrichmerker/action-github-changelog-generator@v2.4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         futureRelease: ${{ github.event.release.tag_name || env.LATEST_TAG }}
