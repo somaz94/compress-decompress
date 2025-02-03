@@ -2,6 +2,8 @@ name: Generate changelog
 on:
   release:
     types: [created, edited]
+  pull_request:
+    types: [closed]
   workflow_dispatch:  
 
 permissions: 
