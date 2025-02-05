@@ -1,3 +1,4 @@
 # Repository CODEOWNERS
 
-* @actions/actions-oss-maintainers
+# 모든 파일의 기본 소유자
+* @somaz94
