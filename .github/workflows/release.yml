@@ -46,6 +46,7 @@ jobs:
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           cat RELEASE.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+          rm -rf RELEASE.md
 
       - name: "🚀 Create GitHub release"
         uses: actions/create-release@v1
