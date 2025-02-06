@@ -1,0 +1,72 @@
+name: Create release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"  # v1.0.1, v1.0.2 등만 매칭
+
+permissions:
+  contents: write  # releases와 태그를 생성하기 위한 권한
+  pull-requests: write  # changelog 생성을 위한 권한
+
+jobs:
+  build:
+    name: "🚀 Release"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "📥 Check-out"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get first tag
+        id: get_first_tag
+        run: |
+          # 시맨틱 버전 태그 중 가장 최신 버전 찾기 (v1 제외)
+          latest_tag="${{ github.ref_name }}"
+          echo "LATEST_TAG=${latest_tag}" >> "$GITHUB_ENV"
+          # 첫 번째 태그는 v1.0.0으로 고정
+          echo "FIRST_TAG=v1.0.0" >> "$GITHUB_ENV"
+
+      - name: Generate changelog for release
+        id: changelog
+        uses: janheinrichmerker/action-github-changelog-generator@v2.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          futureRelease: ${{ env.LATEST_TAG }}
+          sinceTag: ${{ env.FIRST_TAG }}
+          excludeTagsRegex: "^v[0-9]$"
+          output: RELEASE.md
+
+      - name: Read changelog
+        id: read_changelog
+        run: |
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat RELEASE.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: "🚀 Create GitHub release"
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          body: ${{ steps.read_changelog.outputs.changelog }}
+
+      - name: "🏷️ Update major version tag"
+        run: |
+          CURRENT_TAG=${{ github.ref_name }}
+          # Extract major version (e.g., v1)
+          MAJOR_VERSION="${CURRENT_TAG%%.*}"  # v1.0.1 -> v1
+          
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          
+          git tag -d $MAJOR_VERSION || true
+          git push origin :refs/tags/$MAJOR_VERSION || true
+          
+          git tag -a $MAJOR_VERSION -m "Update major version tag to ${CURRENT_TAG}"
+          git push origin $MAJOR_VERSION --force
