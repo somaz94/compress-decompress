@@ -172,6 +172,45 @@ jobs:
           cat ${{ github.workspace }}/unpacked/data-folder.txt # You'll have all the files in that directory. This is an example
 ```
 
+## Understanding IncludeRoot Option
+
+The `includeRoot` option controls how files are structured within the compressed archive:
+
+### includeRoot: true (Default)
+- Creates the archive with the source folder as the root directory
+- Preserves the original directory structure
+- Example structure:
+  ```
+  data-folder.zip
+  └── data-folder/
+      ├── file1.txt
+      ├── file2.txt
+      └── subfolder/
+          └── file3.txt
+  ```
+- Output location: `./data-folder.zip`
+
+### includeRoot: false
+- Compresses only the contents of the source folder without the parent directory
+- Files are directly at the root of the archive
+- Example structure:
+  ```
+  data-folder.zip
+  ├── file1.txt
+  ├── file2.txt
+  └── subfolder/
+      └── file3.txt
+  ```
+- Output location: `./data-folder/data-folder.zip`
+
+### When to Use Each Option
+- Use `includeRoot: true` when you want to preserve the directory structure and need the parent folder name in the archive
+- Use `includeRoot: false` when you only want to compress the contents without the parent directory name
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
