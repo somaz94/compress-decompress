@@ -7,6 +7,10 @@ on:
         description: 'workflow run'
         required: true
         default: 'true'
+  workflow_run:
+    workflows: ["Create release"]  # release.yml의 name과 일치해야 함
+    types:
+      - completed
 
 permissions:
   contents: read
