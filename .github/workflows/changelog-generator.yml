@@ -9,7 +9,7 @@ on:
     types:
       - completed
   workflow_dispatch:  
-
+  
 permissions: 
   contents: write
   pull-requests: write
@@ -45,16 +45,13 @@ jobs:
         # excludeTags: "v1,v2"  # 명시적으로 제외할 태그
         excludeTagsRegex: "^v[0-9]$"
 
-    - name: Commit files
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add CHANGELOG.md
-        git commit -m "Update changelog" || echo "No changes to commit"
-        
-    - name: Push changes
-      uses: ad-m/github-push-action@master
+    - name: Git Commit and Push
+      uses: somaz94/go-git-commit-action@v1.0.1
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
         branch: main
+        commit_message: "Update changelog"
+        user_email: "actions@github.com"
+        user_name: "GitHub Actions"
+        file_pattern: "CHANGELOG.md"
 
