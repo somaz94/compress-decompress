@@ -18,14 +18,24 @@ def print_success(message):
 def print_error(message):
     print(f"❌ {message}")
 
-def get_file_size(file_path):
+def get_file_size(size_or_path):
     """Return human readable file size"""
-    size = os.path.getsize(file_path)
-    for unit in ['B', 'KB', 'MB', 'GB']:
-        if size < 1024:
-            return f"{size:.2f} {unit}"
-        size /= 1024
-    return f"{size:.2f} TB"
+    try:
+        # If input is a path, get its size
+        if isinstance(size_or_path, str):
+            size = os.path.getsize(size_or_path)
+        # If input is already a number, use it directly
+        else:
+            size = size_or_path
+
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024:
+                return f"{size:.2f} {unit}"
+            size /= 1024
+        return f"{size:.2f} TB"
+    except Exception as e:
+        logger.error(f"Error calculating size: {e}")
+        return "Unknown size"
 
 def validate_format(format):
     """Validate compression format"""
