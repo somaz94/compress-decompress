@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import logging
+from datetime import datetime
 
 def print_header(title):
     print("\n" + "=" * 50)
@@ -16,6 +17,33 @@ def print_success(message):
 
 def print_error(message):
     print(f"❌ {message}")
+
+def get_file_size(file_path):
+    """Return human readable file size"""
+    size = os.path.getsize(file_path)
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size < 1024:
+            return f"{size:.2f} {unit}"
+        size /= 1024
+    return f"{size:.2f} TB"
+
+def validate_format(format):
+    """Validate compression format"""
+    valid_formats = ['zip', 'tar', 'tgz', 'tbz2']
+    if format not in valid_formats:
+        print_error(f"Invalid format: {format}")
+        print(f"Supported formats: {', '.join(valid_formats)}")
+        sys.exit(1)
+    return True
+
+def get_directory_size(path):
+    """Calculate total size of a directory"""
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            total_size += os.path.getsize(fp)
+    return total_size
 
 # 로깅 설정
 logging.basicConfig(
@@ -59,16 +87,22 @@ def adjust_path(path):
 
 def compress(source, format, include_root):
     print_header("Compression Process Started")
+    validate_format(format)
     
     if not os.path.exists(source):
         print_error(f"Source path '{source}' does not exist")
         sys.exit(1)
+    
+    # Calculate source size
+    source_size = get_directory_size(source) if os.path.isdir(source) else os.path.getsize(source)
+    start_time = datetime.now()
     
     source = adjust_path(source)
     print_section("Configuration")
     print(f"  • Source: {source}")
     print(f"  • Format: {format}")
     print(f"  • Include Root: {include_root}")
+    print(f"  • Source Size: {get_file_size(source_size)}")
     
     cwd = os.getcwd()
     print(f"  • Initial Directory: {cwd}")
@@ -121,13 +155,30 @@ def compress(source, format, include_root):
         file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"),
     )
 
+    end_time = datetime.now()
+    duration = end_time - start_time
+    
+    if os.path.exists(full_dest):
+        compressed_size = os.path.getsize(full_dest)
+        compression_ratio = (1 - (compressed_size / source_size)) * 100 if source_size > 0 else 0
+        
+        print_section("Compression Results")
+        print(f"  • Original Size: {get_file_size(source_size)}")
+        print(f"  • Compressed Size: {get_file_size(compressed_size)}")
+        print(f"  • Compression Ratio: {compression_ratio:.1f}%")
+        print(f"  • Duration: {duration.total_seconds():.2f} seconds")
+
 
 def decompress(source, format):
     print_header("Decompression Process Started")
+    validate_format(format)
     
     if not os.path.exists(source):
         print_error(f"Source file '{source}' does not exist")
         sys.exit(1)
+    
+    source_size = os.path.getsize(source)
+    start_time = datetime.now()
     
     source = adjust_path(source)
     print_section("Configuration")
@@ -164,24 +215,38 @@ def decompress(source, format):
         file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"),
     )
 
+    end_time = datetime.now()
+    duration = end_time - start_time
+    
+    print_section("Decompression Results")
+    print(f"  • Original Archive Size: {get_file_size(source_size)}")
+    print(f"  • Duration: {duration.total_seconds():.2f} seconds")
+
 
 if __name__ == "__main__":
-    command = os.getenv("COMMAND")
-    source = os.getenv("SOURCE")
-    format = os.getenv("FORMAT")
-    include_root = os.getenv("INCLUDEROOT", "true")
+    try:
+        command = os.getenv("COMMAND")
+        source = os.getenv("SOURCE")
+        format = os.getenv("FORMAT")
+        include_root = os.getenv("INCLUDEROOT", "true")
 
-    print_header("Compress/Decompress Action")
-    print_section("Environment Configuration")
-    print(f"  • Command: {command}")
-    print(f"  • Source: {source}")
-    print(f"  • Format: {format}")
-    print(f"  • Include Root: {include_root}")
-    
-    if command == "compress":
-        compress(source, format, include_root)
-    elif command == "decompress":
-        decompress(source, format)
-    else:
-        print_error(f"Invalid command: {command}")
+        print_header("Compress/Decompress Action")
+        print_section("Environment Configuration")
+        print(f"  • Command: {command}")
+        print(f"  • Source: {source}")
+        print(f"  • Format: {format}")
+        print(f"  • Include Root: {include_root}")
+        print(f"  • GitHub Workspace: {os.getenv('GITHUB_WORKSPACE', 'Not in GitHub Actions')}")
+        
+        if command == "compress":
+            compress(source, format, include_root)
+        elif command == "decompress":
+            decompress(source, format)
+        else:
+            print_error(f"Invalid command: {command}")
+            sys.exit(1)
+            
+    except Exception as e:
+        print_error(f"Unexpected error occurred: {str(e)}")
+        logger.exception("Detailed error information:")
         sys.exit(1)
