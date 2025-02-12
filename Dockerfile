@@ -14,7 +14,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Set the working directory inside the container    
-WORKDIR /usr/src/app
+WORKDIR /usr/src
 
 # Copy all files from app directory
 COPY app/ .
