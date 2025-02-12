@@ -17,7 +17,7 @@ RUN apt-get update && \
 WORKDIR /usr/src
 
 # Copy all files from app directory
-COPY app/*.py ./
+COPY . .
 
 # File to execute when the docker container starts up
-ENTRYPOINT ["python", "/usr/src/main.py"]
+ENTRYPOINT ["python", "/usr/src/app/main.py"]
