@@ -3,7 +3,7 @@ import sys
 from .utils import print_header, print_section
 from .compress import compress
 from .decompress import decompress
-from .utils import print_error
+from .utils import print_error, print_header, print_section
 
 def main():
     try:
