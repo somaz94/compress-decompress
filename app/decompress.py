@@ -1,10 +1,11 @@
 import os
+import sys
 from datetime import datetime
-from .utils import (
+from utils import (
     print_header, print_section, print_success, print_error,
     validate_format, run_command, adjust_path, get_file_size
 )
-import sys
+
 
 def decompress(source, format):
     print_header("Decompression Process Started")

@@ -1,9 +1,8 @@
 import os
 import sys
-from .utils import print_header, print_section
-from .compress import compress
-from .decompress import decompress
-from .utils import print_error, print_header, print_section
+from utils import print_header, print_section, print_error
+from compress import compress
+from decompress import decompress
 
 def main():
     try:

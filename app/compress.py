@@ -1,11 +1,13 @@
 import os
+import sys
 from datetime import datetime
-from .utils import (
+from utils import (
     print_header, print_section, print_success, print_error,
     validate_format, get_directory_size, run_command,
     get_extension, adjust_path, get_file_size
 )
-import sys
+
+
 def compress(source, format, include_root):
     print_header("Compression Process Started")
     validate_format(format)
