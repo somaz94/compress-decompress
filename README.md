@@ -14,6 +14,8 @@ using various compression formats including `zip`, `tar`, `tgz`, and `tbz2`. It
 is designed to be easy to use within GitHub workflows for handling file
 compression and decompression tasks efficiently.
 
+<br/>
+
 ## Inputs
 
 | Input         | Description                                                                                                      | Required | Default |
@@ -24,18 +26,26 @@ compression and decompression tasks efficiently.
 | `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2`.                            | Yes      | -       |
 | `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | yes     |
 
+<br/>
+
 ## Outputs
 
 | Output      | Description                                      |
 | ----------- | ------------------------------------------------ |
 | `file_path` | The path to the compressed or decompressed file. |
 
+<br/>
+
 ## Usage
 
 You can use this action in your GitHub workflow by specifying the action with
 its required inputs.
 
+<br/>
+
 ## Example Workflow
+
+<br/>
 
 ### includeRoot: true(default)
 
@@ -103,6 +113,8 @@ jobs:
           ls -la ${{ github.workspace }}/unpacked
           cat ${{ github.workspace }}/unpacked/data-folder
 ```
+
+<br/>
 
 ### includeRoot: false(option)
 
@@ -172,9 +184,13 @@ jobs:
           cat ${{ github.workspace }}/unpacked/data-folder.txt # You'll have all the files in that directory. This is an example
 ```
 
+<br/>
+
 ## Understanding IncludeRoot Option
 
 The `includeRoot` option controls how files are structured within the compressed archive:
+
+<br/>
 
 ### includeRoot: true (Default)
 - Creates the archive with the source folder as the root directory
@@ -190,6 +206,8 @@ The `includeRoot` option controls how files are structured within the compressed
   ```
 - Output location: `./data-folder.zip`
 
+<br/>
+
 ### includeRoot: false
 - Compresses only the contents of the source folder without the parent directory
 - Files are directly at the root of the archive
@@ -203,13 +221,19 @@ The `includeRoot` option controls how files are structured within the compressed
   ```
 - Output location: `./data-folder/data-folder.zip`
 
+<br/>
+
 ### When to Use Each Option
 - Use `includeRoot: true` when you want to preserve the directory structure and need the parent folder name in the archive
 - Use `includeRoot: false` when you only want to compress the contents without the parent directory name
 
+<br/>
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE) file for details.
+
+<br/>
 
 ## Contributing
 
