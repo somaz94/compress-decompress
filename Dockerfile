@@ -1,23 +1,26 @@
-# Use an official lightweight Python image.
-FROM python:3.13-slim
+# 🏗 Stage 1: Build dependencies
+FROM python:3.13-slim AS builder
 
-# Install compression and decompression tools
-RUN apt-get update && \
-    apt-get install -y \
-    zip \
-    unzip \
-    tar \
-    gzip \
-    bzip2 \
-    xz-utils && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Set the working directory inside the container    
+# Set working directory
 WORKDIR /usr/src
 
-# Copy all files from app directory
-COPY . .
+# Copy only necessary files (avoid copying unnecessary files like .git, backup, tests, etc.)
+COPY app/ app/
 
-# File to execute when the docker container starts up
+# 🏗 Final Stage: Minimal runtime image
+FROM python:3.13-slim
+
+# Install only necessary system utilities (avoid unnecessary dependencies)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    zip unzip tar gzip bzip2 xz-utils && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /usr/src
+
+# Copy only necessary files from builder
+COPY --from=builder /usr/src/app /usr/src/app
+
+# Run the main script
 ENTRYPOINT ["python", "/usr/src/app/main.py"]

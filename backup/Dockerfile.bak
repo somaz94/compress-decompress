@@ -1,9 +1,7 @@
 # Use an official lightweight Python image.
-# Python is used here for the entry script; you could use any other lightweight base image.
 FROM python:3.13-slim
 
 # Install compression and decompression tools
-# Specify versions as available. Note: Debian-based versions may not match Alpine directly and need to be verified.
 RUN apt-get update && \
     apt-get install -y \
     zip \
@@ -18,8 +16,8 @@ RUN apt-get update && \
 # Set the working directory inside the container    
 WORKDIR /usr/src
 
-# Copies your code file from your action repository to the filesystem path `/` of the container
-COPY entrypoint.py .
+# Copy all files from app directory
+COPY . .
 
-# File to execute when the docker container starts up (`entrypoint.py`)
-ENTRYPOINT ["python", "/usr/src/entrypoint.py"]
+# File to execute when the docker container starts up
+ENTRYPOINT ["python", "/usr/src/app/main.py"]
