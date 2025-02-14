@@ -21,7 +21,7 @@ jobs:
       matrix:
         format: [zip, tar, tgz, tbz2]
         include_root: [true, false]
-        source: [test2, test3]
+        source: [test2]
       fail-fast: false
 
     steps:
@@ -32,7 +32,6 @@ jobs:
         run: |
           mkdir -p test2 test3
           echo "Test content for test2" > test2/test2.txt
-          echo "Test content for test3" > test3/test3.txt
 
       - name: Test Compression
         id: compress
@@ -50,20 +49,28 @@ jobs:
           echo "Source directory contents:"
           ls -la ./${{ matrix.source }}
 
+      # Set the correct source path based on includeRoot
+      - name: Set Source Path
+        id: set-path
+        run: |
+          if [ "${{ matrix.include_root }}" = "true" ]; then
+            echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+          else
+            echo "source_path=./${{ matrix.source }}/${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload Compressed Artifact
         uses: actions/upload-artifact@v4
         with:
           name: compressed-${{ matrix.format }}-${{ matrix.source }}-root-${{ matrix.include_root }}
-          path: |
-            ./${{ matrix.source }}.${{ matrix.format }}
-            ./${{ matrix.source }}/${{ matrix.source }}.${{ matrix.format }}
+          path: ${{ steps.set-path.outputs.source_path }}
           if-no-files-found: error
 
       - name: Test Decompression
         uses: ./
         with:
           command: 'decompress'
-          source: './${{ matrix.source }}.${{ matrix.format }}'
+          source: ${{ steps.set-path.outputs.source_path }}
           format: ${{ matrix.format }}
           dest: './unpacked-${{ matrix.format }}-${{ matrix.source }}'
 
