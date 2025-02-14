@@ -56,12 +56,12 @@ def compress(source, format, include_root):
             "tgz": "z",
             "tbz2": "j"
         }
-        temp_dir = os.path.join(os.path.dirname(full_dest), f"temp_{base_name}")
+        # 임시 디렉토리를 상위 경로에 생성
+        temp_dir = os.path.join(os.path.dirname(source), f"temp_{base_name}_{format}")
         os.makedirs(temp_dir, exist_ok=True)
         try:
             command = f"""
                 cp -r {source}/* {temp_dir}/ &&
-                cd {os.path.dirname(temp_dir)} &&
                 tar -c{tar_options[format]}f {full_dest} -C {temp_dir} . &&
                 rm -rf {temp_dir}
             """
