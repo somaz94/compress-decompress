@@ -8,7 +8,7 @@ on:
         required: true
         default: 'true'
   workflow_run:
-    workflows: ["Create release"]  # release.yml의 name과 일치해야 함
+    workflows: ["Create release"]
     types:
       - completed
 
@@ -18,69 +18,118 @@ permissions:
 jobs:
   acton-module-compress:
     runs-on: ubuntu-latest
+    env:
+      TEST_SOURCE: test3
+      TEST_SOURCE2: test2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test Local Compress Action
+      # Create test files
+      - name: Create Test Files
+        run: |
+          mkdir -p ${{ env.TEST_SOURCE }} ${{ env.TEST_SOURCE2 }}
+          echo "Test content for test3" > ${{ env.TEST_SOURCE }}/${{ env.TEST_SOURCE }}.txt
+          echo "Test content for test2" > ${{ env.TEST_SOURCE2 }}/${{ env.TEST_SOURCE2 }}.txt
+
+      # Test compression with includeRoot: false
+      - name: Test Local Compress Action (includeRoot false)
         uses: somaz94/compress-decompress@v1
-        id: compress
+        id: compress-no-root
         with:
           command: 'compress'
-          source: './test'
+          source: './${{ env.TEST_SOURCE }}'
           format: 'zip'
+          includeRoot: 'false'
 
-      - name: Verify File Existence
-        run: ls -la ${{ github.workspace }}
-
-      - name: Upload Artifact
+      - name: Upload Artifact (includeRoot false)
         uses: actions/upload-artifact@v4
         with:
-          name: compressed-data
-          path: ./test.zip
+          name: compressed-data-no-root
+          path: ./${{ env.TEST_SOURCE }}/${{ env.TEST_SOURCE }}.zip
+
+      # Test compression with includeRoot: true
+      - name: Test Local Compress Action (includeRoot true)
+        uses: somaz94/compress-decompress@v1
+        id: compress-with-root
+        with:
+          command: 'compress'
+          source: './${{ env.TEST_SOURCE2 }}'
+          format: 'zip'
+          includeRoot: 'true'
+
+      - name: Upload Artifact (includeRoot true)
+        uses: actions/upload-artifact@v4
+        with:
+          name: compressed-data-with-root
+          path: ./${{ env.TEST_SOURCE2 }}/${{ env.TEST_SOURCE2 }}.zip
+
   acton-module-decompress:
     runs-on: ubuntu-latest
     needs: acton-module-compress
+    env:
+      TEST_SOURCE: test3
+      TEST_SOURCE2: test2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download Artifact
+      # Download and decompress (includeRoot: false)
+      - name: Download Artifact (includeRoot false)
         uses: actions/download-artifact@v4
         with:
-          name: compressed-data
+          name: compressed-data-no-root
 
-      - name: Test Local Decompress Action
+      - name: Test Local Decompress Action (includeRoot false)
         uses: somaz94/compress-decompress@v1
-        id: decompress
+        id: decompress-no-root
         with:
           command: 'decompress'
-          source: './test.zip'
+          source: './${{ env.TEST_SOURCE }}.zip'
           format: 'zip'
-          dest: './unpacked'
+          dest: './unpacked-no-root'
+
+      # Download and decompress (includeRoot: true)
+      - name: Download Artifact (includeRoot true)
+        uses: actions/download-artifact@v4
+        with:
+          name: compressed-data-with-root
+
+      - name: Test Local Decompress Action (includeRoot true)
+        uses: somaz94/compress-decompress@v1
+        id: decompress-with-root
+        with:
+          command: 'decompress'
+          source: './${{ env.TEST_SOURCE2 }}.zip'
+          format: 'zip'
+          dest: './unpacked-with-root'
 
       - name: Display Content of the Unpacked Files
         run: |
-          ls -la ${{ github.workspace }}/unpacked
-          cat ${{ github.workspace }}/unpacked/test
+          echo "Content without root directory:"
+          ls -la ${{ github.workspace }}/unpacked-no-root
+          cat ${{ github.workspace }}/unpacked-no-root/${{ env.TEST_SOURCE }}.txt
+          
+          echo -e "\nContent with root directory:"
+          ls -la ${{ github.workspace }}/unpacked-with-root
+          cat ${{ github.workspace }}/unpacked-with-root/${{ env.TEST_SOURCE2 }}/${{ env.TEST_SOURCE2 }}.txt
 
-      - name: Test Local Compress Action
-        id: compress
+      # Additional TGZ test
+      - name: Test Local Compress Action (TGZ)
+        id: compress-tgz
         uses: ./
         with:
           command: 'compress'
           source: './test2'
           format: 'tgz'
+          includeRoot: 'true'
 
-      - name: List contents in the workspace
-        run: ls -la ${{ github.workspace }}
-
-      - name: Upload Artifact
+      - name: Upload TGZ Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compressed-data-2
+          name: compressed-data-tgz
           path: ./test2.tgz
 
       - name: Print Output
         run: |
-          echo "compress file path result: ${{ steps.compress.outputs.file_path }}"
+          echo "compress file path result: ${{ steps.compress-tgz.outputs.file_path }}"
