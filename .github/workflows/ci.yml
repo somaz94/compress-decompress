@@ -22,6 +22,7 @@ jobs:
         format: [zip, tar, tgz, tbz2]
         include_root: [true, false]
         source: [test2, test3]
+      fail-fast: false
 
     steps:
       - name: Checkout
@@ -42,11 +43,21 @@ jobs:
           format: ${{ matrix.format }}
           includeRoot: ${{ matrix.include_root }}
 
+      - name: List Workspace Contents
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Source directory contents:"
+          ls -la ./${{ matrix.source }}
+
       - name: Upload Compressed Artifact
         uses: actions/upload-artifact@v4
         with:
           name: compressed-${{ matrix.format }}-${{ matrix.source }}-root-${{ matrix.include_root }}
-          path: ./${{ matrix.source }}.${{ matrix.format }}
+          path: |
+            ./${{ matrix.source }}.${{ matrix.format }}
+            ./${{ matrix.source }}/${{ matrix.source }}.${{ matrix.format }}
+          if-no-files-found: error
 
       - name: Test Decompression
         uses: ./
@@ -59,10 +70,15 @@ jobs:
       - name: Verify Contents
         run: |
           echo "Verifying ${{ matrix.format }} format with includeRoot: ${{ matrix.include_root }}"
+          echo "Listing unpacked directory contents:"
+          ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
+          
           if [ "${{ matrix.include_root }}" = "true" ]; then
+            echo "Contents with root directory:"
             ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}
             cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}/${{ matrix.source }}.txt
           else
+            echo "Contents without root directory:"
             ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
             cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}.txt
           fi
