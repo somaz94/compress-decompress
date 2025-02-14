@@ -16,120 +16,82 @@ permissions:
   contents: read
 
 jobs:
-  acton-module-compress:
+  test-compression-formats:
+    name: Test Compression Formats
     runs-on: ubuntu-latest
-    env:
-      TEST_SOURCE: test3
-      TEST_SOURCE2: test2
+    strategy:
+      matrix:
+        format: [zip, tar, tgz, tbz2]
+        include_root: [true, false]
+        source: [test2]
+      fail-fast: false
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Create test files
       - name: Create Test Files
         run: |
-          mkdir -p ${{ env.TEST_SOURCE }} ${{ env.TEST_SOURCE2 }}
-          echo "Test content for test3" > ${{ env.TEST_SOURCE }}/${{ env.TEST_SOURCE }}.txt
-          echo "Test content for test2" > ${{ env.TEST_SOURCE2 }}/${{ env.TEST_SOURCE2 }}.txt
+          mkdir -p test2 test3
+          echo "Test content for test2" > test2/test2.txt
 
-      # Test compression with includeRoot: false
-      - name: Test Local Compress Action (includeRoot false)
+      - name: Test Compression
+        id: compress
         uses: somaz94/compress-decompress@v1
-        id: compress-no-root
         with:
           command: 'compress'
-          source: './${{ env.TEST_SOURCE }}'
-          format: 'zip'
-          includeRoot: 'false'
+          source: './${{ matrix.source }}'
+          format: ${{ matrix.format }}
+          includeRoot: ${{ matrix.include_root }}
 
-      - name: Upload Artifact (includeRoot false)
-        uses: actions/upload-artifact@v4
-        with:
-          name: compressed-data-no-root
-          path: ./${{ env.TEST_SOURCE }}/${{ env.TEST_SOURCE }}.zip
-
-      # Test compression with includeRoot: true
-      - name: Test Local Compress Action (includeRoot true)
-        uses: somaz94/compress-decompress@v1
-        id: compress-with-root
-        with:
-          command: 'compress'
-          source: './${{ env.TEST_SOURCE2 }}'
-          format: 'zip'
-          includeRoot: 'true'
-
-      - name: Upload Artifact (includeRoot true)
-        uses: actions/upload-artifact@v4
-        with:
-          name: compressed-data-with-root
-          path: ./${{ env.TEST_SOURCE2 }}/${{ env.TEST_SOURCE2 }}.zip
-
-  acton-module-decompress:
-    runs-on: ubuntu-latest
-    needs: acton-module-compress
-    env:
-      TEST_SOURCE: test3
-      TEST_SOURCE2: test2
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Download and decompress (includeRoot: false)
-      - name: Download Artifact (includeRoot false)
-        uses: actions/download-artifact@v4
-        with:
-          name: compressed-data-no-root
-
-      - name: Test Local Decompress Action (includeRoot false)
-        uses: somaz94/compress-decompress@v1
-        id: decompress-no-root
-        with:
-          command: 'decompress'
-          source: './${{ env.TEST_SOURCE }}.zip'
-          format: 'zip'
-          dest: './unpacked-no-root'
-
-      # Download and decompress (includeRoot: true)
-      - name: Download Artifact (includeRoot true)
-        uses: actions/download-artifact@v4
-        with:
-          name: compressed-data-with-root
-
-      - name: Test Local Decompress Action (includeRoot true)
-        uses: somaz94/compress-decompress@v1
-        id: decompress-with-root
-        with:
-          command: 'decompress'
-          source: './${{ env.TEST_SOURCE2 }}.zip'
-          format: 'zip'
-          dest: './unpacked-with-root'
-
-      - name: Display Content of the Unpacked Files
+      - name: List Workspace Contents
         run: |
-          echo "Content without root directory:"
-          ls -la ${{ github.workspace }}/unpacked-no-root
-          cat ${{ github.workspace }}/unpacked-no-root/${{ env.TEST_SOURCE }}.txt
+          echo "Current directory contents:"
+          ls -la
+          echo "Source directory contents:"
+          ls -la ./${{ matrix.source }}
+
+      # Set the correct source path based on includeRoot
+      - name: Set Source Path
+        id: set-path
+        run: |
+          if [ "${{ matrix.include_root }}" = "true" ]; then
+            echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+          else
+            echo "source_path=./${{ matrix.source }}/${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Compressed Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compressed-${{ matrix.format }}-${{ matrix.source }}-root-${{ matrix.include_root }}
+          path: ${{ steps.set-path.outputs.source_path }}
+          if-no-files-found: error
+
+      - name: Test Decompression
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: 'decompress'
+          source: ${{ steps.set-path.outputs.source_path }}
+          format: ${{ matrix.format }}
+          dest: './unpacked-${{ matrix.format }}-${{ matrix.source }}'
+
+      - name: Verify Contents
+        run: |
+          echo "Verifying ${{ matrix.format }} format with includeRoot: ${{ matrix.include_root }}"
+          echo "Listing unpacked directory contents:"
+          ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
           
-          echo -e "\nContent with root directory:"
-          ls -la ${{ github.workspace }}/unpacked-with-root
-          cat ${{ github.workspace }}/unpacked-with-root/${{ env.TEST_SOURCE2 }}/${{ env.TEST_SOURCE2 }}.txt
+          if [ "${{ matrix.include_root }}" = "true" ]; then
+            echo "Contents with root directory:"
+            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}
+            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}/${{ matrix.source }}.txt
+          else
+            echo "Contents without root directory:"
+            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
+            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}.txt
+          fi
 
-      # Additional TGZ test
-      - name: Test Local Compress Action (TGZ)
-        id: compress-tgz
-        uses: ./
-        with:
-          command: 'compress'
-          source: './test2'
-          format: 'tgz'
-          includeRoot: 'true'
-
-      - name: Upload TGZ Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: compressed-data-tgz
-          path: ./test2.tgz
-
-      - name: Print Output
+      - name: Print Compression Output
         run: |
-          echo "compress file path result: ${{ steps.compress-tgz.outputs.file_path }}"
+          echo "Compression output for ${{ matrix.format }} (includeRoot: ${{ matrix.include_root }}): ${{ steps.compress.outputs.file_path }}"

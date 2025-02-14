@@ -186,6 +186,97 @@ jobs:
 
 <br/>
 
+To use Matrix, you can modify the workflow like so:
+
+```yaml
+name: Test Compression Formats
+
+on: [push]
+
+jobs:
+  test-compression-formats:
+    name: Test Compression Formats
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        format: [zip, tar, tgz, tbz2]
+        include_root: [true, false]
+        source: [test2]
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Test Files
+        run: |
+          mkdir -p test2 test3
+          echo "Test content for test2" > test2/test2.txt
+
+      - name: Test Compression
+        id: compress
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: 'compress'
+          source: './${{ matrix.source }}'
+          format: ${{ matrix.format }}
+          includeRoot: ${{ matrix.include_root }}
+
+      - name: List Workspace Contents
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Source directory contents:"
+          ls -la ./${{ matrix.source }}
+
+      # Set the correct source path based on includeRoot
+      - name: Set Source Path
+        id: set-path
+        run: |
+          if [ "${{ matrix.include_root }}" = "true" ]; then
+            echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+          else
+            echo "source_path=./${{ matrix.source }}/${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Compressed Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compressed-${{ matrix.format }}-${{ matrix.source }}-root-${{ matrix.include_root }}
+          path: ${{ steps.set-path.outputs.source_path }}
+          if-no-files-found: error
+
+      - name: Test Decompression
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: 'decompress'
+          source: ${{ steps.set-path.outputs.source_path }}
+          format: ${{ matrix.format }}
+          dest: './unpacked-${{ matrix.format }}-${{ matrix.source }}'
+
+      - name: Verify Contents
+        run: |
+          echo "Verifying ${{ matrix.format }} format with includeRoot: ${{ matrix.include_root }}"
+          echo "Listing unpacked directory contents:"
+          ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
+          
+          if [ "${{ matrix.include_root }}" = "true" ]; then
+            echo "Contents with root directory:"
+            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}
+            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}/${{ matrix.source }}.txt
+          else
+            echo "Contents without root directory:"
+            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
+            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}.txt
+          fi
+
+      - name: Print Compression Output
+        run: |
+          echo "Compression output for ${{ matrix.format }} (includeRoot: ${{ matrix.include_root }}): ${{ steps.compress.outputs.file_path }}"
+```
+
+<br/>
+
 ## Understanding IncludeRoot Option
 
 The `includeRoot` option controls how files are structured within the compressed archive:

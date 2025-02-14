@@ -79,7 +79,7 @@ def adjust_path(path):
     print(f"Adjusted path: {adjusted_path}")
     return adjusted_path
 
-# 로깅 설정
+# Logging setup
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',

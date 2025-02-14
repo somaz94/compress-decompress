@@ -68,8 +68,11 @@ def decompress(source, format):
         
     print_success("Decompression completed successfully")
     print("\n" + "=" * 50)
+    
+    # Convert to relative path
+    relative_dest = os.path.relpath(dest if dest else os.getcwd(), os.getcwd())
     print(
-        f"file_path={dest if dest else 'current directory'}",
+        f"file_path={relative_dest}",  # Convert to relative path
         file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"),
     )
 

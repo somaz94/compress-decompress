@@ -36,27 +36,29 @@ def compress(source, format, include_root):
     base_name = os.path.basename(source)
     extension = get_extension(format)
     
-    # 압축 파일 경로 설정
+    # Set compressed file path
     if include_root == "true":
         full_dest = os.path.join(dest, f"{base_name}{extension}")
     else:
         full_dest = os.path.join(source, f"{base_name}{extension}")
     
+    # Convert to relative path
+    relative_dest = os.path.relpath(full_dest, os.getcwd())
     print(f"Destination Path: {full_dest}")
 
-    # 압축 명령어 설정
+    # Set compression command
     if format == "zip":
         if include_root == "true":
             command = f"cd {os.path.dirname(source)} && zip -r {full_dest} {base_name}"
         else:
             command = f"cd {source} && zip -r {full_dest} ."
     elif format in ["tgz", "tbz2"] and include_root == "false":
-        # tgz, tbz2에 대해 include_root가 false일 때 특별 처리
+        # Special handling for tgz, tbz2 when include_root is false
         tar_options = {
             "tgz": "z",
             "tbz2": "j"
         }
-        # 임시 디렉토리를 상위 경로에 생성
+        # Create temporary directory in the parent path
         temp_dir = os.path.join(os.path.dirname(source), f"temp_{base_name}_{format}")
         os.makedirs(temp_dir, exist_ok=True)
         try:
@@ -69,7 +71,7 @@ def compress(source, format, include_root):
             if os.path.exists(temp_dir):
                 os.system(f"rm -rf {temp_dir}")
             raise e
-    else:  # tar 및 나머지 경우
+    else:  # tar and other cases
         tar_options = {
             "tar": "",
             "tgz": "z",
@@ -86,7 +88,7 @@ def compress(source, format, include_root):
     print_success(f"Compression completed: {full_dest}")
     print("\n" + "=" * 50)
     print(
-        f"file_path={full_dest}",
+        f"file_path={relative_dest}",  # Convert to relative path
         file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"),
     )
 
