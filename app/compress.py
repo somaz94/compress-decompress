@@ -50,21 +50,35 @@ def compress(source, format, include_root):
             command = f"cd {os.path.dirname(source)} && zip -r {full_dest} {base_name}"
         else:
             command = f"cd {source} && zip -r {full_dest} ."
-    elif format == "tar":
-        if include_root == "true":
-            command = f"tar -cf {full_dest} -C {os.path.dirname(source)} {base_name}"
-        else:
-            command = f"tar -cf {full_dest} -C {source} ."
-    else:  # tgz, tbz2
+    elif format in ["tgz", "tbz2"] and include_root == "false":
+        # tgz, tbz2에 대해 include_root가 false일 때 특별 처리
         tar_options = {
             "tgz": "z",
             "tbz2": "j"
         }
-        temp_tar = os.path.join(os.path.dirname(full_dest), f"temp_{base_name}.tar")
+        temp_dir = os.path.join(os.path.dirname(full_dest), f"temp_{base_name}")
+        os.makedirs(temp_dir, exist_ok=True)
+        try:
+            command = f"""
+                cp -r {source}/* {temp_dir}/ &&
+                cd {os.path.dirname(temp_dir)} &&
+                tar -c{tar_options[format]}f {full_dest} -C {temp_dir} . &&
+                rm -rf {temp_dir}
+            """
+        except Exception as e:
+            if os.path.exists(temp_dir):
+                os.system(f"rm -rf {temp_dir}")
+            raise e
+    else:  # tar 및 나머지 경우
+        tar_options = {
+            "tar": "",
+            "tgz": "z",
+            "tbz2": "j"
+        }
         if include_root == "true":
-            command = f"tar -cf {temp_tar} -C {os.path.dirname(source)} {base_name} && tar -c{tar_options[format]}f {full_dest} -C {os.path.dirname(temp_tar)} {os.path.basename(temp_tar)} && rm {temp_tar}"
+            command = f"tar -c{tar_options.get(format)}f {full_dest} -C {os.path.dirname(source)} {base_name}"
         else:
-            command = f"tar -cf {temp_tar} -C {source} . && tar -c{tar_options[format]}f {full_dest} -C {os.path.dirname(temp_tar)} {os.path.basename(temp_tar)} && rm {temp_tar}"
+            command = f"tar -c{tar_options.get(format)}f {full_dest} -C {source} ."
 
     print(f"⚙️  Executing: {command}")
     run_command(command)
