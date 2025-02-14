@@ -25,11 +25,17 @@ jobs:
 
     env:
       TEST_TAG: localhost:5001/actions/compress-decompress:latest
-      TEST_SOURCE: test3
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Create test files
+      - name: Create Test Files
+        run: |
+          mkdir -p test2 test3
+          echo "Test content for test2" > test2/test2.txt
+          echo "Test content for test3" > test3/test3.txt
 
       - name: Setup Docker BuildX
         uses: docker/setup-buildx-action@v3
@@ -44,75 +50,77 @@ jobs:
           push: true
           tags: ${{ env.TEST_TAG }}
 
-      - name: Run the Container
+      # Test Docker container with zip format
+      - name: Test Docker Container (ZIP)
         env:
           COMMAND: 'compress'
-          SOURCE: '${{ env.TEST_SOURCE }}'
+          SOURCE: 'test3'
           FORMAT: 'zip'
-          # INCLUDEROOT: 'false'
+          INCLUDEROOT: 'false'
         run: |
           docker run \
             --env COMMAND="${{ env.COMMAND }}" \
             --env SOURCE="${{ env.SOURCE }}" \
             --env FORMAT="${{ env.FORMAT }}" \
+            --env INCLUDEROOT="${{ env.INCLUDEROOT }}" \
             --volume "${{ github.workspace }}:/usr/src" \
             --rm ${{ env.TEST_TAG }}
 
-      - name: Upload Artifact
+      - name: Upload ZIP Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compressed-data
-          path: ./${{ env.TEST_SOURCE }}.zip
+          name: compressed-data-zip
+          path: ./test3.zip
 
   test-action:
-    name: Test Extract Commit Action
+    name: Test Action
     runs-on: ubuntu-latest
     needs: build-and-push-docker
-    env:
-      TEST_SOURCE: test3
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test Local Compress Action
-        id: compress-decompress
+      # Create test files
+      - name: Create Test Files
+        run: |
+          mkdir -p test2 test3
+          echo "Test content for test2" > test2/test2.txt
+          echo "Test content for test3" > test3/test3.txt
+
+      # Test compression with tgz
+      - name: Test Local Compress Action (TGZ)
+        id: compress-tgz
         uses: ./
         with:
           command: 'compress'
           source: './test2'
           format: 'tgz'
 
-      - name: List contents in the workspace
-        run: ls -la ${{ github.workspace }}
-
-      - name: Upload Artifact
+      - name: Upload TGZ Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compressed-data-2
+          name: compressed-data-tgz
           path: ./test2.tgz
 
-      - name: Print Output
+      - name: Print Compression Output
         run: |
-          echo "compress file path result: ${{ steps.compress-decompress.outputs.file_path }}"
+          echo "compress file path result: ${{ steps.compress-tgz.outputs.file_path }}"
 
-      - name: Download Artifact
+      # Test decompression with zip
+      - name: Download ZIP Artifact
         uses: actions/download-artifact@v4
         with:
-          name: compressed-data
-
-      - name: List contents in the workspace
-        run: ls -la ${{ github.workspace }}
+          name: compressed-data-zip
 
       - name: Test Local Decompress Action
         uses: ./
         with:
           command: 'decompress'
-          source: '${{ env.TEST_SOURCE }}.zip'
+          source: 'test3.zip'
           format: 'zip'
           dest: './unpacked'
 
-      - name: Display Content of the Unpacked Files
+      - name: Verify Decompressed Content
         run: |
           ls -la ${{ github.workspace }}/unpacked
-          ls -l ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}
-          # cat ${{ github.workspace }}/unpacked/${{ env.TEST_SOURCE }}.txt
+          cat ${{ github.workspace }}/unpacked/test3.txt
