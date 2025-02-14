@@ -35,42 +35,41 @@ def compress(source, format, include_root):
 
     base_name = os.path.basename(source)
     extension = get_extension(format)
-    full_dest = os.path.join(dest, f"{base_name}{extension}")
+    
+    # 압축 파일 경로 설정
+    if include_root == "true":
+        full_dest = os.path.join(dest, f"{base_name}{extension}")
+    else:
+        full_dest = os.path.join(source, f"{base_name}{extension}")
+    
     print(f"Destination Path: {full_dest}")
 
     compression_commands = {
         "zip": {
-            "true": f"zip -r {full_dest} {base_name}",
+            "true": f"cd {os.path.dirname(source)} && zip -r {full_dest} {base_name}",
             "false": f"cd {source} && zip -r {full_dest} ."
         },
         "tar": {
-            "true": f"tar -cf {full_dest} {base_name}",
-            "false": f"tar -C {source} -cf {full_dest} ."
+            "true": f"cd {os.path.dirname(source)} && tar -cf {full_dest} {base_name}",
+            "false": f"cd {source} && tar -cf {full_dest} ."
         },
         "tgz": {
-            "true": f"tar -czf {full_dest} {base_name}",
-            "false": f"tar -C {source} -czf {full_dest} ."
+            "true": f"cd {os.path.dirname(source)} && tar -czf {full_dest} {base_name}",
+            "false": f"cd {source} && tar -czf {full_dest} ."
         },
         "tbz2": {
-            "true": f"tar -cjf {full_dest} {base_name}",
-            "false": f"tar -C {source} -cjf {full_dest} ."
+            "true": f"cd {os.path.dirname(source)} && tar -cjf {full_dest} {base_name}",
+            "false": f"cd {source} && tar -cjf {full_dest} ."
         }
     }
 
     if format not in compression_commands:
         sys.exit(f"Unsupported format: {format}")
 
-    if include_root == "true":
-        os.chdir(os.path.dirname(source))
-    else:
-        os.chdir(source)
-    print(f"Changed CWD for Compression: {os.getcwd()}")
-
     command = compression_commands[format][include_root]
+    print(f"⚙️  Executing: {command}")
     run_command(command)
         
-    os.chdir(cwd)
-    print(f"Restored CWD: {os.getcwd()}")
     print_success(f"Compression completed: {full_dest}")
     print("\n" + "=" * 50)
     print(
