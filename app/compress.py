@@ -50,16 +50,21 @@ def compress(source, format, include_root):
             command = f"cd {os.path.dirname(source)} && zip -r {full_dest} {base_name}"
         else:
             command = f"cd {source} && zip -r {full_dest} ."
-    else:  # tar, tgz, tbz2
+    elif format == "tar":
+        if include_root == "true":
+            command = f"tar -cf {full_dest} -C {os.path.dirname(source)} {base_name}"
+        else:
+            command = f"tar -cf {full_dest} -C {source} ."
+    else:  # tgz, tbz2
         tar_options = {
-            "tar": "",
             "tgz": "z",
             "tbz2": "j"
         }
+        temp_tar = os.path.join(os.path.dirname(full_dest), f"temp_{base_name}.tar")
         if include_root == "true":
-            command = f"tar -c{tar_options.get(format)}f {full_dest} -C {os.path.dirname(source)} {base_name}"
+            command = f"tar -cf {temp_tar} -C {os.path.dirname(source)} {base_name} && tar -c{tar_options[format]}f {full_dest} -C {os.path.dirname(temp_tar)} {os.path.basename(temp_tar)} && rm {temp_tar}"
         else:
-            command = f"tar -c{tar_options.get(format)}f {full_dest} -C {source} ."
+            command = f"tar -cf {temp_tar} -C {source} . && tar -c{tar_options[format]}f {full_dest} -C {os.path.dirname(temp_tar)} {os.path.basename(temp_tar)} && rm {temp_tar}"
 
     print(f"⚙️  Executing: {command}")
     run_command(command)
