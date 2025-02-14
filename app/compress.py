@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 from datetime import datetime
 from utils import (
     print_header, print_section, print_success, print_error,
@@ -39,38 +40,53 @@ def compress(source, format, include_root):
     # 압축 파일 경로 설정
     if include_root == "true":
         full_dest = os.path.join(dest, f"{base_name}{extension}")
+        work_dir = os.path.dirname(source)
+        target = base_name
     else:
-        full_dest = os.path.join(source, f"{base_name}{extension}")
-    
+        full_dest = os.path.join(dest, f"{base_name}{extension}")
+        work_dir = source
+        target = "."
+
     print(f"Destination Path: {full_dest}")
+    
+    # 임시 디렉토리 생성
+    temp_dir = os.path.join(dest, f"temp_{base_name}_{format}")
+    if os.path.exists(temp_dir):
+        shutil.rmtree(temp_dir)
+    os.makedirs(temp_dir)
 
-    compression_commands = {
-        "zip": {
-            "true": f"cd {os.path.dirname(source)} && zip -r {full_dest} {base_name}",
-            "false": f"cd {source} && zip -r {full_dest} ."
-        },
-        "tar": {
-            "true": f"cd {os.path.dirname(source)} && tar -cf {full_dest} {base_name}",
-            "false": f"cd {source} && tar -cf {full_dest} ."
-        },
-        "tgz": {
-            "true": f"cd {os.path.dirname(source)} && tar -czf {full_dest} {base_name}",
-            "false": f"cd {source} && tar -czf {full_dest} ."
-        },
-        "tbz2": {
-            "true": f"cd {os.path.dirname(source)} && tar -cjf {full_dest} {base_name}",
-            "false": f"cd {source} && tar -cjf {full_dest} ."
-        }
-    }
+    try:
+        # 파일 복사
+        if include_root == "true":
+            shutil.copytree(source, os.path.join(temp_dir, base_name))
+        else:
+            for item in os.listdir(source):
+                src_path = os.path.join(source, item)
+                dst_path = os.path.join(temp_dir, item)
+                if os.path.isdir(src_path):
+                    shutil.copytree(src_path, dst_path)
+                else:
+                    shutil.copy2(src_path, dst_path)
 
-    if format not in compression_commands:
-        sys.exit(f"Unsupported format: {format}")
-
-    command = compression_commands[format][include_root]
-    print(f"⚙️  Executing: {command}")
-    run_command(command)
+        # 압축 명령어 실행
+        os.chdir(temp_dir)
+        if format == "zip":
+            run_command(f"zip -r {full_dest} {target}")
+        elif format == "tar":
+            run_command(f"tar -cf {full_dest} {target}")
+        elif format == "tgz":
+            run_command(f"tar -czf {full_dest} {target}")
+        elif format == "tbz2":
+            run_command(f"tar -cjf {full_dest} {target}")
         
-    print_success(f"Compression completed: {full_dest}")
+        os.chdir(cwd)
+        print_success(f"Compression completed: {full_dest}")
+        
+    finally:
+        # 임시 디렉토리 정리
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+    
     print("\n" + "=" * 50)
     print(
         f"file_path={full_dest}",
