@@ -14,172 +14,59 @@ permissions:
   contents: read
 
 jobs:
-  build-and-push-docker:
-    name: Build and Push Docker
+  test-compression-formats:
+    name: Test Compression Formats
     runs-on: ubuntu-latest
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5001:5000
-
-    env:
-      TEST_TAG: localhost:5001/actions/compress-decompress:latest
+    strategy:
+      matrix:
+        format: [zip, tar, tgz, tbz2]
+        include_root: [true, false]
+        source: [test2, test3]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Create test files
       - name: Create Test Files
         run: |
           mkdir -p test2 test3
           echo "Test content for test2" > test2/test2.txt
           echo "Test content for test3" > test3/test3.txt
 
-      - name: Setup Docker BuildX
-        uses: docker/setup-buildx-action@v3
-        with:
-          install: true
-          driver-opts: network=host
-
-      - name: Build the Container
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ${{ env.TEST_TAG }}
-
-      # Test Docker container with zip format (includeRoot: false)
-      - name: Test Docker Container (ZIP - includeRoot false)
-        env:
-          COMMAND: 'compress'
-          SOURCE: 'test3'
-          FORMAT: 'zip'
-          INCLUDEROOT: 'false'
-        run: |
-          docker run \
-            --env COMMAND="${{ env.COMMAND }}" \
-            --env SOURCE="${{ env.SOURCE }}" \
-            --env FORMAT="${{ env.FORMAT }}" \
-            --env INCLUDEROOT="${{ env.INCLUDEROOT }}" \
-            --volume "${{ github.workspace }}:/usr/src" \
-            --rm ${{ env.TEST_TAG }}
-
-      - name: Upload ZIP Artifact (includeRoot false)
-        uses: actions/upload-artifact@v4
-        with:
-          name: compressed-data-zip-no-root
-          path: ./test3.zip
-
-      # Test Docker container with zip format (includeRoot: true)
-      - name: Test Docker Container (ZIP - includeRoot true)
-        env:
-          COMMAND: 'compress'
-          SOURCE: 'test2'
-          FORMAT: 'zip'
-          INCLUDEROOT: 'true'
-        run: |
-          docker run \
-            --env COMMAND="${{ env.COMMAND }}" \
-            --env SOURCE="${{ env.SOURCE }}" \
-            --env FORMAT="${{ env.FORMAT }}" \
-            --env INCLUDEROOT="${{ env.INCLUDEROOT }}" \
-            --volume "${{ github.workspace }}:/usr/src" \
-            --rm ${{ env.TEST_TAG }}
-
-      - name: Upload ZIP Artifact (includeRoot true)
-        uses: actions/upload-artifact@v4
-        with:
-          name: compressed-data-zip-with-root
-          path: ./test2.zip
-
-  test-action:
-    name: Test Action
-    runs-on: ubuntu-latest
-    needs: build-and-push-docker
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Create test files
-      - name: Create Test Files
-        run: |
-          mkdir -p test2 test3
-          echo "Test content for test2" > test2/test2.txt
-          echo "Test content for test3" > test3/test3.txt
-
-      # Test compression with tgz (includeRoot: false)
-      - name: Test Local Compress Action (TGZ - includeRoot false)
-        id: compress-tgz-no-root
+      - name: Test Compression
+        id: compress
         uses: ./
         with:
           command: 'compress'
-          source: './test2'
-          format: 'tgz'
-          includeRoot: 'false'
+          source: './${{ matrix.source }}'
+          format: ${{ matrix.format }}
+          includeRoot: ${{ matrix.include_root }}
 
-      - name: Upload TGZ Artifact (includeRoot false)
+      - name: Upload Compressed Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compressed-data-tgz-no-root
-          path: ./test2.tgz
+          name: compressed-${{ matrix.format }}-${{ matrix.source }}-root-${{ matrix.include_root }}
+          path: ./${{ matrix.source }}.${{ matrix.format }}
 
-      # Test compression with tgz (includeRoot: true)
-      - name: Test Local Compress Action (TGZ - includeRoot true)
-        id: compress-tgz-with-root
-        uses: ./
-        with:
-          command: 'compress'
-          source: './test3'
-          format: 'tgz'
-          includeRoot: 'true'
-
-      - name: Upload TGZ Artifact (includeRoot true)
-        uses: actions/upload-artifact@v4
-        with:
-          name: compressed-data-tgz-with-root
-          path: ./test3.tgz
-
-      - name: Print Compression Outputs
-        run: |
-          echo "compress file path (no root): ${{ steps.compress-tgz-no-root.outputs.file_path }}"
-          echo "compress file path (with root): ${{ steps.compress-tgz-with-root.outputs.file_path }}"
-
-      # Test decompression with zip (includeRoot: false)
-      - name: Download ZIP Artifact (includeRoot false)
-        uses: actions/download-artifact@v4
-        with:
-          name: compressed-data-zip-no-root
-
-      - name: Test Local Decompress Action (includeRoot false)
+      - name: Test Decompression
         uses: ./
         with:
           command: 'decompress'
-          source: 'test3.zip'
-          format: 'zip'
-          dest: './unpacked-no-root'
+          source: './${{ matrix.source }}.${{ matrix.format }}'
+          format: ${{ matrix.format }}
+          dest: './unpacked-${{ matrix.format }}-${{ matrix.source }}'
 
-      # Test decompression with zip (includeRoot: true)
-      - name: Download ZIP Artifact (includeRoot true)
-        uses: actions/download-artifact@v4
-        with:
-          name: compressed-data-zip-with-root
-
-      - name: Test Local Decompress Action (includeRoot true)
-        uses: ./
-        with:
-          command: 'decompress'
-          source: 'test2.zip'
-          format: 'zip'
-          dest: './unpacked-with-root'
-
-      - name: Verify Decompressed Contents
+      - name: Verify Contents
         run: |
-          echo "Content without root directory:"
-          ls -la ${{ github.workspace }}/unpacked-no-root
-          cat ${{ github.workspace }}/unpacked-no-root/test3.txt
-          
-          echo -e "\nContent with root directory:"
-          ls -la ${{ github.workspace }}/unpacked-with-root
-          cat ${{ github.workspace }}/unpacked-with-root/test2/test2.txt
+          echo "Verifying ${{ matrix.format }} format with includeRoot: ${{ matrix.include_root }}"
+          if [ "${{ matrix.include_root }}" = "true" ]; then
+            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}
+            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}/${{ matrix.source }}.txt
+          else
+            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
+            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}.txt
+          fi
+
+      - name: Print Compression Output
+        run: |
+          echo "Compression output for ${{ matrix.format }} (includeRoot: ${{ matrix.include_root }}): ${{ steps.compress.outputs.file_path }}"

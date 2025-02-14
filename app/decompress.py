@@ -30,20 +30,41 @@ def decompress(source, format):
 
     print(f"Attempting to decompress {source} to {dest if dest else 'current directory'}")
 
-    if format == "zip":
-        unzip_options = f"-d {dest}" if dest else "-j -d ."
-        run_command(f"unzip {unzip_options} {source}")
-    elif format == "tar":
-        tar_options = f"-C {dest}" if dest else "-C ."
-        run_command(f"tar --absolute-names -xvf {source} {tar_options}")
-    elif format == "tgz":
-        tar_options = f"-C {dest}" if dest else "-C ."
-        run_command(f"tar -P -xzvf {source} {tar_options}")
-    elif format == "tbz2":
-        tar_options = f"-C {dest}" if dest else "-C ."
-        run_command(f"tar -P -xjvf {source} {tar_options}")
-    else:
+    decompression_commands = {
+        "zip": {
+            "command": "unzip",
+            "options": lambda d: f"-d {d}" if d else "-j -d .",
+            "format": lambda src, opt: f"{opt} {src}"
+        },
+        "tar": {
+            "command": "tar",
+            "options": lambda d: f"-C {d}" if d else "-C .",
+            "format": lambda src, opt: f"-xf {src} {opt}"
+        },
+        "tgz": {
+            "command": "tar",
+            "options": lambda d: f"-C {d}" if d else "-C .",
+            "format": lambda src, opt: f"-xzf {src} {opt}"
+        },
+        "tbz2": {
+            "command": "tar",
+            "options": lambda d: f"-C {d}" if d else "-C .",
+            "format": lambda src, opt: f"-xjf {src} {opt}"
+        }
+    }
+
+    if format not in decompression_commands:
         sys.exit(f"Unsupported format: {format}")
+
+    cmd_config = decompression_commands[format]
+    options = cmd_config["options"](dest)
+    command = f"{cmd_config['command']} {cmd_config['format'](source, options)}"
+    
+    try:
+        run_command(command)
+    except Exception as e:
+        print_error(f"Decompression failed: {str(e)}")
+        sys.exit(1)
         
     print_success("Decompression completed successfully")
     print("\n" + "=" * 50)
@@ -58,3 +79,17 @@ def decompress(source, format):
     print_section("Decompression Results")
     print(f"  • Original Archive Size: {get_file_size(source_size)}")
     print(f"  • Duration: {duration.total_seconds():.2f} seconds")
+
+    # Verify decompressed contents
+    if os.path.exists(dest):
+        try:
+            files = os.listdir(dest)
+            print_section("Decompressed Contents")
+            for file in files:
+                file_path = os.path.join(dest, file)
+                if os.path.isfile(file_path):
+                    print(f"  • {file}: {get_file_size(os.path.getsize(file_path))}")
+                elif os.path.isdir(file_path):
+                    print(f"  • {file}/ (directory)")
+        except Exception as e:
+            print_error(f"Failed to list contents: {str(e)}")

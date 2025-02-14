@@ -38,29 +38,36 @@ def compress(source, format, include_root):
     full_dest = os.path.join(dest, f"{base_name}{extension}")
     print(f"Destination Path: {full_dest}")
 
-    if os.path.isdir(source):
-        print(f"Attempting to compress directory {source} to {full_dest}")
-        if include_root == "true":
-            compress_target = base_name
-            os.chdir(os.path.dirname(source))
-        else:
-            compress_target = "."
-            os.chdir(source)
-        print(f"Changed CWD for Compression: {os.getcwd()}")
-    else:
-        print(f"Attempting to compress file {source} to {full_dest}")
-        compress_target = base_name
+    compression_commands = {
+        "zip": {
+            "true": f"zip -r {full_dest} {base_name}",
+            "false": f"cd {source} && zip -r {full_dest} ."
+        },
+        "tar": {
+            "true": f"tar -cf {full_dest} {base_name}",
+            "false": f"tar -C {source} -cf {full_dest} ."
+        },
+        "tgz": {
+            "true": f"tar -czf {full_dest} {base_name}",
+            "false": f"tar -C {source} -czf {full_dest} ."
+        },
+        "tbz2": {
+            "true": f"tar -cjf {full_dest} {base_name}",
+            "false": f"tar -C {source} -cjf {full_dest} ."
+        }
+    }
 
-    if format == "zip":
-        run_command(f"zip -r {full_dest} {compress_target}")
-    elif format == "tar":
-        run_command(f"tar --absolute-names -cvf {full_dest} {compress_target}")
-    elif format == "tgz":
-        run_command(f"tar -P -czvf {full_dest} {compress_target}")
-    elif format == "tbz2":
-        run_command(f"tar -P -cjvf {full_dest} {compress_target}")
-    else:
+    if format not in compression_commands:
         sys.exit(f"Unsupported format: {format}")
+
+    if include_root == "true":
+        os.chdir(os.path.dirname(source))
+    else:
+        os.chdir(source)
+    print(f"Changed CWD for Compression: {os.getcwd()}")
+
+    command = compression_commands[format][include_root]
+    run_command(command)
         
     os.chdir(cwd)
     print(f"Restored CWD: {os.getcwd()}")
