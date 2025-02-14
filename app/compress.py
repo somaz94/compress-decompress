@@ -36,13 +36,13 @@ def compress(source, format, include_root):
     base_name = os.path.basename(source)
     extension = get_extension(format)
     
-    # Set compressed file path
+    # Set compression file path
     if include_root == "true":
         full_dest = os.path.join(dest, f"{base_name}{extension}")
     else:
         full_dest = os.path.join(source, f"{base_name}{extension}")
     
-    # Convert to relative path
+    # Convert to relative path for output
     relative_dest = os.path.relpath(full_dest, os.getcwd())
     print(f"Destination Path: {full_dest}")
 

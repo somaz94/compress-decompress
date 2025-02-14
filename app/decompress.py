@@ -24,12 +24,14 @@ def decompress(source, format):
     print(f"  • Format: {format}")
     print(f"  • Destination: {os.getenv('DEST', 'current directory')}")
 
+    # Set destination path and create if it doesn't exist
     dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
     if dest and not os.path.exists(dest):
         os.makedirs(dest)
 
     print(f"Attempting to decompress {source} to {dest if dest else 'current directory'}")
 
+    # Define decompression commands for each format
     decompression_commands = {
         "zip": {
             "command": "unzip",
@@ -69,10 +71,10 @@ def decompress(source, format):
     print_success("Decompression completed successfully")
     print("\n" + "=" * 50)
     
-    # Convert to relative path
+    # Convert to relative path for output
     relative_dest = os.path.relpath(dest if dest else os.getcwd(), os.getcwd())
     print(
-        f"file_path={relative_dest}",  # Convert to relative path
+        f"file_path={relative_dest}",
         file=open(os.getenv("GITHUB_OUTPUT", "/dev/stdout"), "a"),
     )
 
@@ -83,7 +85,7 @@ def decompress(source, format):
     print(f"  • Original Archive Size: {get_file_size(source_size)}")
     print(f"  • Duration: {duration.total_seconds():.2f} seconds")
 
-    # Verify decompressed contents
+    # Verify and display decompressed contents
     if os.path.exists(dest):
         try:
             files = os.listdir(dest)
