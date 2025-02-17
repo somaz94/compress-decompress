@@ -1,9 +1,9 @@
 from datetime import datetime
 import os
 import sys
-from typing import Optional, Dict
+# from typing import Optional, Dict
 from utils import (
-    UI, FileUtils, CommandExecutor, CompressionFormat,
+    UI, FileUtils, CommandExecutor, 
     DECOMPRESSION_COMMANDS, logger, ProcessResult
 )
 
@@ -63,7 +63,7 @@ class Decompressor:
             source_size = os.path.getsize(self.source)
             start_time = datetime.now()
             
-            self.source = adjust_path(self.source)
+            self.source = FileUtils.adjust_path(self.source)
             UI.print_section("Configuration")
             print(f"  • Source: {self.source}")
             print(f"  • Format: {self.format}")

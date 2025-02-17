@@ -1,7 +1,7 @@
 from datetime import datetime
 import os
 import sys
-from typing import Optional
+# from typing import Optional
 from utils import (
     UI, FileUtils, CommandExecutor, CompressionFormat,
     logger, ProcessResult
