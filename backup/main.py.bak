@@ -10,6 +10,8 @@ def main():
         source = os.getenv("SOURCE")
         format = os.getenv("FORMAT")
         include_root = os.getenv("INCLUDEROOT", "true")
+        verbose = os.getenv("VERBOSE", "false").lower() == "true"
+        fail_on_error = os.getenv("FAIL_ON_ERROR", "true").lower() == "true"
 
         print_header("Compress/Decompress Action")
         print_section("Environment Configuration")
@@ -17,6 +19,8 @@ def main():
         print(f"  • Source: {source}")
         print(f"  • Format: {format}")
         print(f"  • Include Root: {include_root}")
+        print(f"  • Verbose: {verbose}")
+        print(f"  • Fail on Error: {fail_on_error}")
 
         if not command:
             print_error("Command is required")

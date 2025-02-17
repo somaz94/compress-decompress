@@ -38,9 +38,15 @@ def validate_format(format):
     """Validate compression format"""
     valid_formats = ['zip', 'tar', 'tgz', 'tbz2']
     if format not in valid_formats:
-        print_error(f"Invalid format: {format}")
-        print(f"Supported formats: {', '.join(valid_formats)}")
-        sys.exit(1)
+        error_msg = f"Invalid format: {format}"
+        if os.getenv("FAIL_ON_ERROR", "true").lower() == "true":
+            print_error(error_msg)
+            print(f"Supported formats: {', '.join(valid_formats)}")
+            sys.exit(1)
+        else:
+            logger.warning(error_msg)
+            logger.warning(f"Supported formats: {', '.join(valid_formats)}")
+            return False
     return True
 
 def get_directory_size(path):
@@ -53,19 +59,26 @@ def get_directory_size(path):
     return total_size
 
 def run_command(command):
+    verbose = os.getenv("VERBOSE", "false").lower() == "true"
     print(f"⚙️  Executing: {command}")
     try:
         result = subprocess.run(command, shell=True, text=True, capture_output=True, check=True)
-        if result.stdout:
+        if result.stdout and verbose:
             logger.info(f"Command output:\n{result.stdout.strip()}")
         if result.stderr:
             logger.warning(f"Command stderr:\n{result.stderr.strip()}")
         print_success("Command executed successfully")
         return True
     except subprocess.CalledProcessError as e:
-        print_error(f"Command failed: {e}")
-        logger.error(f"Error output:\n{e.stderr}")
-        sys.exit(1)
+        error_msg = f"Command failed: {e}"
+        if os.getenv("FAIL_ON_ERROR", "true").lower() == "true":
+            print_error(error_msg)
+            logger.error(f"Error output:\n{e.stderr}")
+            sys.exit(1)
+        else:
+            logger.warning(error_msg)
+            logger.warning(f"Error output:\n{e.stderr}")
+            return False
 
 def get_extension(format):
     return {"zip": ".zip", "tar": ".tar", "tgz": ".tgz", "tbz2": ".tbz2"}.get(format, "")
