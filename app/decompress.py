@@ -1,15 +1,10 @@
+from datetime import datetime
 import os
 import sys
-from datetime import datetime
-from utils import (
-    print_header, print_section, print_success, print_error,
-    validate_format, run_command, adjust_path, get_file_size
-)
-from utils import logger
 from typing import Optional, Dict
 from utils import (
     UI, FileUtils, CommandExecutor, CompressionFormat,
-    DECOMPRESSION_COMMANDS, ProcessResult
+    DECOMPRESSION_COMMANDS, logger, ProcessResult
 )
 
 class Decompressor:
