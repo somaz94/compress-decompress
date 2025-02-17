@@ -19,7 +19,7 @@ class Compressor:
         if not os.path.exists(self.source):
             error_msg = f"Source path '{self.source}' does not exist"
             if self.fail_on_error:
-                print_error(error_msg)
+                UI.print_error(error_msg)
                 sys.exit(1)
             logger.logger.warning(error_msg)
             return False
@@ -72,7 +72,7 @@ class Compressor:
 
     def compress(self) -> ProcessResult:
         try:
-            print_header("Compression Process Started")
+            UI.print_header("Compression Process Started")
             if not self.validate():
                 return ProcessResult(False, "Validation failed")
 
@@ -96,13 +96,13 @@ class Compressor:
             
         except Exception as e:
             if self.fail_on_error:
-                print_error(f"Compression failed: {str(e)}")
+                UI.print_error(f"Compression failed: {str(e)}")
                 sys.exit(1)
             logger.logger.warning(f"Compression warning: {str(e)}")
             return ProcessResult(False, str(e))
 
     def _print_configuration(self, source_size: int) -> None:
-        print_section("Configuration")
+        UI.print_section("Configuration")
         print(f"  • Source: {self.source}")
         print(f"  • Format: {self.format}")
         print(f"  • Include Root: {self.include_root}")
@@ -117,7 +117,7 @@ class Compressor:
             compressed_size = os.path.getsize(self.dest)
             compression_ratio = (1 - (compressed_size / source_size)) * 100 if source_size > 0 else 0
             
-            print_section("Compression Results")
+            UI.print_section("Compression Results")
             print(f"  • Original Size: {FileUtils.get_size(source_size)}")
             print(f"  • Compressed Size: {FileUtils.get_size(compressed_size)}")
             print(f"  • Compression Ratio: {compression_ratio:.1f}%")

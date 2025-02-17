@@ -1,6 +1,6 @@
 import os
 import sys
-# from typing import Optional, Dict
+from typing import Optional, Dict
 from utils import UI, CompressionFormat, logger
 from compress import compress
 from decompress import decompress

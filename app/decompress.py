@@ -19,7 +19,7 @@ class Decompressor:
         if not os.path.exists(self.source):
             error_msg = f"Source file '{self.source}' does not exist"
             if self.fail_on_error:
-                print_error(error_msg)
+                UI.print_error(error_msg)
                 sys.exit(1)
             logger.logger.warning(error_msg)
             return False
@@ -42,7 +42,7 @@ class Decompressor:
             return
 
         try:
-            print_section("Decompressed Contents")
+            UI.print_section("Decompressed Contents")
             for item in os.listdir(self.dest):
                 item_path = os.path.join(self.dest, item)
                 if os.path.isfile(item_path):
@@ -52,11 +52,11 @@ class Decompressor:
         except Exception as e:
             if self.verbose:
                 logger.logger.error(f"Failed to list contents: {str(e)}")
-            print_error(f"Failed to list contents: {str(e)}")
+            UI.print_error(f"Failed to list contents: {str(e)}")
 
     def decompress(self) -> ProcessResult:
         try:
-            print_header("Decompression Process Started")
+            UI.print_header("Decompression Process Started")
             if not self.validate():
                 return ProcessResult(False, "Validation failed")
 
@@ -64,7 +64,7 @@ class Decompressor:
             start_time = datetime.now()
             
             self.source = adjust_path(self.source)
-            print_section("Configuration")
+            UI.print_section("Configuration")
             print(f"  • Source: {self.source}")
             print(f"  • Format: {self.format}")
             print(f"  • Destination: {self.dest or 'current directory'}")
@@ -82,13 +82,13 @@ class Decompressor:
 
         except Exception as e:
             if self.fail_on_error:
-                print_error(f"Decompression failed: {str(e)}")
+                UI.print_error(f"Decompression failed: {str(e)}")
                 sys.exit(1)
             logger.logger.warning(f"Decompression warning: {str(e)}")
             return ProcessResult(False, str(e))
 
     def _print_configuration(self) -> None:
-        print_section("Configuration")
+        UI.print_section("Configuration")
         print(f"  • Source: {self.source}")
         print(f"  • Format: {self.format}")
         print(f"  • Destination: {self.dest or 'current directory'}")
@@ -97,7 +97,7 @@ class Decompressor:
         end_time = datetime.now()
         duration = end_time - start_time
         
-        print_section("Decompression Results")
+        UI.print_section("Decompression Results")
         print(f"  • Original Archive Size: {FileUtils.get_size(source_size)}")
         print(f"  • Duration: {duration.total_seconds():.2f} seconds")
 
