@@ -43,6 +43,7 @@ jobs:
           source: './${{ matrix.source }}'
           format: ${{ matrix.format }}
           includeRoot: ${{ matrix.include_root }}
+          verbose: 'true'
 
       - name: List Workspace Contents
         run: |
@@ -75,6 +76,7 @@ jobs:
           source: ${{ steps.set-path.outputs.source_path }}
           format: ${{ matrix.format }}
           dest: './unpacked-${{ matrix.format }}-${{ matrix.source }}'
+          verbose: 'false'
 
       - name: Verify Contents
         run: |
@@ -95,3 +97,76 @@ jobs:
       - name: Print Compression Output
         run: |
           echo "Compression output for ${{ matrix.format }} (includeRoot: ${{ matrix.include_root }}): ${{ steps.compress.outputs.file_path }}"
+
+  test-error-handling:
+    name: Test Error Handling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Case 1: Should fail (fail_on_error: true)
+      - name: Test Non-existent Source (with fail_on_error)
+        id: test_fail
+        uses: somaz94/compress-decompress@v1
+        continue-on-error: true  # Allow the workflow to continue even if this step fails
+        with:
+          command: 'compress'
+          source: './nonexistent'
+          format: 'zip'
+          fail_on_error: 'true'
+          verbose: 'true'
+
+      - name: Verify Expected Failure
+        run: |
+          if [ "${{ steps.test_fail.outcome }}" != "failure" ]; then
+            echo "Expected failure but got success"
+            exit 1
+          else
+            echo "✅ Test passed: Action failed as expected with fail_on_error=true"
+          fi
+
+      # Case 2: Should complete with warning (fail_on_error: false)
+      - name: Test Non-existent Source (without fail_on_error)
+        id: test_no_fail
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: 'compress'
+          source: './nonexistent'
+          format: 'zip'
+          fail_on_error: 'false'
+          verbose: 'true'
+
+      - name: Verify Warning Behavior
+        run: |
+          if [ "${{ steps.test_no_fail.outcome }}" = "success" ]; then
+            echo "✅ Test passed: Action completed with warning as expected"
+          else
+            echo "❌ Test failed: Action failed when it should have completed with warning"
+            exit 1
+          fi
+
+      # Additional test case for valid source but with warning
+      - name: Create Test Directory with Warning Case
+        run: |
+          mkdir -p test_warning
+          touch test_warning/.gitkeep
+
+      - name: Test Valid Source with Warning
+        id: test_warning
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: 'compress'
+          source: './test_warning'
+          format: 'zip'
+          fail_on_error: 'false'
+          verbose: 'true'
+
+      - name: Verify Warning Case
+        run: |
+          if [ "${{ steps.test_warning.outcome }}" = "success" ]; then
+            echo "✅ Test passed: Action completed successfully with empty directory"
+          else
+            echo "❌ Test failed: Action failed with empty directory"
+            exit 1
+          fi

@@ -102,10 +102,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Case 1: Should fail (fail_on_error: true)
       - name: Test Non-existent Source (with fail_on_error)
         id: test_fail
         uses: ./
-        continue-on-error: true
+        continue-on-error: true  # Allow the workflow to continue even if this step fails
         with:
           command: 'compress'
           source: './nonexistent'
@@ -113,13 +114,16 @@ jobs:
           fail_on_error: 'true'
           verbose: 'true'
 
-      - name: Verify Failure
+      - name: Verify Expected Failure
         run: |
           if [ "${{ steps.test_fail.outcome }}" != "failure" ]; then
             echo "Expected failure but got success"
             exit 1
+          else
+            echo "✅ Test passed: Action failed as expected with fail_on_error=true"
           fi
 
+      # Case 2: Should complete with warning (fail_on_error: false)
       - name: Test Non-existent Source (without fail_on_error)
         id: test_no_fail
         uses: ./
@@ -130,9 +134,36 @@ jobs:
           fail_on_error: 'false'
           verbose: 'true'
 
-      - name: Verify Non-Failure
+      - name: Verify Warning Behavior
         run: |
-          if [ "${{ steps.test_no_fail.outcome }}" != "success" ]; then
-            echo "Expected success but got failure"
+          if [ "${{ steps.test_no_fail.outcome }}" = "success" ]; then
+            echo "✅ Test passed: Action completed with warning as expected"
+          else
+            echo "❌ Test failed: Action failed when it should have completed with warning"
+            exit 1
+          fi
+
+      # Additional test case for valid source but with warning
+      - name: Create Test Directory with Warning Case
+        run: |
+          mkdir -p test_warning
+          touch test_warning/.gitkeep
+
+      - name: Test Valid Source with Warning
+        id: test_warning
+        uses: ./
+        with:
+          command: 'compress'
+          source: './test_warning'
+          format: 'zip'
+          fail_on_error: 'false'
+          verbose: 'true'
+
+      - name: Verify Warning Case
+        run: |
+          if [ "${{ steps.test_warning.outcome }}" = "success" ]; then
+            echo "✅ Test passed: Action completed successfully with empty directory"
+          else
+            echo "❌ Test failed: Action failed with empty directory"
             exit 1
           fi
