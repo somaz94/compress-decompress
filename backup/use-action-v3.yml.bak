@@ -1,14 +1,16 @@
-name: Continuous Integration
+name: Example Workflow using Compress Decompress
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/workflows/**'
-      - '**/*.md'
   workflow_dispatch:
+    inputs:
+      run:
+        description: 'workflow run'
+        required: true
+        default: 'true'
+  workflow_run:
+    workflows: ["Create release"]
+    types:
+      - completed
 
 permissions:
   contents: read
@@ -35,13 +37,12 @@ jobs:
 
       - name: Test Compression
         id: compress
-        uses: ./
+        uses: somaz94/compress-decompress@v1
         with:
           command: 'compress'
           source: './${{ matrix.source }}'
           format: ${{ matrix.format }}
           includeRoot: ${{ matrix.include_root }}
-          verbose: 'true'
 
       - name: List Workspace Contents
         run: |
@@ -68,7 +69,7 @@ jobs:
           if-no-files-found: error
 
       - name: Test Decompression
-        uses: ./
+        uses: somaz94/compress-decompress@v1
         with:
           command: 'decompress'
           source: ${{ steps.set-path.outputs.source_path }}
@@ -94,45 +95,3 @@ jobs:
       - name: Print Compression Output
         run: |
           echo "Compression output for ${{ matrix.format }} (includeRoot: ${{ matrix.include_root }}): ${{ steps.compress.outputs.file_path }}"
-
-  test-error-handling:
-    name: Test Error Handling
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Test Non-existent Source (with fail_on_error)
-        id: test_fail
-        uses: ./
-        continue-on-error: true
-        with:
-          command: 'compress'
-          source: './nonexistent'
-          format: 'zip'
-          fail_on_error: 'true'
-          verbose: 'true'
-
-      - name: Verify Failure
-        run: |
-          if [ "${{ steps.test_fail.outcome }}" != "failure" ]; then
-            echo "Expected failure but got success"
-            exit 1
-          fi
-
-      - name: Test Non-existent Source (without fail_on_error)
-        id: test_no_fail
-        uses: ./
-        with:
-          command: 'compress'
-          source: './nonexistent'
-          format: 'zip'
-          fail_on_error: 'false'
-          verbose: 'true'
-
-      - name: Verify Non-Failure
-        run: |
-          if [ "${{ steps.test_no_fail.outcome }}" != "success" ]; then
-            echo "Expected success but got failure"
-            exit 1
-          fi

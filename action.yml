@@ -23,6 +23,14 @@ inputs:
       'Whether to include the root folder itself in the compressed file.'
     required: false
     default: "true"
+  fail_on_error:
+    description: 'Whether to fail the action if compression/decompression fails.'
+    required: false
+    default: "true"
+  verbose:
+    description: 'Enable verbose logging for debugging.'
+    required: false
+    default: "false"
 outputs:
   file_path:
     description: 'The path to the compressed or decompressed file.'
@@ -35,6 +43,8 @@ runs:
     DEST: ${{ inputs.dest }}
     FORMAT: ${{ inputs.format }}
     INCLUDEROOT: ${{ inputs.includeRoot }}
+    FAIL_ON_ERROR: ${{ inputs.fail_on_error }}
+    VERBOSE: ${{ inputs.verbose }}
 branding:
   icon: 'at-sign'
   color: 'white'

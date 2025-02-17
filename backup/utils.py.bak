@@ -53,26 +53,19 @@ def get_directory_size(path):
     return total_size
 
 def run_command(command):
-    verbose = os.getenv("VERBOSE", "false").lower() == "true"
     print(f"⚙️  Executing: {command}")
     try:
         result = subprocess.run(command, shell=True, text=True, capture_output=True, check=True)
-        if result.stdout and verbose:
+        if result.stdout:
             logger.info(f"Command output:\n{result.stdout.strip()}")
         if result.stderr:
             logger.warning(f"Command stderr:\n{result.stderr.strip()}")
         print_success("Command executed successfully")
         return True
     except subprocess.CalledProcessError as e:
-        error_msg = f"Command failed: {e}"
-        if os.getenv("FAIL_ON_ERROR", "true").lower() == "true":
-            print_error(error_msg)
-            logger.error(f"Error output:\n{e.stderr}")
-            sys.exit(1)
-        else:
-            logger.warning(error_msg)
-            logger.warning(f"Error output:\n{e.stderr}")
-            return False
+        print_error(f"Command failed: {e}")
+        logger.error(f"Error output:\n{e.stderr}")
+        sys.exit(1)
 
 def get_extension(format):
     return {"zip": ".zip", "tar": ".tar", "tgz": ".tgz", "tbz2": ".tbz2"}.get(format, "")
