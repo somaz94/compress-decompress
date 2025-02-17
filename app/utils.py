@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from enum import Enum
 import time
 from functools import wraps
-from utils import print_error
 
 
 class CompressionFormat(Enum):
@@ -147,6 +146,18 @@ class UI:
     @staticmethod
     def print_error(message: str):
         print(f"❌ {message}")
+
+def print_error(message: str):
+    UI.print_error(message)
+
+def print_success(message: str):
+    UI.print_success(message)
+
+def print_header(title: str):
+    UI.print_header(title)
+
+def print_section(title: str):
+    UI.print_section(title)
 
 DECOMPRESSION_COMMANDS = {
     CompressionFormat.ZIP.value: CommandConfig(
