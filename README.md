@@ -25,6 +25,8 @@ compression and decompression tasks efficiently.
 | `dest`        | The destination directory or file for the output. If not provided, it defaults to the current working directory. | No       | -       |
 | `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2`.                            | Yes      | -       |
 | `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | yes     |
+| `fail_on_error` | Whether to fail the action if compression/decompression fails.                                                 | No       | true    |
+| `verbose`     | Enable verbose logging for debugging purposes.                                                                   | No       | false   |
 
 <br/>
 
@@ -320,6 +322,98 @@ The `includeRoot` option controls how files are structured within the compressed
 
 <br/>
 
+## Advanced Usage Examples
+
+<br/>
+
+### 1. Error Handling with fail_on_error
+
+```yaml
+- name: Compress with Error Handling
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./data-folder
+    format: zip
+    fail_on_error: 'false'  # Continue even if compression fails
+    verbose: 'true'         # Enable detailed logging
+```
+
+<br/>
+
+### 2. Debugging with Verbose Logging
+
+```yaml
+- name: Decompress with Verbose Output
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: decompress
+    source: ./archive.tgz
+    format: tgz
+    dest: './unpacked'
+    verbose: 'true'  # Show detailed progress and debug information
+```
+
+<br/>
+
+## Troubleshooting
+
+<br/>
+
+### Common Issues and Solutions
+
+1. **Compression Failures**
+   - Check if source directory/files exist
+   - Verify write permissions
+   - Enable verbose logging for detailed error messages
+   - Use `fail_on_error: 'false'` to continue workflow despite errors
+
+2. **Decompression Issues**
+   - Verify archive format matches the specified format
+   - Check if destination directory is writable
+   - Enable verbose mode to see detailed progress
+   - Look for corruption in source archives
+
+3. **Permission Problems**
+   - Ensure proper file permissions
+   - Check workspace directory permissions
+   - Verify user/group access rights
+
+### Logging and Debugging
+
+The action provides two levels of logging:
+
+1. **Standard Logging (default)**
+   - Basic operation progress
+   - Essential error messages
+   - Final status and results
+
+2. **Verbose Logging (`verbose: 'true'`)**
+   - Detailed configuration information
+   - Command execution details
+   - Comprehensive error messages
+   - File size and compression statistics
+   - Directory content listings
+
+<br/>
+
+### Error Handling Options
+
+The action supports flexible error handling through the `fail_on_error` option:
+
+1. **Strict Mode (`fail_on_error: 'true'`)**
+   - Fails the workflow step on any error
+   - Provides immediate feedback
+   - Suitable for critical operations
+
+2. **Lenient Mode (`fail_on_error: 'false'`)**
+   - Continues workflow despite errors
+   - Logs warnings instead of failing
+   - Useful for non-critical operations
+   - Allows custom error handling in workflow
+
+<br/>
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE) file for details.
@@ -329,3 +423,4 @@ This project is licensed under the [MIT License](LICENSE) file for details.
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
