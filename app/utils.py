@@ -38,9 +38,15 @@ def validate_format(format):
     """Validate compression format"""
     valid_formats = ['zip', 'tar', 'tgz', 'tbz2']
     if format not in valid_formats:
-        print_error(f"Invalid format: {format}")
-        print(f"Supported formats: {', '.join(valid_formats)}")
-        sys.exit(1)
+        error_msg = f"Invalid format: {format}"
+        if os.getenv("FAIL_ON_ERROR", "true").lower() == "true":
+            print_error(error_msg)
+            print(f"Supported formats: {', '.join(valid_formats)}")
+            sys.exit(1)
+        else:
+            logger.warning(error_msg)
+            logger.warning(f"Supported formats: {', '.join(valid_formats)}")
+            return False
     return True
 
 def get_directory_size(path):

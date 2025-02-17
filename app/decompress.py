@@ -13,8 +13,13 @@ def decompress(source, format):
         validate_format(format)
         
         if not os.path.exists(source):
-            print_error(f"Source file '{source}' does not exist")
-            sys.exit(1)
+            error_msg = f"Source file '{source}' does not exist"
+            if os.getenv("FAIL_ON_ERROR", "true").lower() == "true":
+                print_error(error_msg)
+                sys.exit(1)
+            else:
+                logger.warning(error_msg)
+                return False
         
         source_size = os.path.getsize(source)
         start_time = datetime.now()
