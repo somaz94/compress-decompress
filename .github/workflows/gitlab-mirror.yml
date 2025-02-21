@@ -1,0 +1,44 @@
+name: Backup GitHub to GitLab
+
+on:
+  push:
+    branches:
+      - main  # main 브랜치 변경 시 동기화
+    paths-ignore:
+      - .github/workflows/*
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 전체 히스토리를 가져오도록 설정
+          lfs: true      # Git LFS 파일도 가져오기
+          
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+
+      - name: Push to GitLab Mirror
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/backup6695808/compress-decompress.git
+          git push -f --all gitlab  # 모든 브랜치 푸시 (하지만 강제 덮어쓰지는 않음)
+          git push -f --tags gitlab  # 모든 태그 푸시
+        continue-on-error: true
+
+
+
+
+
+
+
+
+
+
+
