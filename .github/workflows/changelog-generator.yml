@@ -48,7 +48,6 @@ jobs:
     - name: Git Commit and Push
       uses: somaz94/go-git-commit-action@v1
       with:
-        repository: ${{ github.repository }}
         branch: main
         commit_message: "Update changelog"
         user_email: "actions@github.com"
