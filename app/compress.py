@@ -1,35 +1,26 @@
 from datetime import datetime
 import os
 import sys
-# from typing import Optional
+from typing import Optional
 from utils import (
     UI, FileUtils, CommandExecutor, CompressionFormat,
-    logger, ProcessResult
+    logger, ProcessResult, BaseProcessor
 )
 
-class Compressor:
+class Compressor(BaseProcessor):
+    """Handles file/directory compression"""
     def __init__(self, source: str, format: str, include_root: str):
+        super().__init__()
         self.source = source
         self.format = format
         self.include_root = include_root.lower() == "true"
-        self.dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
-        self.fail_on_error = os.getenv("FAIL_ON_ERROR", "true").lower() == "true"
 
     def validate(self) -> bool:
-        if not os.path.exists(self.source):
-            error_msg = f"Source path '{self.source}' does not exist"
-            if self.fail_on_error:
-                UI.print_error(error_msg)
-                sys.exit(1)
-            logger.logger.warning(error_msg)
-            return False
-        return True
-
-    def prepare_destination(self) -> None:
-        if self.dest and not os.path.exists(self.dest):
-            os.makedirs(self.dest)
+        """Validate source path exists"""
+        return self.validate_path(self.source, "Source path")
 
     def get_compression_command(self) -> str:
+        """Generate appropriate compression command based on format"""
         base_name = os.path.basename(self.source)
         extension = f".{self.format}"
         full_dest = os.path.join(
@@ -42,11 +33,13 @@ class Compressor:
         return self._get_tar_command(full_dest, base_name)
 
     def _get_zip_command(self, full_dest: str, base_name: str) -> str:
+        """Generate zip compression command"""
         if self.include_root:
             return f"cd {os.path.dirname(self.source)} && zip -r {full_dest} {base_name}"
         return f"cd {self.source} && zip -r {full_dest} ."
 
     def _get_tar_command(self, full_dest: str, base_name: str) -> str:
+        """Generate tar compression command"""
         tar_options = {
             CompressionFormat.TAR.value: "",
             CompressionFormat.TGZ.value: "z",
@@ -62,6 +55,7 @@ class Compressor:
         return f"tar -c{opt}f {full_dest} -C {self.source} ."
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
+        """Generate special tar command for TGZ/TBZ2 formats without root"""
         temp_dir = os.path.join(os.path.dirname(self.source), f"temp_{base_name}_{self.format}")
         return f"""
             mkdir -p {temp_dir} &&
@@ -71,6 +65,7 @@ class Compressor:
         """
 
     def compress(self) -> ProcessResult:
+        """Execute compression process"""
         try:
             UI.print_header("Compression Process Started")
             if not self.validate():
@@ -87,7 +82,7 @@ class Compressor:
             self.prepare_destination()
             
             command = self.get_compression_command()
-            result = CommandExecutor.run(command)
+            result = CommandExecutor.run(command, self.verbose)
             
             if result.success:
                 self._print_results(start_time, source_size)
@@ -95,13 +90,10 @@ class Compressor:
             return result
             
         except Exception as e:
-            if self.fail_on_error:
-                UI.print_error(f"Compression failed: {str(e)}")
-                sys.exit(1)
-            logger.logger.warning(f"Compression warning: {str(e)}")
-            return ProcessResult(False, str(e))
+            return self.handle_error(e, "Compression")
 
     def _print_configuration(self, source_size: int) -> None:
+        """Print compression configuration details"""
         UI.print_section("Configuration")
         print(f"  • Source: {self.source}")
         print(f"  • Format: {self.format}")
@@ -110,6 +102,7 @@ class Compressor:
         print(f"  • Initial Directory: {os.getcwd()}")
 
     def _print_results(self, start_time: datetime, source_size: int) -> None:
+        """Print compression results"""
         end_time = datetime.now()
         duration = end_time - start_time
         
@@ -124,6 +117,7 @@ class Compressor:
             print(f"  • Duration: {duration.total_seconds():.2f} seconds")
 
 def compress(source: str, format: str, include_root: str) -> bool:
+    """Compress a file or directory"""
     compressor = Compressor(source, format, include_root)
     result = compressor.compress()
     return result.success

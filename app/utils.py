@@ -2,12 +2,13 @@ import os
 import subprocess
 import logging
 import sys
-from typing import Union, Optional, Dict, List, Callable, Any
+from typing import Union, Optional, Dict, List, Callable, Any, TypeVar, Generic
 from dataclasses import dataclass
 from enum import Enum
 import time
 from functools import wraps
 
+T = TypeVar('T')
 
 class CompressionFormat(Enum):
     ZIP = 'zip'
@@ -19,19 +20,75 @@ class CompressionFormat(Enum):
     def list(cls) -> List[str]:
         return [format.value for format in cls]
 
+    @classmethod
+    def validate(cls, format_str: str) -> bool:
+        """Validate compression format"""
+        if format_str not in cls.list():
+            error_msg = f"Invalid format: {format_str}"
+            if os.getenv("FAIL_ON_ERROR", "true").lower() == "true":
+                UI.print_error(error_msg)
+                print(f"Supported formats: {', '.join(cls.list())}")
+                sys.exit(1)
+            else:
+                logger.logger.warning(error_msg)
+                logger.logger.warning(f"Supported formats: {', '.join(cls.list())}")
+                return False
+        return True
+
+    @classmethod
+    def get_extension(cls, format_str: str) -> str:
+        """Get file extension for a format"""
+        for format_enum in cls:
+            if format_enum.value == format_str:
+                return f".{format_str}"
+        return ""
+
 @dataclass
 class CommandConfig:
     command: str
     options: Callable[[Optional[str]], str]
     format: Callable[[str, str], str]
 
-class ProcessResult:
-    def __init__(self, success: bool, message: str, data: Optional[Dict] = None):
+class ProcessResult(Generic[T]):
+    def __init__(self, success: bool, message: str, data: Optional[T] = None):
         self.success = success
         self.message = message
         self.data = data or {}
 
+class BaseProcessor:
+    """Base class for compression/decompression processors"""
+    def __init__(self):
+        self.fail_on_error = os.getenv("FAIL_ON_ERROR", "true").lower() == "true"
+        self.verbose = os.getenv("VERBOSE", "false").lower() == "true"
+        self.dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
+
+    def validate_path(self, path: str, error_prefix: str = "Path") -> bool:
+        """Validate that a path exists"""
+        if not os.path.exists(path):
+            error_msg = f"{error_prefix} '{path}' does not exist"
+            if self.fail_on_error:
+                UI.print_error(error_msg)
+                sys.exit(1)
+            logger.logger.warning(error_msg)
+            return False
+        return True
+
+    def prepare_destination(self) -> None:
+        """Create destination directory if it doesn't exist"""
+        if self.dest and not os.path.exists(self.dest):
+            os.makedirs(self.dest)
+
+    def handle_error(self, error: Exception, context: str = "Operation") -> ProcessResult:
+        """Handle exceptions consistently"""
+        error_msg = f"{context} failed: {str(error)}"
+        if self.fail_on_error:
+            UI.print_error(error_msg)
+            sys.exit(1)
+        logger.logger.warning(f"{context} warning: {str(error)}")
+        return ProcessResult(False, str(error))
+
 def retry_on_failure(max_retries: int = 3, delay: int = 1):
+    """Decorator to retry a function on failure"""
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -41,13 +98,14 @@ def retry_on_failure(max_retries: int = 3, delay: int = 1):
                 except Exception as e:
                     if attempt == max_retries - 1:
                         raise
-                    logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+                    logger.logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
                     time.sleep(delay * (attempt + 1))
             return None
         return wrapper
     return decorator
 
 class Logger:
+    """Logging utility class"""
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self._setup_logging()
@@ -68,6 +126,7 @@ class Logger:
 logger = Logger()
 
 class CommandExecutor:
+    """Utility for executing shell commands"""
     @staticmethod
     @retry_on_failure()
     def run(command: str, verbose: bool = False) -> ProcessResult:
@@ -92,11 +151,13 @@ class CommandExecutor:
             return ProcessResult(False, error_msg, {"stderr": e.stderr})
 
 class FileUtils:
+    """File and directory utilities"""
     @staticmethod
     def get_size(size_or_path: Union[int, str]) -> str:
+        """Convert bytes to human-readable size format"""
         try:
             size = (os.path.getsize(size_or_path) 
-                   if isinstance(size_or_path, str) 
+                   if isinstance(size_or_path, str) and os.path.exists(size_or_path)
                    else size_or_path)
             
             units = ['B', 'KB', 'MB', 'GB', 'TB']
@@ -111,16 +172,18 @@ class FileUtils:
 
     @staticmethod
     def get_directory_size(path: str) -> int:
+        """Calculate total size of a directory"""
         total = 0
         for dirpath, _, filenames in os.walk(path):
             total += sum(
                 os.path.getsize(os.path.join(dirpath, f))
-                for f in filenames
+                for f in filenames if os.path.exists(os.path.join(dirpath, f))
             )
         return total
 
     @staticmethod
     def adjust_path(path: str) -> str:
+        """Convert relative path to absolute path"""
         if os.path.isabs(path):
             return path
         return os.path.join(
@@ -129,6 +192,7 @@ class FileUtils:
         )
 
 class UI:
+    """User interface utilities"""
     @staticmethod
     def print_header(title: str):
         print("\n" + "=" * 50)
@@ -147,18 +211,7 @@ class UI:
     def print_error(message: str):
         print(f"❌ {message}")
 
-def print_error(message: str):
-    UI.print_error(message)
-
-def print_success(message: str):
-    UI.print_success(message)
-
-def print_header(title: str):
-    UI.print_header(title)
-
-def print_section(title: str):
-    UI.print_section(title)
-
+# Define decompression commands
 DECOMPRESSION_COMMANDS = {
     CompressionFormat.ZIP.value: CommandConfig(
         "unzip",
@@ -181,21 +234,3 @@ DECOMPRESSION_COMMANDS = {
         lambda src, opt: f"-xjf {src} {opt}"
     )
 }
-
-def validate_format(format):
-    """Validate compression format"""
-    valid_formats = ['zip', 'tar', 'tgz', 'tbz2']
-    if format not in valid_formats:
-        error_msg = f"Invalid format: {format}"
-        if os.getenv("FAIL_ON_ERROR", "true").lower() == "true":
-            print_error(error_msg)
-            print(f"Supported formats: {', '.join(valid_formats)}")
-            sys.exit(1)
-        else:
-            logger.warning(error_msg)
-            logger.warning(f"Supported formats: {', '.join(valid_formats)}")
-            return False
-    return True
-
-def get_extension(format):
-    return {"zip": ".zip", "tar": ".tar", "tgz": ".tgz", "tbz2": ".tbz2"}.get(format, "")

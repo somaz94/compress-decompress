@@ -1,11 +1,12 @@
 import os
 import sys
-# from typing import Optional, Dict
+from typing import Optional, Dict, List
 from utils import UI, CompressionFormat, logger
 from compress import compress
 from decompress import decompress
 
 class ActionRunner:
+    """Main action runner for compression/decompression operations"""
     def __init__(self):
         self.command = os.getenv("COMMAND")
         self.source = os.getenv("SOURCE")
@@ -15,6 +16,7 @@ class ActionRunner:
         self.fail_on_error = os.getenv("FAIL_ON_ERROR", "true").lower() == "true"
 
     def validate_inputs(self) -> None:
+        """Validate required inputs are provided and valid"""
         if not self.command:
             UI.print_error("Command is required")
             sys.exit(1)
@@ -30,6 +32,7 @@ class ActionRunner:
             sys.exit(1)
 
     def print_configuration(self) -> None:
+        """Print action configuration"""
         UI.print_header("Compress/Decompress Action")
         UI.print_section("Environment Configuration")
         print(f"  • Command: {self.command}")
@@ -40,6 +43,7 @@ class ActionRunner:
         print(f"  • Fail on Error: {self.fail_on_error}")
 
     def run(self) -> None:
+        """Run the appropriate action based on command"""
         try:
             self.validate_inputs()
             self.print_configuration()
@@ -59,6 +63,7 @@ class ActionRunner:
             sys.exit(1)
 
 def main():
+    """Main entry point"""
     runner = ActionRunner()
     runner.run()
 
