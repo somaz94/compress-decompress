@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.3.0](https://github.com/somaz94/compress-decompress/tree/v1.3.0) (2025-03-04)
+
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.3.0...v1.3.0)
+
+**Merged pull requests:**
+
+- build\(deps\): bump super-linter/super-linter from 7.2.1 to 7.3.0 in the actions-minor group [\#8](https://github.com/somaz94/compress-decompress/pull/8) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 ## [v1.3.0](https://github.com/somaz94/compress-decompress/tree/v1.3.0) (2025-02-17)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.2.0...v1.3.0)
