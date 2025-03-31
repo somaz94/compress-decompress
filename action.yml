@@ -1,50 +1,53 @@
-name: 'Compress/Decompress'
+name: "Compress/Decompress"
 description:
-  'GitHub Action to compress or decompress files using various formats like zip,
-  tar, tgz, and tbz2.'
-author: 'somaz94'
+  "GitHub Action to compress or decompress files using various formats like zip,
+  tar, tgz, and tbz2."
+author: "somaz94"
 inputs:
   command:
     description: 'Command to perform ("compress" or "decompress").'
     required: true
   source:
-    description: 'Source directory or file to compress or decompress.'
+    description: "Source directory or file to compress or decompress."
     required: true
   dest:
-    description: 'Destination directory or file for the output.'
+    description: "Destination directory for the output."
+    required: false
+  destfilename:
+    description: "Destination filename for the compressed output."
     required: false
   format:
     description:
-      'Compression format to use. Supported formats include zip, tar, tgz, and
-      tbz2.'
+      "Compression format to use. Supported formats include zip, tar, tgz, and
+      tbz2."
     required: true
   includeRoot:
-    description:
-      'Whether to include the root folder itself in the compressed file.'
+    description: "Whether to include the root folder itself in the compressed file."
     required: false
     default: "true"
   fail_on_error:
-    description: 'Whether to fail the action if compression/decompression fails.'
+    description: "Whether to fail the action if compression/decompression fails."
     required: false
     default: "true"
   verbose:
-    description: 'Enable verbose logging for debugging.'
+    description: "Enable verbose logging for debugging."
     required: false
     default: "false"
 outputs:
   file_path:
-    description: 'The path to the compressed or decompressed file.'
+    description: "The path to the compressed or decompressed file."
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: "docker"
+  image: "Dockerfile"
   env:
     COMMAND: ${{ inputs.command }}
     SOURCE: ${{ inputs.source }}
     DEST: ${{ inputs.dest }}
+    DESTFILENAME: ${{ inputs.destfilename }}
     FORMAT: ${{ inputs.format }}
     INCLUDEROOT: ${{ inputs.includeRoot }}
     FAIL_ON_ERROR: ${{ inputs.fail_on_error }}
     VERBOSE: ${{ inputs.verbose }}
 branding:
-  icon: 'at-sign'
-  color: 'white'
+  icon: "at-sign"
+  color: "white"
