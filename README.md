@@ -22,7 +22,8 @@ compression and decompression tasks efficiently.
 | ------------- | ---------------------------------------------------------------------------------------------------------------- | -------- | ------- |
 | `command`     | The operation to perform. It can be either "compress" or "decompress"                                            | Yes      | -       |
 | `source`      | The source directory or file to compress or decompress.                                                          | Yes      | -       |
-| `dest`        | The destination directory or file for the output. If not provided, it defaults to the current working directory. | No       | -       |
+| `dest`        | The destination directory for the output. If not provided, it defaults to the current working directory. | No       | -       |
+| `destfilename` | The destination filename for the output (extension is appended depending on the format). If not provided, it defaults to the current working directory's name. | No       | -       |
 | `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2`.                            | Yes      | -       |
 | `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | yes     |
 | `fail_on_error` | Whether to fail the action if compression/decompression fails.                                                 | No       | true    |

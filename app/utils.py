@@ -61,6 +61,7 @@ class BaseProcessor:
         self.fail_on_error = os.getenv("FAIL_ON_ERROR", "true").lower() == "true"
         self.verbose = os.getenv("VERBOSE", "false").lower() == "true"
         self.dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
+        self.destfilename = os.getenv("DESTFILENAME", "")
 
     def validate_path(self, path: str, error_prefix: str = "Path") -> bool:
         """Validate that a path exists"""

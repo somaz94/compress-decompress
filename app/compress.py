@@ -21,10 +21,10 @@ class Compressor(BaseProcessor):
 
     def get_compression_command(self) -> str:
         """Generate appropriate compression command based on format"""
-        base_name = os.path.basename(self.source)
+        base_name = self.destfilename or os.path.basename(self.source)
         extension = f".{self.format}"
         full_dest = os.path.join(
-            self.dest if self.include_root else self.source,
+            self.dest,
             f"{base_name}{extension}"
         )
 
