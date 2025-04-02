@@ -24,7 +24,7 @@ class Compressor(BaseProcessor):
         base_name = self.destfilename or os.path.basename(self.source)
         extension = f".{self.format}"
         full_dest = os.path.join(
-            self.dest,
+            self.dest if self.include_root else self.source,
             f"{base_name}{extension}"
         )
 
