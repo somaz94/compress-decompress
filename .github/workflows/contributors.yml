@@ -33,7 +33,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           START_DATE: ${{ env.START_DATE }}
           END_DATE: ${{ env.END_DATE }}
-          REPOSITORY_LIST: "somaz94/compress-decompress"  # 콤마로 구분된 레포지토리 목록
+          REPOSITORY: "${{ github.repository }}"  # 현재 레포지토리 자동 지정
           SPONSOR_INFO: "true"
 
       - name: Create issue
