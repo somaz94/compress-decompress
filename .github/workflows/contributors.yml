@@ -26,23 +26,31 @@ jobs:
           echo "Thanks goes to these wonderful people:" >> CONTRIBUTORS.md
           echo "" >> CONTRIBUTORS.md
           
-          git log --format='%aN <%aE>' | \
-          grep -v "bot\|Bot\|BOT\|actions\|github-actions\|dependabot\|renovate" | \
-          sort -u | \
+          # 임시 파일에 기여자 정보 저장
+          declare -A contributors
+          
           while read contributor; do
             name=$(echo "$contributor" | cut -d '<' -f1 | xargs)
             email=$(echo "$contributor" | grep -o '<[^>]*>' | tr -d '<>')
             
-            user_info=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                       "https://api.github.com/search/users?q=$email+in:email")
-            
-            username=$(echo "$user_info" | jq -r '.items[0].login // empty')
-            if [ ! -z "$username" ]; then
-              echo "- [@$username](https://github.com/$username)" >> CONTRIBUTORS.md
-            else
-              echo "- $name" >> CONTRIBUTORS.md
+            # 이미 처리된 이메일인지 확인
+            if [[ -z "${contributors[$email]}" ]]; then
+              user_info=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                         "https://api.github.com/search/users?q=$email+in:email")
+              
+              username=$(echo "$user_info" | jq -r '.items[0].login // empty')
+              if [ ! -z "$username" ]; then
+                echo "- [@$username](https://github.com/$username)" >> CONTRIBUTORS.md
+              else
+                echo "- $name" >> CONTRIBUTORS.md
+              fi
+              
+              # 처리된 이메일 기록
+              contributors[$email]="1"
             fi
-          done
+          done < <(git log --format='%aN <%aE>' | \
+                  grep -v "bot\|Bot\|BOT\|actions\|github-actions\|dependabot\|renovate" | \
+                  sort)
 
       - name: Create Pull Request
         uses: somaz94/go-git-commit-action@v1

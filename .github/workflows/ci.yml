@@ -172,8 +172,14 @@ jobs:
       # Case 3: Test destination and filename options
       - name: Create Test Directory for Dest Options
         run: |
-          mkdir -p test_dest_options custom_output  # custom_output 디렉토리도 생성
+          # 테스트 디렉토리 및 파일 생성
+          mkdir -p test_dest_options custom_output
           echo "Test content" > test_dest_options/test.txt
+          
+          # 디렉토리 생성 확인
+          echo "Created directories and files:"
+          ls -la test_dest_options/
+          ls -la custom_output/
 
       - name: Test Custom Destination and Filename
         id: test_dest_options
@@ -187,12 +193,18 @@ jobs:
           includeRoot: 'false'
           verbose: 'true'
 
-      - name: List Directories  # 디버깅을 위한 디렉토리 내용 출력
+      - name: Debug Output
+        if: always()
         run: |
-          echo "Current directory contents:"
-          ls -la
+          echo "Action output:"
+          echo "Status: ${{ steps.test_dest_options.outcome }}"
+          echo "File path: ${{ steps.test_dest_options.outputs.file_path }}"
+          
+          echo "Directory structure:"
+          tree .
+          
           echo "Custom output directory contents:"
-          ls -la ./custom_output || echo "custom_output directory not found"
+          ls -la ./custom_output/
 
       - name: Verify Custom Destination and Filename
         run: |
@@ -201,8 +213,11 @@ jobs:
             unzip -l ./custom_output/custom_archive.zip
           else
             echo "❌ Test failed: Custom destination/filename archive not created"
-            pwd  # 현재 작업 디렉토리 출력
-            ls -la  # 현재 디렉토리 내용 출력
+            echo "Current working directory: $(pwd)"
+            echo "Contents of current directory:"
+            ls -la
+            echo "Contents of custom_output directory:"
+            ls -la ./custom_output/
             exit 1
           fi
 
