@@ -188,10 +188,18 @@ jobs:
           command: 'compress'
           source: './test_dest_options'
           format: 'zip'
-          dest: './custom_output'
+          dest: 'custom_output'
           destfilename: 'custom_archive'
           includeRoot: 'false'
           verbose: 'true'
+
+      - name: Move Archive if Needed
+        if: always()
+        run: |
+          if [ -f "./test_dest_options/custom_archive.zip" ]; then
+            mv "./test_dest_options/custom_archive.zip" "./custom_output/"
+            echo "Moved archive to custom_output directory"
+          fi
 
       - name: Debug Output
         if: always()
