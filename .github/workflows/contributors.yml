@@ -1,4 +1,4 @@
-name: Update CONTRIBUTORS.md
+name: Generator Contributors
 on:
   workflow_dispatch:
   workflow_run:
