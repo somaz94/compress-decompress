@@ -26,9 +26,6 @@ jobs:
           echo "Thanks goes to these wonderful people:" >> CONTRIBUTORS.md
           echo "" >> CONTRIBUTORS.md
           
-          # 임시 파일에 기여자 정보 저장
-          declare -A contributors
-          
           # 봇 계정 패턴 정의
           BOT_PATTERNS=(
             "bot"
@@ -43,87 +40,55 @@ jobs:
             "github-actions[bot]"
             "dependabot[bot]"
             "renovate[bot]"
-            "github-classroom[bot]"
-            "allcontributors[bot]"
-            "imgbot"
-            "semantic-release-bot"
-            "github-learning-lab"
-            "stale[bot]"
           )
-
+          
           # 봇 패턴을 grep 패턴으로 변환
           BOT_GREP_PATTERN=$(IFS="|"; echo "${BOT_PATTERNS[*]}")
-
-          # 커밋 기여자 수집 (봇 제외)
-          while read contributor; do
-            name=$(echo "$contributor" | cut -d '<' -f1 | xargs)
-            email=$(echo "$contributor" | grep -o '<[^>]*>' | tr -d '<>')
-            
-            # 이미 처리된 이메일인지 확인
-            if [[ -z "${contributors[$email]}" ]]; then
-              # GitHub API로 사용자 검색
-              user_info=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                         "https://api.github.com/search/users?q=$email+in:email")
-              
-              username=$(echo "$user_info" | jq -r '.items[0].login // empty')
-              
-              # GitHub API로 이메일로 사용자를 찾지 못한 경우 커밋 메시지에서 추출한 정보 사용
-              if [ -z "$username" ]; then
-                # PR 작성자 정보로 재시도
-                pr_author_info=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                               "https://api.github.com/search/users?q=$name")
-                username=$(echo "$pr_author_info" | jq -r '.items[0].login // empty')
-              fi
-
-              if [ ! -z "$username" ] && ! [[ "$username" =~ ($BOT_GREP_PATTERN) ]]; then
-                echo "- [@$username](https://github.com/$username)" >> CONTRIBUTORS.md
-              elif [ ! -z "$name" ] && ! [[ "$name" =~ ($BOT_GREP_PATTERN) ]]; then
-                # GitHub 사용자를 찾지 못한 경우 이름과 이메일 모두 표시
-                echo "- $name ($email)" >> CONTRIBUTORS.md
-              fi
-              
-              # 처리된 이메일 기록
-              contributors[$email]="1"
-            fi
-          done < <(git log --format='%aN <%aE>' | \
-                  grep -vE "$BOT_GREP_PATTERN" | \
-                  sort -u)
-
-          # 추가로 PR 작성자도 수집
-          prs=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/${{ github.repository }}/pulls?state=all&per_page=100")
           
-          echo "$prs" | jq -r '.[] | .user.login' | while read author; do
-            if [[ ! -z "$author" ]] && [[ "$author" != "null" ]] && \
-               ! [[ "$author" =~ ($BOT_GREP_PATTERN) ]]; then
-              if ! grep -q "@$author" CONTRIBUTORS.md; then
-                echo "- [@$author](https://github.com/$author)" >> CONTRIBUTORS.md
-              fi
+          # 기여자 정보를 임시 파일에 저장
+          declare -A contributors
+          
+          echo "## Code Contributors" >> CONTRIBUTORS.md
+          echo "" >> CONTRIBUTORS.md
+          
+          # 커밋 로그에서 author와 committer 정보 수집
+          while IFS="|" read -r name email; do
+            if [[ ! "$name" =~ ($BOT_GREP_PATTERN) ]] && [[ -z "${contributors[$email]}" ]]; then
+              contributors[$email]="$name"
+              echo "- $name" >> CONTRIBUTORS.md
             fi
-          done
-
-          # PR 리뷰어/승인자 수집
+          done < <(git log --format='%aN|%aE%n%cN|%cE' | sort -u)
+          
+          echo "" >> CONTRIBUTORS.md
+          echo "## Pull Request Contributors" >> CONTRIBUTORS.md
+          echo "" >> CONTRIBUTORS.md
+          
+          # PR 작성자 정보 수집
+          while IFS="|" read -r name email; do
+            if [[ ! "$name" =~ ($BOT_GREP_PATTERN) ]] && [[ -z "${contributors[$email]}" ]]; then
+              contributors[$email]="$name"
+              echo "- $name" >> CONTRIBUTORS.md
+            fi
+          done < <(git log --format='%aN|%aE' --merges --grep="Merge pull request" | sort -u)
+          
           echo "" >> CONTRIBUTORS.md
           echo "## Reviewers" >> CONTRIBUTORS.md
           echo "" >> CONTRIBUTORS.md
           
-          # PR 번호 추출
-          pr_numbers=$(echo "$prs" | jq -r '.[].number')
+          # PR 리뷰어 정보 수집 (코멘트나 승인 이력이 있는 사람)
+          while IFS="|" read -r name email; do
+            if [[ ! "$name" =~ ($BOT_GREP_PATTERN) ]] && [[ -z "${contributors[$email]}" ]]; then
+              contributors[$email]="$name"
+              echo "- $name (Reviewer)" >> CONTRIBUTORS.md
+            fi
+          done < <(git log --format='%aN|%aE' --grep="Reviewed-by:" --grep="Approved-by:" | sort -u)
           
-          # 각 PR의 리뷰어 정보 수집
-          for pr_number in $pr_numbers; do
-            reviews=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                     "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number/reviews")
-            
-            echo "$reviews" | jq -r '.[] | select(.state == "APPROVED") | .user.login' | while read reviewer; do
-              if [[ ! -z "$reviewer" ]] && [[ "$reviewer" != "null" ]] && \
-                 ! [[ "$reviewer" =~ ($BOT_GREP_PATTERN) ]]; then
-                if ! grep -q "@$reviewer" CONTRIBUTORS.md; then
-                  echo "- [@$reviewer](https://github.com/$reviewer) (Reviewer)" >> CONTRIBUTORS.md
-                fi
-              fi
-            done
-          done
+          # 중복 제거 및 정렬
+          sort -u -o CONTRIBUTORS.md{,}
+          
+          # 결과 확인
+          echo "Generated Contributors List:"
+          cat CONTRIBUTORS.md
 
       - name: Create Pull Request
         uses: somaz94/go-git-commit-action@v1
@@ -144,8 +109,10 @@ jobs:
             
             ### Changes
             - Updated CONTRIBUTORS.md with latest contributors
-            - Added PR reviewers and approvers
-            - Excluded bot accounts and automated systems
-            - Added GitHub profile links where available
+            - Added code contributors from git history
+            - Added PR contributors and reviewers
+            - Excluded bot accounts
+            - Removed duplicates
           github_token: ${{ secrets.PAT_TOKEN }}
           skip_if_empty: true
+          delete_source_branch: true
