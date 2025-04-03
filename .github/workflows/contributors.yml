@@ -1,45 +1,64 @@
-name: Contributors Report
+name: Update CONTRIBUTORS.md
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Generate changelog"]  # changelog-generator.yml의 name과 일치해야 함
+    workflows: ["Generate changelog"]
     types:
       - completed
 
 permissions:
-  contents: read
-  issues: write
+  contents: write
+  pull-requests: write
 
 jobs:
-  contributor_report:
-    name: contributor report
+  update_contributors:
+    name: Update Contributors
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get dates for last month
-        shell: bash
-        run: |
-          # 이전 달의 첫째 날
-          start_date=$(date -d "last month" +%Y-%m-01)
-          # 이전 달의 마지막 날
-          end_date=$(date -d "$start_date +1 month -1 day" +%Y-%m-%d)
-          
-          echo "START_DATE=$start_date" >> "$GITHUB_ENV"
-          echo "END_DATE=$end_date" >> "$GITHUB_ENV"
-
-      - name: Run contributor action
-        uses: github/contributors@v1
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          START_DATE: ${{ env.START_DATE }}
-          END_DATE: ${{ env.END_DATE }}
-          REPOSITORY: "${{ github.repository }}"  # 현재 레포지토리 자동 지정
-          SPONSOR_INFO: "true"
-
-      - name: Create issue
-        uses: peter-evans/create-issue-from-file@v5
+      - uses: actions/checkout@v4
         with:
-          title: Monthly contributor report
-          token: ${{ secrets.GITHUB_TOKEN }}
-          content-filepath: ./contributors.md
-          assignees: somaz94 
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Get contributors
+        run: |
+          {
+            echo "# Contributors"
+            echo ""
+            echo "Contributions are welcome! Please feel free to submit a Pull Request."
+            echo ""
+            echo "## Contributors List"
+            echo ""
+            echo "Thanks goes to these wonderful people:"
+            echo ""
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                 -H "Accept: application/vnd.github.v3+json" \
+                 "https://api.github.com/repos/${{ github.repository }}/contributors" | \
+            jq -r '.[] | select(.type != "Bot") | "- [@\(.login)](\(.html_url))"' | \
+            sort
+          } > CONTRIBUTORS.md
+
+      - name: Create Pull Request
+        uses: somaz94/go-git-commit-action@v1
+        with:
+          user_email: actions@github.com
+          user_name: GitHub Actions
+          create_pr: true
+          auto_branch: true
+          branch: main
+          pr_branch: main
+          pr_base: main
+          pr_title: "docs: update CONTRIBUTORS.md"
+          pr_body: |
+            ## CONTRIBUTORS.md Update
+            
+            This PR updates the contributors list in CONTRIBUTORS.md
+            
+            ### Changes
+            - Updated contributors list from GitHub API
+            - Excluded bot accounts
+            - Added profile links to contributors
+          pr_labels: "documentation"
+          github_token: ${{ secrets.PAT_TOKEN }}
+          file_pattern: "CONTRIBUTORS.md" 
+          delete_source_branch: true
