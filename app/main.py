@@ -14,6 +14,8 @@ class ActionRunner:
         self.include_root = os.getenv("INCLUDEROOT", "true")
         self.verbose = os.getenv("VERBOSE", "false").lower() == "true"
         self.fail_on_error = os.getenv("FAIL_ON_ERROR", "true").lower() == "true"
+        self.dest = os.getenv("DEST", "")
+        self.destfilename = os.getenv("DESTFILENAME", "")
 
     def validate_inputs(self) -> None:
         """Validate required inputs are provided and valid"""
@@ -41,6 +43,10 @@ class ActionRunner:
         print(f"  • Include Root: {self.include_root}")
         print(f"  • Verbose: {self.verbose}")
         print(f"  • Fail on Error: {self.fail_on_error}")
+        if self.dest:
+            print(f"  • Destination: {self.dest}")
+        if self.destfilename:
+            print(f"  • Destination Filename: {self.destfilename}")
 
     def run(self) -> None:
         """Run the appropriate action based on command"""

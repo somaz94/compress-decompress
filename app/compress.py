@@ -23,10 +23,14 @@ class Compressor(BaseProcessor):
         """Generate appropriate compression command based on format"""
         base_name = self.destfilename or os.path.basename(self.source)
         extension = f".{self.format}"
-        full_dest = os.path.join(
-            self.dest if self.include_root else self.source,
-            f"{base_name}{extension}"
-        )
+        
+        # dest가 지정된 경우 해당 경로 사용, 아니면 기본 동작 유지
+        if self.dest and self.dest != os.getcwd():
+            full_dest = os.path.join(self.dest, f"{base_name}{extension}")
+        else:
+            # 기존 동작 유지
+            output_dir = os.path.dirname(self.source) if self.include_root else self.source
+            full_dest = os.path.join(output_dir, f"{base_name}{extension}")
 
         if self.format == CompressionFormat.ZIP.value:
             return self._get_zip_command(full_dest, base_name)
