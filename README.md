@@ -48,7 +48,37 @@ its required inputs.
 
 ## Example Workflow
 
-<br/>
+### Custom Destination and Filename
+
+This example demonstrates how to use custom destination and filename options:
+
+```yaml
+name: Compress Files with Custom Path
+
+on: [push]
+
+jobs:
+  compress-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Compress Directory
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: ./data-folder
+          format: zip
+          dest: './custom_output'
+          destfilename: 'my_archive'
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compressed-data
+          path: ./custom_output/my_archive.zip
+```
 
 ### includeRoot: true(default)
 
@@ -205,6 +235,13 @@ jobs:
         format: [zip, tar, tgz, tbz2]
         include_root: [true, false]
         source: [test2]
+        dest_config:
+          - type: default
+            dest: ''
+            destfilename: ''
+          - type: custom
+            dest: 'custom_output'
+            destfilename: 'custom_archive'
       fail-fast: false
 
     steps:
@@ -224,6 +261,8 @@ jobs:
           source: './${{ matrix.source }}'
           format: ${{ matrix.format }}
           includeRoot: ${{ matrix.include_root }}
+          dest: ${{ matrix.dest_config.dest }}
+          destfilename: ${{ matrix.dest_config.destfilename }}
 
       - name: List Workspace Contents
         run: |
@@ -280,79 +319,144 @@ jobs:
 
 <br/>
 
-## Understanding IncludeRoot Option
+## Understanding Output Locations
 
-The `includeRoot` option controls how files are structured within the compressed archive:
+The location of the compressed file depends on several factors:
 
-<br/>
+1. **Default Behavior (no dest/destfilename specified)**:
+   - With `includeRoot: true`: `./source-folder.zip`
+   - With `includeRoot: false`: `./source-folder/source-folder.zip`
 
-### includeRoot: true (Default)
-- Creates the archive with the source folder as the root directory
-- Preserves the original directory structure
-- Example structure:
-  ```
-  data-folder.zip
-  └── data-folder/
-      ├── file1.txt
-      ├── file2.txt
-      └── subfolder/
-          └── file3.txt
-  ```
-- Output location: `./data-folder.zip`
+2. **Custom Destination**:
+   - When `dest` is specified: `{dest}/{destfilename or source-name}.{format}`
+   - Example: `./custom_output/my_archive.zip`
 
-<br/>
+3. **Custom Filename**:
+   - When `destfilename` is specified: Uses this name instead of the source folder name
+   - Example: `my_archive.zip` instead of `source-folder.zip`
 
-### includeRoot: false
-- Compresses only the contents of the source folder without the parent directory
-- Files are directly at the root of the archive
-- Example structure:
-  ```
-  data-folder.zip
-  ├── file1.txt
-  ├── file2.txt
-  └── subfolder/
-      └── file3.txt
-  ```
-- Output location: `./data-folder/data-folder.zip`
+## Additional Usage Examples
 
-<br/>
-
-### When to Use Each Option
-- Use `includeRoot: true` when you want to preserve the directory structure and need the parent folder name in the archive
-- Use `includeRoot: false` when you only want to compress the contents without the parent directory name
-
-<br/>
-
-## Advanced Usage Examples
-
-<br/>
-
-### 1. Error Handling with fail_on_error
-
+### 1. Basic Usage with Default Settings
 ```yaml
-- name: Compress with Error Handling
+- name: Compress Directory
   uses: somaz94/compress-decompress@v1
   with:
     command: compress
     source: ./data-folder
     format: zip
-    fail_on_error: 'false'  # Continue even if compression fails
-    verbose: 'true'         # Enable detailed logging
 ```
+Output: `./data-folder.zip`
 
-<br/>
-
-### 2. Debugging with Verbose Logging
-
+### 2. Custom Destination Directory
 ```yaml
-- name: Decompress with Verbose Output
+- name: Compress Directory
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./data-folder
+    format: zip
+    dest: './artifacts'
+```
+Output: `./artifacts/data-folder.zip`
+
+### 3. Custom Filename
+```yaml
+- name: Compress Directory
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./data-folder
+    format: zip
+    destfilename: 'backup-2024'
+```
+Output: `./backup-2024.zip`
+
+### 4. Custom Destination and Filename
+```yaml
+- name: Compress Directory
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./data-folder
+    format: zip
+    dest: './backups/2024'
+    destfilename: 'q1-backup'
+```
+Output: `./backups/2024/q1-backup.zip`
+
+### 5. Custom Path with includeRoot: false
+```yaml
+- name: Compress Directory
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./data-folder
+    format: zip
+    dest: './archives'
+    destfilename: 'files-only'
+    includeRoot: 'false'
+```
+Output: `./archives/files-only.zip` (without parent directory)
+
+### 6. Different Formats with Custom Paths
+```yaml
+- name: Create TGZ Archive
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./project
+    format: tgz
+    dest: './releases'
+    destfilename: 'project-v1.0'
+```
+Output: `./releases/project-v1.0.tgz`
+
+### 7. Decompression with Custom Path
+```yaml
+- name: Decompress Archive
   uses: somaz94/compress-decompress@v1
   with:
     command: decompress
-    source: ./archive.tgz
-    format: tgz
-    dest: './unpacked'
-    verbose: 'true'  # Show detailed progress and debug information
+    source: ./archives/backup.zip
+    format: zip
+    dest: './restored-files'
+```
+Output: Files will be extracted to `./restored-files/`
+
+### 8. Complete Workflow Example with Custom Paths
+```yaml
+name: Backup and Restore
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compress Project Files
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: ./src
+          format: tgz
+          dest: './backups'
+          destfilename: 'project-backup'
+          includeRoot: 'true'
+
+      - name: Upload Backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-backup
+          path: ./backups/project-backup.tgz
+
+      - name: Restore from Backup
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: decompress
+          source: ./backups/project-backup.tgz
+          format: tgz
+          dest: './restored'
 ```
 
 <br/>
@@ -424,4 +528,6 @@ This project is licensed under the [MIT License](LICENSE) file for details.
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+
 

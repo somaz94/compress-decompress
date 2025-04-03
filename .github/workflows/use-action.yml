@@ -24,16 +24,29 @@ jobs:
         format: [zip, tar, tgz, tbz2]
         include_root: [true, false]
         source: [test2]
+        dest_config:
+          - type: default
+            dest: ''
+            destfilename: ''
+          - type: custom
+            dest: 'custom_output'
+            destfilename: 'custom_archive'
       fail-fast: false
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create Test Files
+      - name: Create Test Files and Directories
         run: |
-          mkdir -p test2 test3
+          mkdir -p test2 test3 custom_output
           echo "Test content for test2" > test2/test2.txt
+          
+          echo "Created directories and files:"
+          ls -la test2/
+          if [ "${{ matrix.dest_config.type }}" = "custom" ]; then
+            ls -la ${{ matrix.dest_config.dest }}/
+          fi
 
       - name: Test Compression
         id: compress
@@ -43,6 +56,8 @@ jobs:
           source: './${{ matrix.source }}'
           format: ${{ matrix.format }}
           includeRoot: ${{ matrix.include_root }}
+          dest: ${{ matrix.dest_config.dest }}
+          destfilename: ${{ matrix.dest_config.destfilename }}
           verbose: 'true'
 
       - name: List Workspace Contents
@@ -52,14 +67,18 @@ jobs:
           echo "Source directory contents:"
           ls -la ./${{ matrix.source }}
 
-      # Set the correct source path based on includeRoot
+      # Set the correct source path based on configuration
       - name: Set Source Path
         id: set-path
         run: |
-          if [ "${{ matrix.include_root }}" = "true" ]; then
-            echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+          if [ "${{ matrix.dest_config.type }}" = "custom" ]; then
+            echo "source_path=${{ matrix.dest_config.dest }}/${{ matrix.dest_config.destfilename }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
           else
-            echo "source_path=./${{ matrix.source }}/${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+            if [ "${{ matrix.include_root }}" = "true" ]; then
+              echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+            else
+              echo "source_path=./${{ matrix.source }}/${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Upload Compressed Artifact
@@ -80,7 +99,7 @@ jobs:
 
       - name: Verify Contents
         run: |
-          echo "Verifying ${{ matrix.format }} format with includeRoot: ${{ matrix.include_root }}"
+          echo "Verifying ${{ matrix.format }} format with includeRoot: ${{ matrix.include_root }}, dest: ${{ matrix.dest_config.type }}"
           echo "Listing unpacked directory contents:"
           ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
           
