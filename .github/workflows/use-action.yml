@@ -84,7 +84,7 @@ jobs:
       - name: Upload Compressed Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compressed-${{ matrix.format }}-${{ matrix.source }}-root-${{ matrix.include_root }}
+          name: compressed-${{ matrix.format }}-${{ matrix.source }}-root-${{ matrix.include_root }}-dest-${{ matrix.dest_config.type }}
           path: ${{ steps.set-path.outputs.source_path }}
           if-no-files-found: error
 
