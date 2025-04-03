@@ -62,4 +62,3 @@ jobs:
           github_token: ${{ secrets.PAT_TOKEN }}
           file_pattern: "CONTRIBUTORS.md" 
           delete_source_branch: true
-          pr_closed: false
