@@ -61,14 +61,25 @@ jobs:
             
             # 이미 처리된 이메일인지 확인
             if [[ -z "${contributors[$email]}" ]]; then
+              # GitHub API로 사용자 검색
               user_info=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                          "https://api.github.com/search/users?q=$email+in:email")
               
               username=$(echo "$user_info" | jq -r '.items[0].login // empty')
+              
+              # GitHub API로 이메일로 사용자를 찾지 못한 경우 커밋 메시지에서 추출한 정보 사용
+              if [ -z "$username" ]; then
+                # PR 작성자 정보로 재시도
+                pr_author_info=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                               "https://api.github.com/search/users?q=$name")
+                username=$(echo "$pr_author_info" | jq -r '.items[0].login // empty')
+              fi
+
               if [ ! -z "$username" ] && ! [[ "$username" =~ ($BOT_GREP_PATTERN) ]]; then
                 echo "- [@$username](https://github.com/$username)" >> CONTRIBUTORS.md
               elif [ ! -z "$name" ] && ! [[ "$name" =~ ($BOT_GREP_PATTERN) ]]; then
-                echo "- $name" >> CONTRIBUTORS.md
+                # GitHub 사용자를 찾지 못한 경우 이름과 이메일 모두 표시
+                echo "- $name ($email)" >> CONTRIBUTORS.md
               fi
               
               # 처리된 이메일 기록
@@ -78,14 +89,23 @@ jobs:
                   grep -vE "$BOT_GREP_PATTERN" | \
                   sort -u)
 
+          # 추가로 PR 작성자도 수집
+          prs=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/${{ github.repository }}/pulls?state=all&per_page=100")
+          
+          echo "$prs" | jq -r '.[] | .user.login' | while read author; do
+            if [[ ! -z "$author" ]] && [[ "$author" != "null" ]] && \
+               ! [[ "$author" =~ ($BOT_GREP_PATTERN) ]]; then
+              if ! grep -q "@$author" CONTRIBUTORS.md; then
+                echo "- [@$author](https://github.com/$author)" >> CONTRIBUTORS.md
+              fi
+            fi
+          done
+
           # PR 리뷰어/승인자 수집
           echo "" >> CONTRIBUTORS.md
           echo "## Reviewers" >> CONTRIBUTORS.md
           echo "" >> CONTRIBUTORS.md
-          
-          # 모든 PR 정보 가져오기
-          prs=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/${{ github.repository }}/pulls?state=all&per_page=100")
           
           # PR 번호 추출
           pr_numbers=$(echo "$prs" | jq -r '.[].number')
