@@ -40,7 +40,10 @@ class Compressor(BaseProcessor):
         """Generate zip compression command"""
         source_path = os.path.abspath(self.source)
         if self.include_root:
-            return f"cd {os.path.dirname(source_path)} && zip -r {full_dest} {base_name}"
+            # source_path의 부모 디렉토리로 이동하고, 실제 디렉토리 이름을 사용
+            parent_dir = os.path.dirname(source_path)
+            dir_name = os.path.basename(source_path)
+            return f"cd {parent_dir} && zip -r {full_dest} {dir_name}"
         return f"cd {source_path} && zip -r {full_dest} ."
 
     def _get_tar_command(self, full_dest: str, base_name: str) -> str:
@@ -58,7 +61,10 @@ class Compressor(BaseProcessor):
         
         opt = tar_options.get(self.format, "")
         if self.include_root:
-            return f"tar -c{opt}f {full_dest} -C {os.path.dirname(source_path)} {base_name}"
+            # source_path의 부모 디렉토리로 이동하고, 실제 디렉토리 이름을 사용
+            parent_dir = os.path.dirname(source_path)
+            dir_name = os.path.basename(source_path)
+            return f"tar -c{opt}f {full_dest} -C {parent_dir} {dir_name}"
         return f"tar -c{opt}f {full_dest} -C {source_path} ."
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
