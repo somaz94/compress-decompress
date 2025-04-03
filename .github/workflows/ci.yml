@@ -172,7 +172,7 @@ jobs:
       # Case 3: Test destination and filename options
       - name: Create Test Directory for Dest Options
         run: |
-          mkdir -p test_dest_options
+          mkdir -p test_dest_options custom_output  # custom_output 디렉토리도 생성
           echo "Test content" > test_dest_options/test.txt
 
       - name: Test Custom Destination and Filename
@@ -182,19 +182,27 @@ jobs:
           command: 'compress'
           source: './test_dest_options'
           format: 'zip'
-          dest: './custom_output'        # 추가: 사용자 지정 출력 디렉토리
+          dest: './custom_output'
           destfilename: 'custom_archive'
           includeRoot: 'false'
           verbose: 'true'
+
+      - name: List Directories  # 디버깅을 위한 디렉토리 내용 출력
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Custom output directory contents:"
+          ls -la ./custom_output || echo "custom_output directory not found"
 
       - name: Verify Custom Destination and Filename
         run: |
           if [ -f "./custom_output/custom_archive.zip" ]; then
             echo "✅ Test passed: Archive created with custom destination and filename"
-            # 압축 파일 내용 확인
             unzip -l ./custom_output/custom_archive.zip
           else
             echo "❌ Test failed: Custom destination/filename archive not created"
+            pwd  # 현재 작업 디렉토리 출력
+            ls -la  # 현재 디렉토리 내용 출력
             exit 1
           fi
 

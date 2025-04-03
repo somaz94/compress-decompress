@@ -1,13 +1,10 @@
 name: Update Contributors
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/workflows/**'
-      - '**/*.md'
-      - 'backup/**'
+  workflow_run:
+    workflows: ["Generate changelog"]  # changelog-generator.yml의 name과 일치해야 함
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
