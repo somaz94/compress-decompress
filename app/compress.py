@@ -51,20 +51,23 @@ class Compressor(BaseProcessor):
             CompressionFormat.TBZ2.value: "j"
         }
         
+        source_path = os.path.abspath(self.source)
+        
         if self.format in [CompressionFormat.TGZ.value, CompressionFormat.TBZ2.value] and not self.include_root:
             return self._get_special_tar_command(full_dest, base_name, tar_options[self.format])
         
         opt = tar_options.get(self.format, "")
         if self.include_root:
-            return f"tar -c{opt}f {full_dest} -C {os.path.dirname(self.source)} {base_name}"
-        return f"tar -c{opt}f {full_dest} -C {self.source} ."
+            return f"tar -c{opt}f {full_dest} -C {os.path.dirname(source_path)} {base_name}"
+        return f"tar -c{opt}f {full_dest} -C {source_path} ."
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
         """Generate special tar command for TGZ/TBZ2 formats without root"""
-        temp_dir = os.path.join(os.path.dirname(self.source), f"temp_{base_name}_{self.format}")
+        source_path = os.path.abspath(self.source)
+        temp_dir = os.path.join(os.path.dirname(source_path), f"temp_{base_name}_{self.format}")
         return f"""
             mkdir -p {temp_dir} &&
-            cp -r {self.source}/* {temp_dir}/ &&
+            cp -r {source_path}/* {temp_dir}/ &&
             tar -c{opt}f {full_dest} -C {temp_dir} . &&
             rm -rf {temp_dir}
         """
