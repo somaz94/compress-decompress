@@ -24,9 +24,9 @@ class Compressor(BaseProcessor):
         base_name = self.destfilename or os.path.basename(self.source)
         extension = f".{self.format}"
         
-        # dest가 지정된 경우 해당 경로 사용, 아니면 기본 동작 유지
+        # dest가 지정된 경우 절대 경로로 변환
         if self.dest and self.dest != os.getcwd():
-            full_dest = os.path.join(self.dest, f"{base_name}{extension}")
+            full_dest = os.path.abspath(os.path.join(self.dest, f"{base_name}{extension}"))
         else:
             # 기존 동작 유지
             output_dir = os.path.dirname(self.source) if self.include_root else self.source
@@ -38,9 +38,10 @@ class Compressor(BaseProcessor):
 
     def _get_zip_command(self, full_dest: str, base_name: str) -> str:
         """Generate zip compression command"""
+        source_path = os.path.abspath(self.source)
         if self.include_root:
-            return f"cd {os.path.dirname(self.source)} && zip -r {full_dest} {base_name}"
-        return f"cd {self.source} && zip -r {full_dest} ."
+            return f"cd {os.path.dirname(source_path)} && zip -r {full_dest} {base_name}"
+        return f"cd {source_path} && zip -r {full_dest} ."
 
     def _get_tar_command(self, full_dest: str, base_name: str) -> str:
         """Generate tar compression command"""

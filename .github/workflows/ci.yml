@@ -238,3 +238,62 @@ jobs:
             echo "❌ Test failed: Decompression failed or file missing"
             exit 1
           fi
+
+
+      # Case 5: Test custom destination and decompression
+      - name: Create Test Files for Decompression
+        run: |
+          mkdir -p source_files custom_output decompressed_output
+          echo "Test content 1" > source_files/test1.txt
+          echo "Test content 2" > source_files/test2.txt
+          
+          echo "Created test files:"
+          ls -la source_files/
+
+      - name: Test Compression with Custom Path
+        id: compress_test
+        uses: ./
+        with:
+          command: 'compress'
+          source: './source_files'
+          format: 'zip'
+          dest: './custom_output'
+          destfilename: 'test_archive'
+          includeRoot: 'false'
+          verbose: 'true'
+
+      - name: Verify Compression Result
+        run: |
+          if [ -f "./custom_output/test_archive.zip" ]; then
+            echo "✅ Test passed: Archive created at custom destination"
+            unzip -l ./custom_output/test_archive.zip
+          else
+            echo "❌ Test failed: Archive not found at custom destination"
+            echo "Contents of custom_output:"
+            ls -la ./custom_output/
+            exit 1
+          fi
+
+      - name: Test Decompression with Custom Path
+        id: decompress_test
+        uses: ./
+        with:
+          command: 'decompress'
+          source: './custom_output/test_archive.zip'
+          format: 'zip'
+          dest: './decompressed_output'
+          verbose: 'true'
+
+      - name: Verify Decompression Result
+        run: |
+          if [ -f "./decompressed_output/test1.txt" ] && [ -f "./decompressed_output/test2.txt" ]; then
+            echo "✅ Test passed: Files decompressed to custom destination"
+            echo "Content verification:"
+            cat "./decompressed_output/test1.txt"
+            cat "./decompressed_output/test2.txt"
+          else
+            echo "❌ Test failed: Decompression verification failed"
+            echo "Contents of decompressed_output:"
+            ls -la ./decompressed_output/
+            exit 1
+          fi
