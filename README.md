@@ -80,6 +80,8 @@ jobs:
           path: ./custom_output/my_archive.zip
 ```
 
+<br/>
+
 ### includeRoot: true(default)
 
 This example demonstrates how to use the Compress-Decompress action to compress
@@ -335,7 +337,11 @@ The location of the compressed file depends on several factors:
    - When `destfilename` is specified: Uses this name instead of the source folder name
    - Example: `my_archive.zip` instead of `source-folder.zip`
 
+<br/>
+
 ## Additional Usage Examples
+
+<br/>
 
 ### 1. Basic Usage with Default Settings
 ```yaml
@@ -347,6 +353,8 @@ The location of the compressed file depends on several factors:
     format: zip
 ```
 Output: `./data-folder.zip`
+
+<br/>
 
 ### 2. Custom Destination Directory
 ```yaml
@@ -360,6 +368,8 @@ Output: `./data-folder.zip`
 ```
 Output: `./artifacts/data-folder.zip`
 
+<br/>
+
 ### 3. Custom Filename
 ```yaml
 - name: Compress Directory
@@ -371,6 +381,8 @@ Output: `./artifacts/data-folder.zip`
     destfilename: 'backup-2024'
 ```
 Output: `./backup-2024.zip`
+
+<br/>
 
 ### 4. Custom Destination and Filename
 ```yaml
@@ -384,6 +396,8 @@ Output: `./backup-2024.zip`
     destfilename: 'q1-backup'
 ```
 Output: `./backups/2024/q1-backup.zip`
+
+<br/>
 
 ### 5. Custom Path with includeRoot: false
 ```yaml
@@ -399,6 +413,8 @@ Output: `./backups/2024/q1-backup.zip`
 ```
 Output: `./archives/files-only.zip` (without parent directory)
 
+<br/>
+
 ### 6. Different Formats with Custom Paths
 ```yaml
 - name: Create TGZ Archive
@@ -412,6 +428,8 @@ Output: `./archives/files-only.zip` (without parent directory)
 ```
 Output: `./releases/project-v1.0.tgz`
 
+<br/>
+
 ### 7. Decompression with Custom Path
 ```yaml
 - name: Decompress Archive
@@ -423,6 +441,8 @@ Output: `./releases/project-v1.0.tgz`
     dest: './restored-files'
 ```
 Output: Files will be extracted to `./restored-files/`
+
+<br/>
 
 ### 8. Complete Workflow Example with Custom Paths
 ```yaml
@@ -483,6 +503,8 @@ jobs:
    - Ensure proper file permissions
    - Check workspace directory permissions
    - Verify user/group access rights
+
+<br/>
 
 ### Logging and Debugging
 
