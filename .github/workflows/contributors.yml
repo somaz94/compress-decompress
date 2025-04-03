@@ -2,7 +2,7 @@ name: Update CONTRIBUTORS.md
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Generate changelog"]
+    workflows: ["Create release"]  # release.yml의 name과 일치해야 함
     types:
       - completed
 
