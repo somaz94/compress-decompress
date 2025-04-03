@@ -168,3 +168,48 @@ jobs:
             echo "❌ Test failed: Action failed with empty directory"
             exit 1
           fi
+
+      # Case 3: Test destfilename functionality
+      - name: Create Test Directory for Destfilename
+        run: |
+          mkdir -p test_destname
+          echo "Test content" > test_destname/test.txt
+
+      - name: Test Custom Destination Filename
+        id: test_destname
+        uses: ./
+        with:
+          command: 'compress'
+          source: './test_destname'
+          format: 'zip'
+          destfilename: 'custom_archive'
+          verbose: 'true'
+
+      - name: Verify Custom Filename
+        run: |
+          if [ -f "custom_archive.zip" ]; then
+            echo "✅ Test passed: Archive created with custom filename"
+            # 압축 해제하여 내용 확인
+            unzip -l custom_archive.zip
+          else
+            echo "❌ Test failed: Custom filename archive not created"
+            exit 1
+          fi
+
+      - name: Test Decompression with Custom Filename
+        uses: ./
+        with:
+          command: 'decompress'
+          source: './custom_archive.zip'
+          format: 'zip'
+          dest: './unpacked_custom'
+
+      - name: Verify Decompressed Contents
+        run: |
+          if [ -f "./unpacked_custom/test.txt" ]; then
+            echo "✅ Test passed: Successfully decompressed custom named archive"
+            cat "./unpacked_custom/test.txt"
+          else
+            echo "❌ Test failed: Decompression failed or file missing"
+            exit 1
+          fi
