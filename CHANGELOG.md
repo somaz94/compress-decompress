@@ -1,8 +1,12 @@
 # Changelog
 
-## [v1.3.1](https://github.com/somaz94/compress-decompress/tree/v1.3.1) (2025-04-03)
+## [v1.4.0](https://github.com/somaz94/compress-decompress/tree/v1.4.0) (2025-04-03)
 
-[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.3.1...v1.3.1)
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.3.1...v1.4.0)
+
+**Closed issues:**
+
+- Monthly contributor report [\#22](https://github.com/somaz94/compress-decompress/issues/22)
 
 **Merged pull requests:**
 
