@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.3.1](https://github.com/somaz94/compress-decompress/tree/v1.3.1) (2025-04-03)
+
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.3.1...v1.3.1)
+
+**Merged pull requests:**
+
+- Added destfilename parameter [\#9](https://github.com/somaz94/compress-decompress/pull/9) ([fgrande](https://github.com/fgrande))
+
 ## [v1.3.1](https://github.com/somaz94/compress-decompress/tree/v1.3.1) (2025-03-04)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.3.0...v1.3.1)
