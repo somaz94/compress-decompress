@@ -96,8 +96,8 @@ jobs:
         run: |
           echo "Compression output for ${{ matrix.format }} (includeRoot: ${{ matrix.include_root }}): ${{ steps.compress.outputs.file_path }}"
 
-  test-error-handling:
-    name: Test Error Handling
+  test-features-and-errors:
+    name: Test Features and Error Handling
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -169,45 +169,47 @@ jobs:
             exit 1
           fi
 
-      # Case 3: Test destfilename functionality
-      - name: Create Test Directory for Destfilename
+      # Case 3: Test destination and filename options
+      - name: Create Test Directory for Dest Options
         run: |
-          mkdir -p test_destname
-          echo "Test content" > test_destname/test.txt
+          mkdir -p test_dest_options
+          echo "Test content" > test_dest_options/test.txt
 
-      - name: Test Custom Destination Filename
-        id: test_destname
+      - name: Test Custom Destination and Filename
+        id: test_dest_options
         uses: ./
         with:
           command: 'compress'
-          source: './test_destname'
+          source: './test_dest_options'
           format: 'zip'
+          dest: './custom_output'        # 추가: 사용자 지정 출력 디렉토리
           destfilename: 'custom_archive'
+          includeRoot: 'false'
           verbose: 'true'
 
-      - name: Verify Custom Filename
+      - name: Verify Custom Destination and Filename
         run: |
-          if [ -f "custom_archive.zip" ]; then
-            echo "✅ Test passed: Archive created with custom filename"
-            # 압축 해제하여 내용 확인
-            unzip -l custom_archive.zip
+          if [ -f "./custom_output/custom_archive.zip" ]; then
+            echo "✅ Test passed: Archive created with custom destination and filename"
+            # 압축 파일 내용 확인
+            unzip -l ./custom_output/custom_archive.zip
           else
-            echo "❌ Test failed: Custom filename archive not created"
+            echo "❌ Test failed: Custom destination/filename archive not created"
             exit 1
           fi
 
-      - name: Test Decompression with Custom Filename
+      - name: Test Decompression with Custom Path
         uses: ./
         with:
           command: 'decompress'
-          source: './custom_archive.zip'
+          source: './custom_output/custom_archive.zip'
           format: 'zip'
           dest: './unpacked_custom'
 
       - name: Verify Decompressed Contents
         run: |
           if [ -f "./unpacked_custom/test.txt" ]; then
-            echo "✅ Test passed: Successfully decompressed custom named archive"
+            echo "✅ Test passed: Successfully decompressed custom path archive"
             cat "./unpacked_custom/test.txt"
           else
             echo "❌ Test failed: Decompression failed or file missing"
