@@ -17,10 +17,11 @@ class Compressor(BaseProcessor):
 
     def validate(self) -> bool:
         """Validate source path exists"""
-        # 경로의 앞뒤 공백을 제거
+        # Strip leading/trailing whitespace from path
         self.source = self.source.strip()
         
-        # GitHub Actions runner 경로를 Docker 컨테이너 경로로 변환
+        # Convert GitHub Actions runner path to Docker container path
+        # Example: /home/runner/work/repo/repo -> /github/workspace
         if self.source.startswith('/home/runner/work/'):
             repo_path = '/'.join(self.source.split('/')[-2:])  # 'compress-decompress/compress-decompress'
             self.source = f'/github/workspace'
@@ -32,11 +33,11 @@ class Compressor(BaseProcessor):
         base_name = self.destfilename or os.path.basename(self.source)
         extension = f".{self.format}"
         
-        # dest가 지정된 경우 절대 경로로 변환
+        # Convert destination path to absolute path if specified
         if self.dest and self.dest != os.getcwd():
             full_dest = os.path.abspath(os.path.join(self.dest, f"{base_name}{extension}"))
         else:
-            # 기존 동작 유지
+            # Maintain existing behavior for output directory
             output_dir = os.path.dirname(self.source) if self.include_root else self.source
             full_dest = os.path.join(output_dir, f"{base_name}{extension}")
 
@@ -48,15 +49,17 @@ class Compressor(BaseProcessor):
         """Generate zip compression command"""
         source_path = os.path.abspath(self.source)
         
-        # GitHub Actions 환경에서 경로 처리
+        # Handle GitHub Actions environment path
+        # Convert /github/workspace to actual working directory if needed
         if source_path == '/github/workspace':
-            # 실제 작업 디렉토리로 변경
             source_path = os.getcwd()
         
         if self.include_root:
+            # Include the root directory in the archive
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
             return f"cd {parent_dir} && zip -r {full_dest} {dir_name}"
+        # Archive contents only, without root directory
         return f"cd {source_path} && zip -r {full_dest} ."
 
     def _get_tar_command(self, full_dest: str, base_name: str) -> str:
@@ -69,24 +72,29 @@ class Compressor(BaseProcessor):
         
         source_path = os.path.abspath(self.source)
         
-        # GitHub Actions 환경에서 경로 처리
+        # Handle GitHub Actions environment path
+        # Convert /github/workspace to actual working directory if needed
         if source_path == '/github/workspace':
             source_path = os.getcwd()
         
+        # Special handling for TGZ/TBZ2 formats when not including root
         if self.format in [CompressionFormat.TGZ.value, CompressionFormat.TBZ2.value] and not self.include_root:
             return self._get_special_tar_command(full_dest, base_name, tar_options[self.format])
         
         opt = tar_options.get(self.format, "")
         if self.include_root:
+            # Include the root directory in the archive
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
             return f"tar -c{opt}f {full_dest} -C {parent_dir} {dir_name}"
+        # Archive contents only, without root directory
         return f"tar -c{opt}f {full_dest} -C {source_path} ."
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
         """Generate special tar command for TGZ/TBZ2 formats without root"""
         source_path = os.path.abspath(self.source)
         temp_dir = os.path.join(os.path.dirname(source_path), f"temp_{base_name}_{self.format}")
+        # Create temporary directory, copy files, create archive, then cleanup
         return f"""
             mkdir -p {temp_dir} &&
             cp -r {source_path}/* {temp_dir}/ &&

@@ -65,7 +65,7 @@ class BaseProcessor:
 
     def validate_path(self, path: str, error_prefix: str = "Path") -> bool:
         """Validate that a path exists"""
-        # 경로의 앞뒤 공백을 제거
+        # Remove the front and back spaces of the path
         path = path.strip()
         if not os.path.exists(path):
             error_msg = f"{error_prefix} '{path}' does not exist"
@@ -187,20 +187,20 @@ class FileUtils:
     @staticmethod
     def adjust_path(path: str) -> str:
         """Convert relative path to absolute path"""
-        # 앞뒤 공백 제거
+        # Strip leading/trailing whitespace
         path = path.strip()
         
-        # 이미 절대 경로면 그대로 반환
+        # If the path is already absolute, return it as is
         if os.path.isabs(path):
             return path
             
-        # GITHUB_WORKSPACE 환경변수 확인
+        # Check the GITHUB_WORKSPACE environment variable
         github_workspace = os.getenv("GITHUB_WORKSPACE")
         if github_workspace:
-            # GITHUB_WORKSPACE가 설정되어 있으면 해당 경로 기준으로 절대 경로 생성
+            # If GITHUB_WORKSPACE is set, create an absolute path based on it
             return os.path.abspath(os.path.join(github_workspace, path))
             
-        # GITHUB_WORKSPACE가 없으면 현재 디렉토리 기준으로 절대 경로 생성
+        # If GITHUB_WORKSPACE is not set, create an absolute path based on the current directory
         return os.path.abspath(os.path.join(os.getcwd(), path))
 
 class UI:
