@@ -413,3 +413,113 @@ jobs:
             echo "❌ No root extraction failed"
             exit 1
           fi
+
+  test-github-workspace-paths:
+    name: Test GitHub Workspace Path Variants
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Test Files
+        run: |
+          echo "Test content 1" > test1.txt
+          echo "Test content 2" > test2.txt
+          mkdir -p subdir
+          echo "Subdir content" > subdir/test3.txt
+          
+          echo "Created test files:"
+          ls -la
+          ls -la subdir/
+
+      # Case 1: Direct github.workspace variable
+      - name: Test Direct Workspace Path
+        id: test_direct
+        uses: ./
+        with:
+          command: compress
+          source: ${{ github.workspace }}
+          format: zip
+          dest: './output1'
+          destfilename: 'direct_workspace'
+          verbose: 'true'
+          includeRoot: 'false'
+
+      # Case 2: Workspace path with space
+      - name: Test Workspace Path with Space
+        id: test_with_space
+        uses: ./
+        with:
+          command: compress
+          source: ' ${{ github.workspace }}'
+          format: zip
+          dest: './output2'
+          destfilename: 'space_workspace'
+          verbose: 'true'
+          includeRoot: 'false'
+
+      # Verify both archives
+      - name: Verify Compression Results
+        run: |
+          echo "Checking output directories contents:"
+          ls -la ./output1/
+          ls -la ./output2/
+          
+          # Test direct case
+          if [ -f "./output1/direct_workspace.zip" ]; then
+            echo "✅ Direct workspace compression successful"
+            unzip -l ./output1/direct_workspace.zip
+          else
+            echo "❌ Direct workspace compression failed"
+            exit 1
+          fi
+          
+          # Test space case
+          if [ -f "./output2/space_workspace.zip" ]; then
+            echo "✅ Space workspace compression successful"
+            unzip -l ./output2/space_workspace.zip
+          else
+            echo "❌ Space workspace compression failed"
+            exit 1
+          fi
+
+      # Test decompression for both cases
+      - name: Test Decompression (Direct)
+        uses: ./
+        with:
+          command: decompress
+          source: ./output1/direct_workspace.zip
+          format: zip
+          dest: './extracted_direct'
+          verbose: 'true'
+
+      - name: Test Decompression (Space)
+        uses: ./
+        with:
+          command: decompress
+          source: ./output2/space_workspace.zip
+          format: zip
+          dest: './extracted_space'
+          verbose: 'true'
+
+      - name: Verify Decompression Results
+        run: |
+          echo "Checking extracted contents (Direct):"
+          ls -la ./extracted_direct/
+          
+          echo "Checking extracted contents (Space):"
+          ls -la ./extracted_space/
+          
+          # Verify file contents for both cases
+          for dir in "./extracted_direct" "./extracted_space"; do
+            if [ -f "$dir/test1.txt" ] && [ -f "$dir/test2.txt" ] && [ -f "$dir/subdir/test3.txt" ]; then
+              echo "✅ Extraction verified for $dir"
+              echo "Contents of test files:"
+              cat "$dir/test1.txt"
+              cat "$dir/test2.txt"
+              cat "$dir/subdir/test3.txt"
+            else
+              echo "❌ Extraction failed for $dir"
+              exit 1
+            fi
+          done

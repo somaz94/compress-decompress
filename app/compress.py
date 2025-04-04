@@ -39,8 +39,13 @@ class Compressor(BaseProcessor):
     def _get_zip_command(self, full_dest: str, base_name: str) -> str:
         """Generate zip compression command"""
         source_path = os.path.abspath(self.source)
+        
+        # GitHub Actions 환경에서 경로 처리
+        if source_path == '/github/workspace':
+            # 실제 작업 디렉토리로 변경
+            source_path = os.getcwd()
+        
         if self.include_root:
-            # source_path의 부모 디렉토리로 이동하고, 실제 디렉토리 이름을 사용
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
             return f"cd {parent_dir} && zip -r {full_dest} {dir_name}"
@@ -56,12 +61,15 @@ class Compressor(BaseProcessor):
         
         source_path = os.path.abspath(self.source)
         
+        # GitHub Actions 환경에서 경로 처리
+        if source_path == '/github/workspace':
+            source_path = os.getcwd()
+        
         if self.format in [CompressionFormat.TGZ.value, CompressionFormat.TBZ2.value] and not self.include_root:
             return self._get_special_tar_command(full_dest, base_name, tar_options[self.format])
         
         opt = tar_options.get(self.format, "")
         if self.include_root:
-            # source_path의 부모 디렉토리로 이동하고, 실제 디렉토리 이름을 사용
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
             return f"tar -c{opt}f {full_dest} -C {parent_dir} {dir_name}"
