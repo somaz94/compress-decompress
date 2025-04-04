@@ -188,17 +188,34 @@ class FileUtils:
         # 앞뒤 공백 제거
         path = path.strip()
         
-        # 이미 절대 경로면 그대로 반환
+        # GitHub Actions의 두 가지 경로 형식 처리
+        if path.startswith('/github/workspace'):
+            # Docker 컨테이너 내부 경로를 실제 러너 경로로 변환
+            runner_workspace = os.getenv("RUNNER_WORKSPACE", "")
+            if runner_workspace:
+                repo_name = os.getenv("GITHUB_REPOSITORY", "").split('/')[-1]
+                return path.replace('/github/workspace', 
+                                 os.path.join(runner_workspace, repo_name))
+            
+        elif path.startswith('/home/runner/work/'):
+            # 이미 러너 경로면 그대로 사용
+            return path
+            
+        # 상대 경로나 다른 절대 경로 처리
         if os.path.isabs(path):
             return path
             
         # GITHUB_WORKSPACE 환경변수 확인
-        github_workspace = os.getenv("GITHUB_WORKSPACE")
+        github_workspace = os.getenv("GITHUB_WORKSPACE", "")
         if github_workspace:
-            # GITHUB_WORKSPACE가 설정되어 있으면 해당 경로 기준으로 절대 경로 생성
-            return os.path.abspath(os.path.join(github_workspace, path))
-            
-        # GITHUB_WORKSPACE가 없으면 현재 디렉토리 기준으로 절대 경로 생성
+            # GitHub Actions 환경에서는 러너 경로 사용
+            runner_workspace = os.getenv("RUNNER_WORKSPACE", "")
+            if runner_workspace:
+                repo_name = os.getenv("GITHUB_REPOSITORY", "").split('/')[-1]
+                base_path = os.path.join(runner_workspace, repo_name)
+                return os.path.abspath(os.path.join(base_path, path))
+                
+        # 기본값: 현재 디렉토리 기준
         return os.path.abspath(os.path.join(os.getcwd(), path))
 
 class UI:
