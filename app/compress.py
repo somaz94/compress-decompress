@@ -17,8 +17,14 @@ class Compressor(BaseProcessor):
 
     def validate(self) -> bool:
         """Validate source path exists"""
-        # 경로의 앞뒤 공백을 제거하고 검증
+        # 경로의 앞뒤 공백을 제거
         self.source = self.source.strip()
+        
+        # GitHub Actions runner 경로를 Docker 컨테이너 경로로 변환
+        if self.source.startswith('/home/runner/work/'):
+            repo_path = '/'.join(self.source.split('/')[-2:])  # 'compress-decompress/compress-decompress'
+            self.source = f'/github/workspace'
+        
         return self.validate_path(self.source, "Source path")
 
     def get_compression_command(self) -> str:
