@@ -185,12 +185,21 @@ class FileUtils:
     @staticmethod
     def adjust_path(path: str) -> str:
         """Convert relative path to absolute path"""
+        # 앞뒤 공백 제거
+        path = path.strip()
+        
+        # 이미 절대 경로면 그대로 반환
         if os.path.isabs(path):
             return path
-        return os.path.join(
-            os.getenv("GITHUB_WORKSPACE", os.getcwd()),
-            path
-        )
+            
+        # GITHUB_WORKSPACE 환경변수 확인
+        github_workspace = os.getenv("GITHUB_WORKSPACE")
+        if github_workspace:
+            # GITHUB_WORKSPACE가 설정되어 있으면 해당 경로 기준으로 절대 경로 생성
+            return os.path.abspath(os.path.join(github_workspace, path))
+            
+        # GITHUB_WORKSPACE가 없으면 현재 디렉토리 기준으로 절대 경로 생성
+        return os.path.abspath(os.path.join(os.getcwd(), path))
 
 class UI:
     """User interface utilities"""
