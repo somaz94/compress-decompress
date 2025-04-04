@@ -4,6 +4,8 @@ on:
   #   types: [created, edited, published]
   pull_request:
     types: [closed]
+  issues:
+    types: [closed]
   workflow_run:
     workflows: ["Create release"]  # release.yml의 name과 일치해야 함
     types:
