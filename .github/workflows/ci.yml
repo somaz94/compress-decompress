@@ -398,14 +398,15 @@ jobs:
           echo "Checking extracted contents (No Root):"
           ls -la ./extracted_no_root/
           
-          # Verify file contents
-          if [ -f "./extracted_default/test.txt" ] && [ -f "./extracted_default/subdir/subdir.txt" ]; then
+          # Verify file contents for default case (with workspace directory)
+          if [ -f "./extracted_default/workspace/test.txt" ] && [ -f "./extracted_default/workspace/subdir/subdir.txt" ]; then
             echo "✅ Default extraction verified"
           else
             echo "❌ Default extraction failed"
             exit 1
           fi
           
+          # Verify file contents for no root case (files directly in directory)
           if [ -f "./extracted_no_root/test.txt" ] && [ -f "./extracted_no_root/subdir/subdir.txt" ]; then
             echo "✅ No root extraction verified"
           else

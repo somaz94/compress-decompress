@@ -189,3 +189,111 @@ jobs:
             echo "❌ Test failed: Action failed with empty directory"
             exit 1
           fi
+
+  test-github-workspace:
+    name: Test GitHub Workspace Path
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Test Files
+        run: |
+          echo "Test content" > test.txt
+          mkdir -p subdir
+          echo "Subdir content" > subdir/subdir.txt
+          echo "Created test files:"
+          ls -la
+          ls -la subdir/
+
+      # Case 1: GitHub Workspace with default settings
+      - name: Test GitHub Workspace Path (Default)
+        id: test_workspace_default
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: ${{ github.workspace }}
+          format: zip
+          dest: './output'
+          destfilename: 'workspace_default'
+          verbose: 'true'
+
+      # Case 2: GitHub Workspace with includeRoot false
+      - name: Test GitHub Workspace Path (No Root)
+        id: test_workspace_no_root
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: ${{ github.workspace }}
+          format: zip
+          includeRoot: 'false'
+          dest: './output'
+          destfilename: 'workspace_no_root'
+          verbose: 'true'
+
+      # Verify the results
+      - name: Verify Compression Results
+        run: |
+          echo "Checking output directory contents:"
+          ls -la ./output/
+          
+          # Test default case
+          if [ -f "./output/workspace_default.zip" ]; then
+            echo "✅ Default workspace compression successful"
+            unzip -l ./output/workspace_default.zip
+          else
+            echo "❌ Default workspace compression failed"
+            exit 1
+          fi
+          
+          # Test no root case
+          if [ -f "./output/workspace_no_root.zip" ]; then
+            echo "✅ No root workspace compression successful"
+            unzip -l ./output/workspace_no_root.zip
+          else
+            echo "❌ No root workspace compression failed"
+            exit 1
+          fi
+
+      # Test decompression
+      - name: Test Decompression (Default)
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: decompress
+          source: ./output/workspace_default.zip
+          format: zip
+          dest: './extracted_default'
+          verbose: 'true'
+
+      - name: Test Decompression (No Root)
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: decompress
+          source: ./output/workspace_no_root.zip
+          format: zip
+          dest: './extracted_no_root'
+          verbose: 'true'
+
+      - name: Verify Decompression Results
+        run: |
+          echo "Checking extracted contents (Default):"
+          ls -la ./extracted_default/
+          
+          echo "Checking extracted contents (No Root):"
+          ls -la ./extracted_no_root/
+          
+          # Verify file contents for default case (with workspace directory)
+          if [ -f "./extracted_default/workspace/test.txt" ] && [ -f "./extracted_default/workspace/subdir/subdir.txt" ]; then
+            echo "✅ Default extraction verified"
+          else
+            echo "❌ Default extraction failed"
+            exit 1
+          fi
+          
+          # Verify file contents for no root case (files directly in directory)
+          if [ -f "./extracted_no_root/test.txt" ] && [ -f "./extracted_no_root/subdir/subdir.txt" ]; then
+            echo "✅ No root extraction verified"
+          else
+            echo "❌ No root extraction failed"
+            exit 1
+          fi
