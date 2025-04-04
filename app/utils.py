@@ -65,6 +65,8 @@ class BaseProcessor:
 
     def validate_path(self, path: str, error_prefix: str = "Path") -> bool:
         """Validate that a path exists"""
+        # 경로의 앞뒤 공백을 제거
+        path = path.strip()
         if not os.path.exists(path):
             error_msg = f"{error_prefix} '{path}' does not exist"
             if self.fail_on_error:

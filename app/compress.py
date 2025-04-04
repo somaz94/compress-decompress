@@ -17,6 +17,8 @@ class Compressor(BaseProcessor):
 
     def validate(self) -> bool:
         """Validate source path exists"""
+        # 경로의 앞뒤 공백을 제거하고 검증
+        self.source = self.source.strip()
         return self.validate_path(self.source, "Source path")
 
     def get_compression_command(self) -> str:
