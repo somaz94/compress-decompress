@@ -431,14 +431,14 @@ jobs:
           format: zip
           verbose: 'true'
           includeRoot: 'false'
-          dest: '/tmp'
+          dest: './tmp'
           destfilename: test1
 
       # 다음 스텝에서 파일 존재 확인
       - name: Check /tmp after first compression
         run: |
           echo "Checking /tmp after compression without space:"
-          ls -la /tmp/test1.zip || echo "File not found in /tmp"
+          ls -la ./tmp/test1.zip || echo "File not found in /tmp"
 
       # Fabio의 두 번째 케이스: 공백 있는 경우
       - name: Test Compression with space
@@ -450,20 +450,20 @@ jobs:
           format: zip
           verbose: 'true'
           includeRoot: 'false'
-          dest: '/tmp'
+          dest: './tmp'
           destfilename: test2
 
       # 다음 스텝에서 파일 존재 확인
       - name: Check /tmp after second compression
         run: |
           echo "Checking /tmp after compression with space:"
-          ls -la /tmp/test2.zip || echo "File not found in /tmp"
+          ls -la ./tmp/test2.zip || echo "File not found in /tmp"
 
       # 결과 요약
       - name: Summarize results
         run: |
           echo "=== Test Results ==="
           echo "Test 1 (no space):"
-          ls -la /tmp/test1.zip 2>/dev/null && echo "✅ File exists" || echo "❌ File not found"
+          ls -la ./tmp/test1.zip 2>/dev/null && echo "✅ File exists" || echo "❌ File not found"
           echo "Test 2 (with space):"
-          ls -la /tmp/test2.zip 2>/dev/null && echo "✅ File exists" || echo "❌ File not found"
+          ls -la ./tmp/test2.zip 2>/dev/null && echo "✅ File exists" || echo "❌ File not found"
