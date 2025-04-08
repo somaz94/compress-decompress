@@ -407,3 +407,67 @@ jobs:
               exit 1
             fi
           done
+
+  test-tmp-path:
+    name: Test Tmp Directory Path
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Test Files
+        run: |
+          echo "Test content" > test.txt
+          mkdir -p subdir
+          echo "Subdir content" > subdir/subdir.txt
+          echo "Created test files:"
+          ls -la
+
+      - name: Test Compression to /tmp
+        id: compress_tmp
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: ${{ github.workspace }}
+          format: zip
+          dest: '/tmp'
+          destfilename: 'test_archive'
+          verbose: 'true'
+          includeRoot: 'false'
+
+      - name: Verify Tmp Archive
+        run: |
+          echo "Checking /tmp contents:"
+          ls -la /tmp/test_archive.zip
+          
+          if [ -f "/tmp/test_archive.zip" ]; then
+            echo "✅ Compression to /tmp successful"
+            unzip -l /tmp/test_archive.zip
+          else
+            echo "❌ Compression to /tmp failed"
+            exit 1
+          fi
+
+      - name: Test Decompression from /tmp
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: decompress
+          source: /tmp/test_archive.zip
+          format: zip
+          dest: './extracted_from_tmp'
+          verbose: 'true'
+
+      - name: Verify Decompression Results
+        run: |
+          echo "Checking extracted contents:"
+          ls -la ./extracted_from_tmp/
+          
+          if [ -f "./extracted_from_tmp/test.txt" ] && [ -f "./extracted_from_tmp/subdir/subdir.txt" ]; then
+            echo "✅ Extraction verified"
+            echo "Contents of test files:"
+            cat "./extracted_from_tmp/test.txt"
+            cat "./extracted_from_tmp/subdir/subdir.txt"
+          else
+            echo "❌ Extraction failed"
+            exit 1
+          fi
