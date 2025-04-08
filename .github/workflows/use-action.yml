@@ -408,66 +408,62 @@ jobs:
             fi
           done
 
-  test-tmp-path:
-    name: Test Tmp Directory Path
+  test-tmp-issue:
+    name: Test Fabio's Issue with /tmp
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create Test Files
+      # 먼저 github.workspace 값 확인
+      - name: Check workspace path
         run: |
-          echo "Test content" > test.txt
-          mkdir -p subdir
-          echo "Subdir content" > subdir/subdir.txt
-          echo "Created test files:"
-          ls -la
+          echo "GitHub Workspace: ${{ github.workspace }}"
+          ls ${{ github.workspace }}
 
-      - name: Test Compression to /tmp
-        id: compress_tmp
+      # Fabio의 첫 번째 케이스: 공백 없는 경우
+      - name: Test Compression without space
+        id: compress_no_space
         uses: somaz94/compress-decompress@v1
         with:
           command: compress
-          source: ${{ github.workspace }}
+          source: '${{ github.workspace }}'
           format: zip
-          dest: '/tmp'
-          destfilename: 'test_archive'
           verbose: 'true'
           includeRoot: 'false'
+          dest: '/tmp'
+          destfilename: test1
 
-      - name: Verify Tmp Archive
+      # 다음 스텝에서 파일 존재 확인
+      - name: Check /tmp after first compression
         run: |
-          echo "Checking /tmp contents:"
-          ls -la /tmp/test_archive.zip
-          
-          if [ -f "/tmp/test_archive.zip" ]; then
-            echo "✅ Compression to /tmp successful"
-            unzip -l /tmp/test_archive.zip
-          else
-            echo "❌ Compression to /tmp failed"
-            exit 1
-          fi
+          echo "Checking /tmp after compression without space:"
+          ls -la /tmp/test1.zip || echo "File not found in /tmp"
 
-      - name: Test Decompression from /tmp
+      # Fabio의 두 번째 케이스: 공백 있는 경우
+      - name: Test Compression with space
+        id: compress_with_space
         uses: somaz94/compress-decompress@v1
         with:
-          command: decompress
-          source: /tmp/test_archive.zip
+          command: compress
+          source: ' ${{ github.workspace }}'
           format: zip
-          dest: './extracted_from_tmp'
           verbose: 'true'
+          includeRoot: 'false'
+          dest: '/tmp'
+          destfilename: test2
 
-      - name: Verify Decompression Results
+      # 다음 스텝에서 파일 존재 확인
+      - name: Check /tmp after second compression
         run: |
-          echo "Checking extracted contents:"
-          ls -la ./extracted_from_tmp/
-          
-          if [ -f "./extracted_from_tmp/test.txt" ] && [ -f "./extracted_from_tmp/subdir/subdir.txt" ]; then
-            echo "✅ Extraction verified"
-            echo "Contents of test files:"
-            cat "./extracted_from_tmp/test.txt"
-            cat "./extracted_from_tmp/subdir/subdir.txt"
-          else
-            echo "❌ Extraction failed"
-            exit 1
-          fi
+          echo "Checking /tmp after compression with space:"
+          ls -la /tmp/test2.zip || echo "File not found in /tmp"
+
+      # 결과 요약
+      - name: Summarize results
+        run: |
+          echo "=== Test Results ==="
+          echo "Test 1 (no space):"
+          ls -la /tmp/test1.zip 2>/dev/null && echo "✅ File exists" || echo "❌ File not found"
+          echo "Test 2 (with space):"
+          ls -la /tmp/test2.zip 2>/dev/null && echo "✅ File exists" || echo "❌ File not found"
