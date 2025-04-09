@@ -1,5 +1,17 @@
 # Changelog
 
+## [v1.4.2](https://github.com/somaz94/compress-decompress/tree/v1.4.2) (2025-04-09)
+
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.4.2...v1.4.2)
+
+**Closed issues:**
+
+- Strange issue [\#28](https://github.com/somaz94/compress-decompress/issues/28)
+
+## [v1.4.2](https://github.com/somaz94/compress-decompress/tree/v1.4.2) (2025-04-08)
+
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.4.1...v1.4.2)
+
 ## [v1.4.1](https://github.com/somaz94/compress-decompress/tree/v1.4.1) (2025-04-04)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.4.0...v1.4.1)
