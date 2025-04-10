@@ -18,6 +18,7 @@ class ActionRunner:
         # Custom destination and filename options
         self.dest = os.getenv("DEST", "")
         self.destfilename = os.getenv("DESTFILENAME", "")
+        self.exclude = os.getenv("EXCLUDE", "")
 
     def validate_inputs(self) -> None:
         """Validate required inputs are provided and valid"""
@@ -55,6 +56,8 @@ class ActionRunner:
             print(f"  • Destination: {self.dest}")
         if self.destfilename:
             print(f"  • Destination Filename: {self.destfilename}")
+        if self.exclude:
+            print(f"  • Exclude Pattern: {self.exclude}")
 
     def run(self) -> None:
         """Run the appropriate action based on command"""

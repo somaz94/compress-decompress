@@ -16,6 +16,9 @@ inputs:
   destfilename:
     description: "Destination filename for the compressed output."
     required: false
+  exclude:
+    description: "File(s) to exclude from compression process."
+    required: false
   format:
     description:
       "Compression format to use. Supported formats include zip, tar, tgz, and
@@ -44,6 +47,7 @@ runs:
     SOURCE: ${{ inputs.source }}
     DEST: ${{ inputs.dest }}
     DESTFILENAME: ${{ inputs.destfilename }}
+    EXCLUDE: ${{ inputs.exclude }}
     FORMAT: ${{ inputs.format }}
     INCLUDEROOT: ${{ inputs.includeRoot }}
     FAIL_ON_ERROR: ${{ inputs.fail_on_error }}
