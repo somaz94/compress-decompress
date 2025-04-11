@@ -46,6 +46,14 @@ jobs:
         sinceTag: ${{ env.FIRST_TAG }}  # v1.0.0과 같은 구체적인 버전 태그
         # excludeTags: "v1,v2"  # 명시적으로 제외할 태그
         excludeTagsRegex: "^v[0-9]$"
+        issues: true  # 명시적으로 이슈 포함
+        issuesWoLabels: true  # 라벨이 없는 이슈도 포함
+        pullRequests: true  # PR 포함
+        prWoLabels: true  # 라벨이 없는 PR도 포함
+        unreleased: true  # 미발표 이슈 포함
+        verbose: true  # 상세 로그 출력
+        issuesLabel: "**Closed Issues:**"  # 이슈 섹션 라벨 커스터마이징
+        # includeLabels이나 excludeLabels를 설정하지 않으면 모든 이슈 포함
 
     - name: Git Commit and Push
       uses: somaz94/go-git-commit-action@v1
