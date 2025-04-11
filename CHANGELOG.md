@@ -28,7 +28,7 @@
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.3.0...v1.3.1)
 
-**Dependency Updates:**
+**Merged pull requests:**
 
 - build\(deps\): bump super-linter/super-linter from 7.2.1 to 7.3.0 in the actions-minor group [\#8](https://github.com/somaz94/compress-decompress/pull/8) ([dependabot[bot]](https://github.com/apps/dependabot))
 
@@ -64,7 +64,7 @@
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.0.3...v1.0.4)
 
-**Dependency Updates:**
+**Merged pull requests:**
 
 - build\(deps\): bump janheinrichmerker/action-github-changelog-generator from 2.3 to 2.4 in the actions-minor group [\#7](https://github.com/somaz94/compress-decompress/pull/7) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump super-linter/super-linter from 7.2.0 to 7.2.1 in the actions-minor group [\#6](https://github.com/somaz94/compress-decompress/pull/6) ([dependabot[bot]](https://github.com/apps/dependabot))
@@ -74,7 +74,7 @@
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.0.2...v1.0.3)
 
-**Dependency Updates:**
+**Merged pull requests:**
 
 - build\(deps\): bump python from 3.12-slim to 3.13-slim in the docker-minor group [\#3](https://github.com/somaz94/compress-decompress/pull/3) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump super-linter/super-linter from 6 to 7 [\#2](https://github.com/somaz94/compress-decompress/pull/2) ([dependabot[bot]](https://github.com/apps/dependabot))
@@ -83,7 +83,7 @@
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.0.1...v1.0.2)
 
-**Dependency Updates:**
+**Merged pull requests:**
 
 - build\(deps\): bump python from 3.8-slim to 3.12-slim in the docker-minor group [\#1](https://github.com/somaz94/compress-decompress/pull/1) ([dependabot[bot]](https://github.com/apps/dependabot))
 
