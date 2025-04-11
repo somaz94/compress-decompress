@@ -523,3 +523,188 @@ jobs:
               exit 1
             fi
           done
+
+  test-exclude-functionality:
+    name: Test Exclude Functionality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Test Structure
+        run: |
+          # 테스트 디렉토리 구조 생성
+          mkdir -p test_exclude/include_folder test_exclude/exclude_folder
+          mkdir -p test_exclude/mixed_folder
+          
+          # 포함될 파일 생성
+          echo "File to include" > test_exclude/include_file.txt
+          echo "Folder file to include" > test_exclude/include_folder/include.txt
+          
+          # 제외될 파일 생성
+          echo "File to exclude" > test_exclude/exclude_file.txt
+          echo "Folder file to exclude" > test_exclude/exclude_folder/exclude.txt
+          
+          # 혼합 파일 생성
+          echo "Mixed file 1 - include" > test_exclude/mixed_folder/file1.txt
+          echo "Mixed file 2 - exclude" > test_exclude/mixed_folder/file2.log
+          
+          # 생성된 구조 확인
+          echo "Created test structure:"
+          find test_exclude -type f | sort
+
+      - name: Test Single File Exclusion
+        id: exclude_single_file
+        uses: ./
+        with:
+          command: 'compress'
+          source: './test_exclude'
+          format: 'zip'
+          dest: './output'
+          destfilename: 'single_file_exclude'
+          exclude: 'exclude_file.txt'
+          verbose: 'true'
+
+      - name: Test Directory Exclusion
+        id: exclude_directory
+        uses: ./
+        with:
+          command: 'compress'
+          source: './test_exclude'
+          format: 'zip'
+          dest: './output'
+          destfilename: 'directory_exclude'
+          exclude: 'exclude_folder'
+          verbose: 'true'
+
+      - name: Test Multiple Exclusions
+        id: exclude_multiple
+        uses: ./
+        with:
+          command: 'compress'
+          source: './test_exclude'
+          format: 'zip'
+          dest: './output'
+          destfilename: 'multiple_exclude'
+          exclude: 'exclude_file.txt exclude_folder/* mixed_folder/*.log'
+          verbose: 'true'
+
+      - name: Test Wildcard Pattern Exclusion
+        id: exclude_pattern
+        uses: ./
+        with:
+          command: 'compress'
+          source: './test_exclude'
+          format: 'zip'
+          dest: './output'
+          destfilename: 'pattern_exclude'
+          exclude: '*.log'
+          verbose: 'true'
+
+      - name: Verify Exclusion Results
+        run: |
+          echo "Checking compressed archives contents:"
+          mkdir -p verify
+          
+          # 단일 파일 제외 확인
+          unzip -l ./output/single_file_exclude.zip
+          unzip -q ./output/single_file_exclude.zip -d ./verify/single_file
+          echo "Single file exclusion contents:"
+          find ./verify/single_file -type f | sort
+          if grep -q "exclude_file.txt" <(find ./verify/single_file -type f); then
+            echo "❌ Exclusion failed: exclude_file.txt was found when it should be excluded"
+            exit 1
+          else
+            echo "✅ Single file exclusion successful"
+          fi
+          
+          # 디렉토리 제외 확인
+          unzip -l ./output/directory_exclude.zip
+          unzip -q ./output/directory_exclude.zip -d ./verify/directory
+          echo "Directory exclusion contents:"
+          find ./verify/directory -type f | sort
+          if grep -q "exclude_folder" <(find ./verify/directory -type d); then
+            echo "❌ Exclusion failed: exclude_folder was found when it should be excluded"
+            exit 1
+          else
+            echo "✅ Directory exclusion successful"
+          fi
+          
+          # 다중 제외 확인
+          unzip -l ./output/multiple_exclude.zip
+          unzip -q ./output/multiple_exclude.zip -d ./verify/multiple
+          echo "Multiple exclusion contents:"
+          find ./verify/multiple -type f | sort
+          
+          EXCLUSION_FAILED=false
+          if grep -q "exclude_file.txt" <(find ./verify/multiple -type f); then
+            echo "❌ Exclusion failed: exclude_file.txt was found"
+            EXCLUSION_FAILED=true
+          fi
+          
+          if grep -q "exclude_folder" <(find ./verify/multiple -type d); then
+            echo "❌ Exclusion failed: exclude_folder was found"
+            EXCLUSION_FAILED=true
+          fi
+          
+          if grep -q ".log" <(find ./verify/multiple/mixed_folder -type f 2>/dev/null || echo ""); then
+            echo "❌ Exclusion failed: .log files were found in mixed_folder"
+            EXCLUSION_FAILED=true
+          fi
+          
+          if [ "$EXCLUSION_FAILED" = "false" ]; then
+            echo "✅ Multiple exclusion successful"
+          else
+            exit 1
+          fi
+          
+          # 패턴 제외 확인
+          unzip -l ./output/pattern_exclude.zip
+          unzip -q ./output/pattern_exclude.zip -d ./verify/pattern
+          echo "Pattern exclusion contents:"
+          find ./verify/pattern -type f | sort
+          if grep -q ".log" <(find ./verify/pattern -type f); then
+            echo "❌ Exclusion failed: .log files were found when they should be excluded"
+            exit 1
+          else
+            echo "✅ Pattern exclusion successful"
+          fi
+
+      - name: Test TAR Format with Exclusion
+        id: exclude_tar
+        uses: ./
+        with:
+          command: 'compress'
+          source: './test_exclude'
+          format: 'tar'
+          dest: './output'
+          destfilename: 'tar_exclude'
+          exclude: 'exclude_file.txt exclude_folder'
+          verbose: 'true'
+
+      - name: Verify TAR Exclusion
+        run: |
+          echo "Checking TAR archive contents:"
+          mkdir -p verify/tar
+          tar -tvf ./output/tar_exclude.tar
+          tar -xf ./output/tar_exclude.tar -C ./verify/tar
+          
+          echo "TAR exclusion contents:"
+          find ./verify/tar -type f | sort
+          
+          EXCLUSION_FAILED=false
+          if grep -q "exclude_file.txt" <(find ./verify/tar -type f); then
+            echo "❌ TAR Exclusion failed: exclude_file.txt was found"
+            EXCLUSION_FAILED=true
+          fi
+          
+          if grep -q "exclude_folder" <(find ./verify/tar -type d); then
+            echo "❌ TAR Exclusion failed: exclude_folder was found"
+            EXCLUSION_FAILED=true
+          fi
+          
+          if [ "$EXCLUSION_FAILED" = "false" ]; then
+            echo "✅ TAR exclusion successful"
+          else
+            exit 1
+          fi
