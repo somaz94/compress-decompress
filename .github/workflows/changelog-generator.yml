@@ -64,3 +64,10 @@ jobs:
         user_name: "GitHub Actions"
         file_pattern: "CHANGELOG.md"
 
+    - name: Debug GitHub issues
+      run: |
+        echo "Fetching issues for debugging..."
+        gh issue list --state closed --limit 30 --json number,title,labels
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
