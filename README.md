@@ -83,6 +83,41 @@ jobs:
 
 <br/>
 
+### Using Exclude Patterns
+
+This example demonstrates how to exclude specific files or directories from the compression:
+
+```yaml
+name: Compress Files with Exclusions
+
+on: [push]
+
+jobs:
+  compress-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Compress Repository Excluding Git Files
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: .
+          format: zip
+          dest: './artifacts'
+          destfilename: 'repo-backup'
+          exclude: '.git .github node_modules *.log'
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: repo-backup
+          path: ./artifacts/repo-backup.zip
+```
+
+<br/>
+
 ### includeRoot: true(default)
 
 This example demonstrates how to use the Compress-Decompress action to compress
@@ -482,6 +517,89 @@ jobs:
 
 <br/>
 
+### 9. Excluding Files and Directories
+```yaml
+- name: Compress Project Files
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./project
+    format: zip
+    dest: './backups'
+    destfilename: 'clean-project'
+    exclude: 'node_modules vendor .git tests/tmp'
+```
+Output: `./backups/clean-project.zip` (without excluded directories and files)
+
+<br/>
+
+### 10. Using Wildcards in Exclude Patterns
+```yaml
+- name: Compress Source Code
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./src
+    format: zip
+    dest: './releases'
+    destfilename: 'source-code'
+    exclude: '*.log *.tmp __pycache__/* .DS_Store'
+```
+Output: `./releases/source-code.zip` (without log files, temp files, Python cache, and macOS metadata)
+
+<br/>
+
+## Using the Exclude Feature
+
+The `exclude` parameter allows you to specify files, directories, or patterns that should be excluded from the compression process. This is particularly useful when compressing large directories that may contain:
+
+- Version control directories (like `.git`, `.svn`)
+- Build artifacts or dependencies (like `node_modules`, `vendor`, `.gradle`)
+- Temporary or cache files (like `__pycache__`, `.DS_Store`, `*.log`)
+- Large binary files that don't need to be included
+
+<br/>
+
+### Exclude Pattern Syntax
+
+The `exclude` parameter accepts space-separated patterns:
+
+- Simple filenames or directory names: `node_modules .git`
+- Paths relative to the source: `src/tests/fixtures data/samples`
+- Wildcards for extensions or patterns: `*.log *.tmp`
+- Directory contents with trailing slash: `tmp/ cache/`
+
+<br/>
+
+### Examples of Exclude Patterns
+
+1. **Excluding Version Control:**
+   ```yaml
+   exclude: '.git .github .svn .gitignore'
+   ```
+
+2. **Excluding Build Artifacts:**
+   ```yaml
+   exclude: 'node_modules vendor build dist target'
+   ```
+
+3. **Excluding Temp and Log Files:**
+   ```yaml
+   exclude: '*.log *.tmp *.cache tmp/ logs/'
+   ```
+
+4. **Combining Multiple Patterns:**
+   ```yaml
+   exclude: '.git node_modules *.log tmp/ .DS_Store'
+   ```
+
+5. **Excluding Specific Subdirectories:**
+   ```yaml
+   exclude: 'tests/fixtures docs/examples'
+   ```
+
+<br/>
+
 ## Troubleshooting
 
 <br/>
@@ -504,6 +622,12 @@ jobs:
    - Ensure proper file permissions
    - Check workspace directory permissions
    - Verify user/group access rights
+
+4. **Exclude Pattern Issues**
+   - Ensure patterns are space-separated
+   - Check path relativity (patterns are relative to source directory)
+   - For stubborn files, try multiple pattern formats
+   - Use verbose mode to see which files are being included/excluded
 
 <br/>
 
