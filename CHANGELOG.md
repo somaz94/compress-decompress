@@ -1,12 +1,12 @@
 # Changelog
 
-## [v1.4.2](https://github.com/somaz94/compress-decompress/tree/v1.4.2) (2025-04-09)
+## [v1.5.0](https://github.com/somaz94/compress-decompress/tree/v1.5.0) (2025-04-11)
 
-[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.4.2...v1.4.2)
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.4.2...v1.5.0)
 
-**Closed issues:**
+**Merged pull requests:**
 
-- Strange issue [\#28](https://github.com/somaz94/compress-decompress/issues/28)
+- Added exclude parameter [\#29](https://github.com/somaz94/compress-decompress/pull/29) ([fgrande](https://github.com/fgrande))
 
 ## [v1.4.2](https://github.com/somaz94/compress-decompress/tree/v1.4.2) (2025-04-08)
 
@@ -19,10 +19,6 @@
 ## [v1.4.0](https://github.com/somaz94/compress-decompress/tree/v1.4.0) (2025-04-03)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.3.1...v1.4.0)
-
-**Closed issues:**
-
-- Monthly contributor report [\#22](https://github.com/somaz94/compress-decompress/issues/22)
 
 **Merged pull requests:**
 
@@ -67,10 +63,6 @@
 ## [v1.0.4](https://github.com/somaz94/compress-decompress/tree/v1.0.4) (2025-02-07)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.0.3...v1.0.4)
-
-**Closed issues:**
-
-- When compressing, zip includes folder named as source [\#4](https://github.com/somaz94/compress-decompress/issues/4)
 
 **Merged pull requests:**
 
