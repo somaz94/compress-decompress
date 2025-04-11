@@ -177,135 +177,7 @@ jobs:
             exit 1
           fi
 
-      # # Case 3: Test destination and filename options
-      # - name: Create Test Directory for Dest Options
-      #   run: |
-      #     # 테스트 디렉토리 및 파일 생성
-      #     mkdir -p test_dest_options custom_output
-      #     echo "Test content" > test_dest_options/test.txt
-          
-      #     # 디렉토리 생성 확인
-      #     echo "Created directories and files:"
-      #     ls -la test_dest_options/
-      #     ls -la custom_output/
-
-      # - name: Test Custom Destination and Filename
-      #   id: test_dest_options
-      #   uses: ./
-      #   with:
-      #     command: 'compress'
-      #     source: './test_dest_options'
-      #     format: 'zip'
-      #     dest: 'custom_output'
-      #     destfilename: 'custom_archive'
-      #     includeRoot: 'false'
-      #     verbose: 'true'
-
-      # - name: Debug Output
-      #   if: always()
-      #   run: |
-      #     echo "Action output:"
-      #     echo "Status: ${{ steps.test_dest_options.outcome }}"
-      #     echo "File path: ${{ steps.test_dest_options.outputs.file_path }}"
-          
-      #     echo "Directory structure:"
-      #     tree .
-          
-      #     echo "Custom output directory contents:"
-      #     ls -la ./custom_output/
-
-      # - name: Verify Custom Destination and Filename
-      #   run: |
-      #     if [ -f "./custom_output/custom_archive.zip" ]; then
-      #       echo "✅ Test passed: Archive created with custom destination and filename"
-      #       unzip -l ./custom_output/custom_archive.zip
-      #     else
-      #       echo "❌ Test failed: Custom destination/filename archive not created"
-      #       echo "Current working directory: $(pwd)"
-      #       echo "Contents of current directory:"
-      #       ls -la
-      #       echo "Contents of custom_output directory:"
-      #       ls -la ./custom_output/
-      #       exit 1
-      #     fi
-
-      # - name: Test Decompression with Custom Path
-      #   uses: ./
-      #   with:
-      #     command: 'decompress'
-      #     source: './custom_output/custom_archive.zip'
-      #     format: 'zip'
-      #     dest: './unpacked_custom'
-
-      # - name: Verify Decompressed Contents
-      #   run: |
-      #     if [ -f "./unpacked_custom/test.txt" ]; then
-      #       echo "✅ Test passed: Successfully decompressed custom path archive"
-      #       cat "./unpacked_custom/test.txt"
-      #     else
-      #       echo "❌ Test failed: Decompression failed or file missing"
-      #       exit 1
-      #     fi
-
-
-      # # Case 4: Test custom destination and decompression
-      # - name: Create Test Files for Decompression
-      #   run: |
-      #     mkdir -p source_files custom_output decompressed_output
-      #     echo "Test content 1" > source_files/test1.txt
-      #     echo "Test content 2" > source_files/test2.txt
-          
-      #     echo "Created test files:"
-      #     ls -la source_files/
-
-      # - name: Test Compression with Custom Path
-      #   id: compress_test
-      #   uses: ./
-      #   with:
-      #     command: 'compress'
-      #     source: './source_files'
-      #     format: 'zip'
-      #     dest: './custom_output'
-      #     destfilename: 'test_archive'
-      #     includeRoot: 'false'
-      #     verbose: 'true'
-
-      # - name: Verify Compression Result
-      #   run: |
-      #     if [ -f "./custom_output/test_archive.zip" ]; then
-      #       echo "✅ Test passed: Archive created at custom destination"
-      #       unzip -l ./custom_output/test_archive.zip
-      #     else
-      #       echo "❌ Test failed: Archive not found at custom destination"
-      #       echo "Contents of custom_output:"
-      #       ls -la ./custom_output/
-      #       exit 1
-      #     fi
-
-      # - name: Test Decompression with Custom Path
-      #   id: decompress_test
-      #   uses: ./
-      #   with:
-      #     command: 'decompress'
-      #     source: './custom_output/test_archive.zip'
-      #     format: 'zip'
-      #     dest: './decompressed_output'
-      #     verbose: 'true'
-
-      # - name: Verify Decompression Result
-      #   run: |
-      #     if [ -f "./decompressed_output/test1.txt" ] && [ -f "./decompressed_output/test2.txt" ]; then
-      #       echo "✅ Test passed: Files decompressed to custom destination"
-      #       echo "Content verification:"
-      #       cat "./decompressed_output/test1.txt"
-      #       cat "./decompressed_output/test2.txt"
-      #     else
-      #       echo "❌ Test failed: Decompression verification failed"
-      #       echo "Contents of decompressed_output:"
-      #       ls -la ./decompressed_output/
-      #       exit 1
-      #     fi
-
+ 
   test-github-workspace:
     name: Test GitHub Workspace Path
     runs-on: ubuntu-latest
@@ -533,23 +405,23 @@ jobs:
 
       - name: Create Test Structure
         run: |
-          # 테스트 디렉토리 구조 생성
+          # Creating a Test Directory Structure
           mkdir -p test_exclude/include_folder test_exclude/exclude_folder
           mkdir -p test_exclude/mixed_folder
           
-          # 포함될 파일 생성
+          # Create a file to be included
           echo "File to include" > test_exclude/include_file.txt
           echo "Folder file to include" > test_exclude/include_folder/include.txt
           
-          # 제외될 파일 생성
+          # Create a file to be excluded
           echo "File to exclude" > test_exclude/exclude_file.txt
           echo "Folder file to exclude" > test_exclude/exclude_folder/exclude.txt
           
-          # 혼합 파일 생성
+          # Create a mixed file
           echo "Mixed file 1 - include" > test_exclude/mixed_folder/file1.txt
           echo "Mixed file 2 - exclude" > test_exclude/mixed_folder/file2.log
           
-          # 생성된 구조 확인
+          # Check the created structure
           echo "Created test structure:"
           find test_exclude -type f | sort
 
@@ -606,7 +478,7 @@ jobs:
           echo "Checking compressed archives contents:"
           mkdir -p verify
           
-          # 단일 파일 제외 확인
+          # Check single file exclusion
           unzip -l ./output/single_file_exclude.zip
           unzip -q ./output/single_file_exclude.zip -d ./verify/single_file
           echo "Single file exclusion contents:"
@@ -618,7 +490,7 @@ jobs:
             echo "✅ Single file exclusion successful"
           fi
           
-          # 디렉토리 제외 확인
+          # Check directory exclusion
           unzip -l ./output/directory_exclude.zip
           unzip -q ./output/directory_exclude.zip -d ./verify/directory
           echo "Directory exclusion contents:"
@@ -630,7 +502,7 @@ jobs:
             echo "✅ Directory exclusion successful"
           fi
           
-          # 다중 제외 확인
+          # Check multiple exclusion
           unzip -l ./output/multiple_exclude.zip
           unzip -q ./output/multiple_exclude.zip -d ./verify/multiple
           echo "Multiple exclusion contents:"
@@ -658,7 +530,7 @@ jobs:
             exit 1
           fi
           
-          # 패턴 제외 확인
+          # Check pattern exclusion
           unzip -l ./output/pattern_exclude.zip
           unzip -q ./output/pattern_exclude.zip -d ./verify/pattern
           echo "Pattern exclusion contents:"

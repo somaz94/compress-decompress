@@ -415,13 +415,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 먼저 github.workspace 값 확인
+      # First, check the github.workspace value
       - name: Check workspace path
         run: |
           echo "GitHub Workspace: ${{ github.workspace }}"
           ls ${{ github.workspace }}
 
-      # Fabio의 첫 번째 케이스: 공백 없는 경우
+      # Fabio's first case: no space
       - name: Test Compression without space
         id: compress_no_space
         uses: somaz94/compress-decompress@v1
@@ -434,13 +434,13 @@ jobs:
           dest: './tmp'
           destfilename: test1
 
-      # 다음 스텝에서 파일 존재 확인
+      # Next, check the file existence in /tmp
       - name: Check /tmp after first compression
         run: |
           echo "Checking /tmp after compression without space:"
           ls -la ./tmp/test1.zip || echo "File not found in /tmp"
 
-      # Fabio의 두 번째 케이스: 공백 있는 경우
+      # Fabio's second case: space
       - name: Test Compression with space
         id: compress_with_space
         uses: somaz94/compress-decompress@v1
@@ -453,13 +453,13 @@ jobs:
           dest: './tmp'
           destfilename: test2
 
-      # 다음 스텝에서 파일 존재 확인
+      # Next, check the file existence in /tmp
       - name: Check /tmp after second compression
         run: |
           echo "Checking /tmp after compression with space:"
           ls -la ./tmp/test2.zip || echo "File not found in /tmp"
 
-      # 결과 요약
+      # Summarize results
       - name: Summarize results
         run: |
           echo "=== Test Results ==="
@@ -477,23 +477,23 @@ jobs:
 
       - name: Create Test Structure
         run: |
-          # 테스트 디렉토리 구조 생성
+          # Create a test directory structure
           mkdir -p test_exclude/include_folder test_exclude/exclude_folder
           mkdir -p test_exclude/mixed_folder
           
-          # 포함될 파일 생성
+          # Create a file to be included
           echo "File to include" > test_exclude/include_file.txt
           echo "Folder file to include" > test_exclude/include_folder/include.txt
           
-          # 제외될 파일 생성
+          # Create a file to be excluded
           echo "File to exclude" > test_exclude/exclude_file.txt
           echo "Folder file to exclude" > test_exclude/exclude_folder/exclude.txt
           
-          # 혼합 파일 생성
+          # Create a mixed file
           echo "Mixed file 1 - include" > test_exclude/mixed_folder/file1.txt
           echo "Mixed file 2 - exclude" > test_exclude/mixed_folder/file2.log
           
-          # 생성된 구조 확인
+          # Check the created structure
           echo "Created test structure:"
           find test_exclude -type f | sort
 
@@ -550,7 +550,7 @@ jobs:
           echo "Checking compressed archives contents:"
           mkdir -p verify
           
-          # 단일 파일 제외 확인
+          # Check single file exclusion
           unzip -l ./output/single_file_exclude.zip
           unzip -q ./output/single_file_exclude.zip -d ./verify/single_file
           echo "Single file exclusion contents:"
@@ -562,7 +562,7 @@ jobs:
             echo "✅ Single file exclusion successful"
           fi
           
-          # 디렉토리 제외 확인
+          # Check directory exclusion
           unzip -l ./output/directory_exclude.zip
           unzip -q ./output/directory_exclude.zip -d ./verify/directory
           echo "Directory exclusion contents:"
@@ -574,7 +574,7 @@ jobs:
             echo "✅ Directory exclusion successful"
           fi
           
-          # 다중 제외 확인
+          # Check multiple exclusion
           unzip -l ./output/multiple_exclude.zip
           unzip -q ./output/multiple_exclude.zip -d ./verify/multiple
           echo "Multiple exclusion contents:"
@@ -602,7 +602,7 @@ jobs:
             exit 1
           fi
           
-          # 패턴 제외 확인
+          # Check pattern exclusion
           unzip -l ./output/pattern_exclude.zip
           unzip -q ./output/pattern_exclude.zip -d ./verify/pattern
           echo "Pattern exclusion contents:"
