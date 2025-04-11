@@ -48,6 +48,9 @@ class Compressor(BaseProcessor):
     def _get_zip_command(self, full_dest: str, base_name: str) -> str:
         """Generate zip compression command"""
         source_path = os.path.abspath(self.source)
+
+        # Handle exclusion
+        exclude = "-x '" + self.exclude + "'" if self.exclude else ""
         
         # Handle GitHub Actions environment path
         # Convert /github/workspace to actual working directory if needed
@@ -58,9 +61,9 @@ class Compressor(BaseProcessor):
             # Include the root directory in the archive
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"cd {parent_dir} && zip -r {full_dest} {dir_name}"
+            return f"cd {parent_dir} && zip -r {full_dest} {dir_name} {exclude}"
         # Archive contents only, without root directory
-        return f"cd {source_path} && zip -r {full_dest} ."
+        return f"cd {source_path} && zip -r {full_dest} . {exclude}"
 
     def _get_tar_command(self, full_dest: str, base_name: str) -> str:
         """Generate tar compression command"""
@@ -71,6 +74,9 @@ class Compressor(BaseProcessor):
         }
         
         source_path = os.path.abspath(self.source)
+
+        # Handle exclusion
+        exclude = "--exclude '" + self.exclude + "'" if self.exclude else ""
         
         # Handle GitHub Actions environment path
         # Convert /github/workspace to actual working directory if needed
@@ -86,19 +92,23 @@ class Compressor(BaseProcessor):
             # Include the root directory in the archive
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"tar -c{opt}f {full_dest} -C {parent_dir} {dir_name}"
+            return f"tar -c{opt}f {exclude} {full_dest} -C {parent_dir} {dir_name}"
         # Archive contents only, without root directory
-        return f"tar -c{opt}f {full_dest} -C {source_path} ."
+        return f"tar -c{opt}f {exclude} {full_dest} -C {source_path} ."
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
         """Generate special tar command for TGZ/TBZ2 formats without root"""
         source_path = os.path.abspath(self.source)
         temp_dir = os.path.join(os.path.dirname(source_path), f"temp_{base_name}_{self.format}")
+
+        # Handle exclusion
+        exclude = "--exclude '" + self.exclude + "'" if self.exclude else ""
+
         # Create temporary directory, copy files, create archive, then cleanup
         return f"""
             mkdir -p {temp_dir} &&
             cp -r {source_path}/* {temp_dir}/ &&
-            tar -c{opt}f {full_dest} -C {temp_dir} . &&
+            tar -c{opt}f {exclude} {full_dest} -C {temp_dir} . &&
             rm -rf {temp_dir}
         """
 

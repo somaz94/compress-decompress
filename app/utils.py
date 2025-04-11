@@ -62,6 +62,7 @@ class BaseProcessor:
         self.verbose = os.getenv("VERBOSE", "false").lower() == "true"
         self.dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
         self.destfilename = os.getenv("DESTFILENAME", "")
+        self.exclude = os.getenv("EXCLUDE", "")
 
     def validate_path(self, path: str, error_prefix: str = "Path") -> bool:
         """Validate that a path exists"""
