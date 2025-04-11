@@ -52,24 +52,41 @@ class Compressor(BaseProcessor):
         # Handle exclusion - zip requires specific path patterns
         exclude_cmd = ""
         if self.exclude:
-            # For zip, the exclude pattern must match the full path inside the archive
             # Split by spaces, process each pattern
             patterns = [pattern.strip() for pattern in self.exclude.split() if pattern.strip()]
             if patterns:
                 dir_name = os.path.basename(source_path)
-                # For each pattern, we need to prefix it with the directory name when using includeRoot
-                if self.include_root:
-                    exclude_patterns = []
-                    for pattern in patterns:
-                        # If pattern doesn't already start with the dir name, prefix it
+                processed_patterns = []
+                
+                for pattern in patterns:
+                    # Handle directory exclusion vs file exclusion
+                    if self.include_root:
+                        # Prefix with directory name for includeRoot=true
                         if not pattern.startswith(f"{dir_name}/") and not pattern == dir_name:
-                            exclude_patterns.append(f"{dir_name}/{pattern}")
+                            # If excluding a directory without trailing /, ensure we exclude its contents
+                            if pattern.endswith('/'):
+                                processed_patterns.append(f"{dir_name}/{pattern}*")
+                            elif os.path.isdir(os.path.join(source_path, pattern)) and not pattern.endswith('/*'):
+                                # Directory needs /* to exclude contents
+                                processed_patterns.append(f"{dir_name}/{pattern}/*")
+                                # Also exclude the directory itself
+                                processed_patterns.append(f"{dir_name}/{pattern}/")
+                            else:
+                                processed_patterns.append(f"{dir_name}/{pattern}")
                         else:
-                            exclude_patterns.append(pattern)
-                    exclude_cmd = " ".join([f'-x "{p}"' for p in exclude_patterns])
-                else:
-                    # When not including root, patterns are relative to source path
-                    exclude_cmd = " ".join([f'-x "{p}"' for p in patterns])
+                            processed_patterns.append(pattern)
+                    else:
+                        # Direct pattern for includeRoot=false
+                        if os.path.isdir(os.path.join(source_path, pattern)) and not pattern.endswith('/*'):
+                            # Directory needs /* to exclude contents
+                            processed_patterns.append(f"{pattern}/*")
+                            # Also exclude the directory itself
+                            processed_patterns.append(f"{pattern}/")
+                        else:
+                            processed_patterns.append(pattern)
+                            
+                # Create the exclude command with all processed patterns
+                exclude_cmd = " ".join([f'-x "{p}"' for p in processed_patterns])
         
         # Handle GitHub Actions environment path
         # Convert /github/workspace to actual working directory if needed
@@ -100,8 +117,19 @@ class Compressor(BaseProcessor):
             # Split by spaces, process each pattern
             patterns = [pattern.strip() for pattern in self.exclude.split() if pattern.strip()]
             if patterns:
-                # Tar exclude patterns work differently and need full paths or patterns
-                exclude_cmd = " ".join([f'--exclude="{p}"' for p in patterns])
+                # For tar, we need to handle different path formats based on include_root
+                processed_patterns = []
+                dir_name = os.path.basename(source_path)
+                
+                for pattern in patterns:
+                    if self.include_root and not pattern.startswith(dir_name):
+                        # Prefix with directory name for includeRoot=true
+                        processed_patterns.append(f"{dir_name}/{pattern}")
+                    else:
+                        processed_patterns.append(pattern)
+                
+                # Tar exclude patterns with proper formatting
+                exclude_cmd = " ".join([f'--exclude="{p}"' for p in processed_patterns])
         
         # Handle GitHub Actions environment path
         # Convert /github/workspace to actual working directory if needed
@@ -126,14 +154,20 @@ class Compressor(BaseProcessor):
         source_path = os.path.abspath(self.source)
         temp_dir = os.path.join(os.path.dirname(source_path), f"temp_{base_name}_{self.format}")
 
-        # Handle exclusion
-        exclude = "--exclude '" + self.exclude + "'" if self.exclude else ""
+        # Handle exclusion - use consistent approach with _get_tar_command
+        exclude_cmd = ""
+        if self.exclude:
+            # Split by spaces, process each pattern
+            patterns = [pattern.strip() for pattern in self.exclude.split() if pattern.strip()]
+            if patterns:
+                # For special tar command, paths are relative to temp dir
+                exclude_cmd = " ".join([f'--exclude="{p}"' for p in patterns])
 
         # Create temporary directory, copy files, create archive, then cleanup
         return f"""
             mkdir -p {temp_dir} &&
             cp -r {source_path}/* {temp_dir}/ &&
-            tar -c{opt}f {exclude} {full_dest} -C {temp_dir} . &&
+            tar {exclude_cmd} -c{opt}f {full_dest} -C {temp_dir} . &&
             rm -rf {temp_dir}
         """
 
