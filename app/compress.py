@@ -49,13 +49,27 @@ class Compressor(BaseProcessor):
         """Generate zip compression command"""
         source_path = os.path.abspath(self.source)
 
-        # Handle exclusion - zip requires individual -x arguments for each pattern
-        exclude_patterns = ""
+        # Handle exclusion - zip requires specific path patterns
+        exclude_cmd = ""
         if self.exclude:
-            # Split by spaces, then wrap each pattern in quotes, treat each as separate -x argument
+            # For zip, the exclude pattern must match the full path inside the archive
+            # Split by spaces, process each pattern
             patterns = [pattern.strip() for pattern in self.exclude.split() if pattern.strip()]
             if patterns:
-                exclude_patterns = " ".join([f"-x '{pattern}'" for pattern in patterns])
+                dir_name = os.path.basename(source_path)
+                # For each pattern, we need to prefix it with the directory name when using includeRoot
+                if self.include_root:
+                    exclude_patterns = []
+                    for pattern in patterns:
+                        # If pattern doesn't already start with the dir name, prefix it
+                        if not pattern.startswith(f"{dir_name}/") and not pattern == dir_name:
+                            exclude_patterns.append(f"{dir_name}/{pattern}")
+                        else:
+                            exclude_patterns.append(pattern)
+                    exclude_cmd = " ".join([f'-x "{p}"' for p in exclude_patterns])
+                else:
+                    # When not including root, patterns are relative to source path
+                    exclude_cmd = " ".join([f'-x "{p}"' for p in patterns])
         
         # Handle GitHub Actions environment path
         # Convert /github/workspace to actual working directory if needed
@@ -66,9 +80,9 @@ class Compressor(BaseProcessor):
             # Include the root directory in the archive
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"cd {parent_dir} && zip -r {full_dest} {dir_name} {exclude_patterns}"
+            return f"cd {parent_dir} && zip -r {full_dest} {dir_name} {exclude_cmd}"
         # Archive contents only, without root directory
-        return f"cd {source_path} && zip -r {full_dest} . {exclude_patterns}"
+        return f"cd {source_path} && zip -r {full_dest} . {exclude_cmd}"
 
     def _get_tar_command(self, full_dest: str, base_name: str) -> str:
         """Generate tar compression command"""
@@ -80,8 +94,14 @@ class Compressor(BaseProcessor):
         
         source_path = os.path.abspath(self.source)
 
-        # Handle exclusion
-        exclude = "--exclude '" + self.exclude + "'" if self.exclude else ""
+        # Handle exclusion - tar uses different pattern syntax
+        exclude_cmd = ""
+        if self.exclude:
+            # Split by spaces, process each pattern
+            patterns = [pattern.strip() for pattern in self.exclude.split() if pattern.strip()]
+            if patterns:
+                # Tar exclude patterns work differently and need full paths or patterns
+                exclude_cmd = " ".join([f'--exclude="{p}"' for p in patterns])
         
         # Handle GitHub Actions environment path
         # Convert /github/workspace to actual working directory if needed
@@ -97,9 +117,9 @@ class Compressor(BaseProcessor):
             # Include the root directory in the archive
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"tar -c{opt}f {exclude} {full_dest} -C {parent_dir} {dir_name}"
+            return f"tar {exclude_cmd} -c{opt}f {full_dest} -C {parent_dir} {dir_name}"
         # Archive contents only, without root directory
-        return f"tar -c{opt}f {exclude} {full_dest} -C {source_path} ."
+        return f"tar {exclude_cmd} -c{opt}f {full_dest} -C {source_path} ."
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
         """Generate special tar command for TGZ/TBZ2 formats without root"""
@@ -153,6 +173,8 @@ class Compressor(BaseProcessor):
         print(f"  • Include Root: {self.include_root}")
         print(f"  • Source Size: {FileUtils.get_size(source_size)}")
         print(f"  • Initial Directory: {os.getcwd()}")
+        if self.exclude:
+            print(f"  • Exclude Pattern: {self.exclude}")
 
     def _print_results(self, start_time: datetime, source_size: int) -> None:
         """Print compression results"""
