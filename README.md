@@ -676,5 +676,12 @@ This project is licensed under the [MIT License](LICENSE) file for details.
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+<br/>
 
+## Contributors
 
+Thanks to all contributors:
+
+<a href="https://github.com/somaz94/compress-decompress/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=somaz94/compress-decompress" />
+</a>
