@@ -8,26 +8,55 @@ from utils import (
 )
 
 class Compressor(BaseProcessor):
-    """Handles file/directory compression"""
+    """
+    Handles file/directory compression operations
+    
+    This class provides functionality to compress directories or files using
+    different compression formats (zip, tar, tgz, tbz2) with various options
+    like preserving root directory structure or excluding specific files.
+    """
     def __init__(self, source: str, format: str, include_root: str):
+        """
+        Initialize Compressor with required parameters
+        
+        Args:
+            source: Source directory or file to compress
+            format: Compression format (zip, tar, tgz, tbz2)
+            include_root: Whether to include root directory in compressed file ("true" or "false")
+        """
         super().__init__()
         self.source = source
         self.format = format
         self.include_root = include_root.lower() == "true"
 
     def validate(self) -> bool:
-        """Validate source path exists"""
+        """
+        Validate that source path exists
+        
+        Also handles GitHub Actions runner path conversion for Docker container compatibility.
+        
+        Returns:
+            True if source path is valid, False otherwise
+        """
         # Strip leading/trailing whitespace from path
         self.source = self.source.strip()
         
         # Convert GitHub Actions runner path to Docker container path
+        # This converts paths like /home/runner/work/repo/repo to /github/workspace
         if self.source.startswith('/home/runner/work/'):
             self.source = '/github/workspace'
         
         return self.validate_path(self.source, "Source path")
 
     def get_compression_command(self) -> str:
-        """Generate appropriate compression command based on format"""
+        """
+        Generate the appropriate compression command based on format
+        
+        Determines output destination and calls format-specific command generator.
+        
+        Returns:
+            Shell command string to execute compression
+        """
         base_name = self.destfilename or os.path.basename(self.source)
         extension = f".{self.format}"
         full_dest = self._determine_destination_path(base_name, extension)
@@ -37,29 +66,69 @@ class Compressor(BaseProcessor):
         return self._get_tar_command(full_dest, base_name)
 
     def _determine_destination_path(self, base_name: str, extension: str) -> str:
-        """Determine the full destination path for the compressed file"""
+        """
+        Determine the full destination path for the compressed file
+        
+        Handles both custom destination paths and default paths based on includeRoot option.
+        
+        Args:
+            base_name: Base filename for the output
+            extension: File extension (.zip, .tar, etc.)
+            
+        Returns:
+            Absolute path to the destination file
+        """
         if self.dest and self.dest != os.getcwd():
             return os.path.abspath(os.path.join(self.dest, f"{base_name}{extension}"))
         
         # Use default output location based on includeRoot setting
+        # - If includeRoot=true: Place file next to the source directory
+        # - If includeRoot=false: Place file inside the source directory
         output_dir = os.path.dirname(self.source) if self.include_root else self.source
         return os.path.join(output_dir, f"{base_name}{extension}")
 
     def _get_zip_command(self, full_dest: str, base_name: str) -> str:
-        """Generate zip compression command"""
+        """
+        Generate zip compression command
+        
+        Creates a zip command with proper handling of:
+        - Source path
+        - Exclusion patterns
+        - Root directory inclusion/exclusion
+        
+        Args:
+            full_dest: Full destination path for the output file
+            base_name: Base name of the output file
+            
+        Returns:
+            Shell command string for zip compression
+        """
         source_path = os.path.abspath(self.source)
         source_path = os.getcwd() if source_path == '/github/workspace' else source_path
         exclude_cmd = self._process_zip_exclude_patterns(source_path)
         
         if self.include_root:
+            # When including root directory, we cd to parent dir and zip the source dir
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
             return f"cd {parent_dir} && zip -r {full_dest} {dir_name} {exclude_cmd}"
         
+        # When not including root directory, we cd into source dir and zip its contents
         return f"cd {source_path} && zip -r {full_dest} . {exclude_cmd}"
 
     def _process_zip_exclude_patterns(self, source_path: str) -> str:
-        """Process exclusion patterns for zip command"""
+        """
+        Process exclusion patterns for zip command
+        
+        Handles parsing of exclude patterns from space-separated string to
+        properly formatted zip exclusion parameters.
+        
+        Args:
+            source_path: Absolute path to the source directory
+            
+        Returns:
+            Formatted zip exclusion command string (e.g., -x "pattern1" -x "pattern2")
+        """
         if not self.exclude:
             return ""
             
@@ -72,7 +141,20 @@ class Compressor(BaseProcessor):
         return " ".join([f'-x "{p}"' for p in processed_patterns])
 
     def _format_zip_exclude_patterns(self, patterns: List[str], source_path: str, dir_name: str) -> List[str]:
-        """Format exclude patterns for zip command based on includeRoot setting"""
+        """
+        Format exclude patterns for zip command based on includeRoot setting
+        
+        This is a crucial method that ensures exclude patterns work correctly
+        regardless of whether we're including the root directory or not.
+        
+        Args:
+            patterns: List of raw exclusion patterns
+            source_path: Absolute path to source directory
+            dir_name: Name of the source directory
+            
+        Returns:
+            List of properly formatted exclusion patterns
+        """
         processed_patterns = []
         
         for pattern in patterns:
@@ -84,7 +166,22 @@ class Compressor(BaseProcessor):
         return processed_patterns
 
     def _format_pattern_with_root(self, pattern: str, source_path: str, dir_name: str) -> List[str]:
-        """Format exclusion pattern when includeRoot is true"""
+        """
+        Format exclusion pattern when includeRoot is true
+        
+        Handles different cases like:
+        - Pattern already including directory prefix
+        - Directory patterns (need to exclude content and directory itself)
+        - Regular file patterns
+        
+        Args:
+            pattern: Raw exclusion pattern
+            source_path: Absolute path to source directory
+            dir_name: Name of the source directory
+            
+        Returns:
+            List of formatted patterns for zip command
+        """
         # Pattern already includes directory prefix
         if pattern.startswith(f"{dir_name}/") or pattern == dir_name:
             return [pattern]
@@ -99,13 +196,37 @@ class Compressor(BaseProcessor):
         return [f"{dir_name}/{pattern}"]
 
     def _format_pattern_without_root(self, pattern: str, source_path: str) -> List[str]:
-        """Format exclusion pattern when includeRoot is false"""
+        """
+        Format exclusion pattern when includeRoot is false
+        
+        Handles the case when we're compressing the contents directly without
+        the parent directory name.
+        
+        Args:
+            pattern: Raw exclusion pattern
+            source_path: Absolute path to source directory
+            
+        Returns:
+            List of formatted patterns for zip command
+        """
         if os.path.isdir(os.path.join(source_path, pattern)) and not pattern.endswith('/*'):
             return [f"{pattern}/*", f"{pattern}/"]
         return [pattern]
 
     def _get_tar_command(self, full_dest: str, base_name: str) -> str:
-        """Generate tar compression command"""
+        """
+        Generate tar compression command
+        
+        Handles different tar formats (tar, tgz, tbz2) and options like
+        including/excluding root directory.
+        
+        Args:
+            full_dest: Full destination path for the output file
+            base_name: Base name of the output file
+            
+        Returns:
+            Shell command string for tar compression
+        """
         source_path = os.path.abspath(self.source)
         source_path = os.getcwd() if source_path == '/github/workspace' else source_path
         
@@ -117,20 +238,34 @@ class Compressor(BaseProcessor):
         opt = tar_options.get(self.format, "")
         
         # Special case for TGZ/TBZ2 without root
+        # These formats require a special approach when not including root directory
         if self.format in [CompressionFormat.TGZ.value, CompressionFormat.TBZ2.value] and not self.include_root:
             return self._get_special_tar_command(full_dest, base_name, opt)
         
         exclude_cmd = self._process_tar_exclude_patterns(source_path)
         
         if self.include_root:
+            # When including root, use the parent directory as base and specify the dir name
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
             return f"tar {exclude_cmd} -c{opt}f {full_dest} -C {parent_dir} {dir_name}"
         
+        # When not including root, use the source directory as base and compress everything
         return f"tar {exclude_cmd} -c{opt}f {full_dest} -C {source_path} ."
 
     def _process_tar_exclude_patterns(self, source_path: str) -> str:
-        """Process exclusion patterns for tar command"""
+        """
+        Process exclusion patterns for tar command
+        
+        Tar uses a different exclusion syntax than zip, so we need to handle
+        patterns differently.
+        
+        Args:
+            source_path: Absolute path to source directory
+            
+        Returns:
+            Formatted tar exclusion command string
+        """
         if not self.exclude:
             return ""
             
@@ -150,7 +285,21 @@ class Compressor(BaseProcessor):
         return " ".join([f'--exclude="{p}"' for p in processed_patterns])
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
-        """Generate special tar command for TGZ/TBZ2 formats without root"""
+        """
+        Generate special tar command for TGZ/TBZ2 formats without root
+        
+        This creates a temporary directory, copies files there, compresses them,
+        and then cleans up. This approach is needed for some tar formats when
+        not including the root directory.
+        
+        Args:
+            full_dest: Full destination path for output file
+            base_name: Base name of output file
+            opt: Tar format option (z for gzip, j for bzip2)
+            
+        Returns:
+            Shell command string for special tar compression
+        """
         source_path = os.path.abspath(self.source)
         temp_dir = os.path.join(os.path.dirname(source_path), f"temp_{base_name}_{self.format}")
         exclude_cmd = self._process_special_tar_exclude_patterns()
@@ -163,7 +312,15 @@ class Compressor(BaseProcessor):
         """
 
     def _process_special_tar_exclude_patterns(self) -> str:
-        """Process exclusion patterns for special tar command"""
+        """
+        Process exclusion patterns for special tar command
+        
+        In the special tar case, exclusion patterns are relative to the
+        temporary directory we create.
+        
+        Returns:
+            Formatted tar exclusion command string
+        """
         if not self.exclude:
             return ""
             
@@ -174,7 +331,18 @@ class Compressor(BaseProcessor):
         return " ".join([f'--exclude="{p}"' for p in patterns])
 
     def compress(self) -> ProcessResult:
-        """Execute compression process"""
+        """
+        Execute the compression process
+        
+        This is the main method that orchestrates the entire compression process:
+        1. Validates the source
+        2. Prepares the environment and configuration
+        3. Executes the compression command
+        4. Handles results and errors
+        
+        Returns:
+            ProcessResult object with success status and message
+        """
         try:
             UI.print_header("Compression Process Started")
             if not self.validate():
@@ -199,13 +367,27 @@ class Compressor(BaseProcessor):
             return self.handle_error(e, "Compression")
 
     def _get_source_size(self) -> int:
-        """Get size of source directory or file"""
+        """
+        Get size of source directory or file
+        
+        Handles both directory and file size calculations.
+        
+        Returns:
+            Size in bytes of the source
+        """
         if os.path.isdir(self.source):
             return FileUtils.get_directory_size(self.source)
         return os.path.getsize(self.source)
 
     def _print_configuration(self, source_size: int) -> None:
-        """Print compression configuration details"""
+        """
+        Print compression configuration details
+        
+        Displays all relevant configuration settings to the user.
+        
+        Args:
+            source_size: Size in bytes of the source
+        """
         UI.print_section("Configuration")
         print(f"  • Source: {self.source}")
         print(f"  • Format: {self.format}")
@@ -216,7 +398,16 @@ class Compressor(BaseProcessor):
             print(f"  • Exclude Pattern: {self.exclude}")
 
     def _print_results(self, start_time: datetime, source_size: int) -> None:
-        """Print compression results"""
+        """
+        Print compression results
+        
+        Shows statistics about the compression operation, including size
+        reduction and performance metrics.
+        
+        Args:
+            start_time: Time when compression started
+            source_size: Size in bytes of the source
+        """
         end_time = datetime.now()
         duration = end_time - start_time
         
@@ -231,7 +422,19 @@ class Compressor(BaseProcessor):
             print(f"  • Duration: {duration.total_seconds():.2f} seconds")
 
 def compress(source: str, format: str, include_root: str) -> bool:
-    """Compress a file or directory"""
+    """
+    Main compression function that's called from the action
+    
+    Creates a Compressor instance and executes the compression.
+    
+    Args:
+        source: Source directory or file to compress
+        format: Compression format (zip, tar, tgz, tbz2)
+        include_root: Whether to include root directory ("true" or "false")
+        
+    Returns:
+        True if compression succeeded, False otherwise
+    """
     compressor = Compressor(source, format, include_root)
     result = compressor.compress()
     return result.success

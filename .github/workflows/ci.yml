@@ -90,19 +90,63 @@ jobs:
 
       - name: Verify Contents
         run: |
-          echo "Verifying ${{ matrix.format }} format with includeRoot: ${{ matrix.include_root }}, dest: ${{ matrix.dest_config.type }}"
-          echo "Listing unpacked directory contents:"
-          ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
           
-          if [ "${{ matrix.include_root }}" = "true" ]; then
-            echo "Contents with root directory:"
-            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}
-            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}/${{ matrix.source }}.txt
-          else
-            echo "Contents without root directory:"
-            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
-            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}.txt
+          echo -e "\n${BOLD}${BLUE}======== TEST CONFIGURATION ========${NC}"
+          echo -e "${BOLD}Format:${NC}      ${YELLOW}${{ matrix.format }}${NC}"
+          echo -e "${BOLD}Include Root:${NC} ${YELLOW}${{ matrix.include_root }}${NC}"
+          echo -e "${BOLD}Destination:${NC}  ${YELLOW}${{ matrix.dest_config.type }}${NC}"
+          echo -e "${BOLD}Source Path:${NC}  ${YELLOW}${{ steps.set-path.outputs.source_path }}${NC}"
+          echo -e "${BOLD}Extract Path:${NC} ${YELLOW}./unpacked-${{ matrix.format }}-${{ matrix.source }}${NC}\n"
+          
+          # Check if unpacked directory exists
+          if [ ! -d "./unpacked-${{ matrix.format }}-${{ matrix.source }}" ]; then
+            echo -e "${RED}❌ FAILED: Unpacked directory does not exist!${NC}"
+            exit 1
           fi
+          
+          echo -e "${BOLD}${BLUE}======== UNPACKED DIRECTORY STRUCTURE ========${NC}"
+          find "./unpacked-${{ matrix.format }}-${{ matrix.source }}" -type f | sort | sed 's/^/  /'
+          echo ""
+          
+          # Different verification based on includeRoot setting
+          if [ "${{ matrix.include_root }}" = "true" ]; then
+            echo -e "${BOLD}${BLUE}======== VERIFYING WITH ROOT DIRECTORY ========${NC}"
+            expected_path="./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}/${{ matrix.source }}.txt"
+            
+            if [ -f "$expected_path" ]; then
+              echo -e "${GREEN}✅ SUCCESS: Root directory structure preserved${NC}"
+              echo -e "${BOLD}Content of $expected_path:${NC}"
+              echo -e "${YELLOW}$(cat "$expected_path")${NC}"
+            else
+              echo -e "${RED}❌ FAILED: Expected file $expected_path not found!${NC}"
+              exit 1
+            fi
+          else
+            echo -e "${BOLD}${BLUE}======== VERIFYING WITHOUT ROOT DIRECTORY ========${NC}"
+            expected_path="./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}.txt"
+            
+            if [ -f "$expected_path" ]; then
+              echo -e "${GREEN}✅ SUCCESS: Files extracted without root directory${NC}"
+              echo -e "${BOLD}Content of $expected_path:${NC}"
+              echo -e "${YELLOW}$(cat "$expected_path")${NC}"
+            else
+              echo -e "${RED}❌ FAILED: Expected file $expected_path not found!${NC}"
+              exit 1
+            fi
+          fi
+          
+          echo -e "\n${GREEN}${BOLD}✓ ALL VERIFICATION TESTS PASSED${NC}\n"
+
+      - name: Print Compression Output
+        run: |
+          echo "Compression output for ${{ matrix.format }} (includeRoot: ${{ matrix.include_root }}): ${{ steps.compress.outputs.file_path }}"
 
   test-features-and-errors:
     name: Test Features and Error Handling
@@ -125,11 +169,24 @@ jobs:
 
       - name: Verify Expected Failure
         run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE: EXPECTED FAILURE ========${NC}"
+          echo -e "${BOLD}Test:${NC} Non-existent source with fail_on_error=true"
+          echo -e "${BOLD}Expected Outcome:${NC} Action should fail"
+          echo -e "${BOLD}Actual Outcome:${NC} ${YELLOW}${{ steps.test_fail.outcome }}${NC}\n"
+          
           if [ "${{ steps.test_fail.outcome }}" != "failure" ]; then
-            echo "Expected failure but got success"
+            echo -e "${RED}❌ TEST FAILED: Expected failure but got success${NC}"
             exit 1
           else
-            echo "✅ Test passed: Action failed as expected with fail_on_error=true"
+            echo -e "${GREEN}✅ TEST PASSED: Action failed as expected with fail_on_error=true${NC}"
           fi
 
       # Case 2: Should complete with warning (fail_on_error: false)
@@ -145,10 +202,23 @@ jobs:
 
       - name: Verify Warning Behavior
         run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE: WARNING BEHAVIOR ========${NC}"
+          echo -e "${BOLD}Test:${NC} Non-existent source with fail_on_error=false"
+          echo -e "${BOLD}Expected Outcome:${NC} Action should complete with warning"
+          echo -e "${BOLD}Actual Outcome:${NC} ${YELLOW}${{ steps.test_no_fail.outcome }}${NC}\n"
+          
           if [ "${{ steps.test_no_fail.outcome }}" = "success" ]; then
-            echo "✅ Test passed: Action completed with warning as expected"
+            echo -e "${GREEN}✅ TEST PASSED: Action completed with warning as expected${NC}"
           else
-            echo "❌ Test failed: Action failed when it should have completed with warning"
+            echo -e "${RED}❌ TEST FAILED: Action failed when it should have completed with warning${NC}"
             exit 1
           fi
 
@@ -157,6 +227,15 @@ jobs:
         run: |
           mkdir -p test_warning
           touch test_warning/.gitkeep
+          
+          # Define colors for better readability
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== PREPARING TEST CASE: EMPTY DIRECTORY ========${NC}"
+          echo -e "Created empty test directory with only .gitkeep file:"
+          ls -la test_warning/
 
       - name: Test Valid Source with Warning
         id: test_warning
@@ -170,14 +249,41 @@ jobs:
 
       - name: Verify Warning Case
         run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE: EMPTY DIRECTORY ========${NC}"
+          echo -e "${BOLD}Test:${NC} Empty directory with fail_on_error=false"
+          echo -e "${BOLD}Expected Outcome:${NC} Action should complete successfully"
+          echo -e "${BOLD}Actual Outcome:${NC} ${YELLOW}${{ steps.test_warning.outcome }}${NC}\n"
+          
           if [ "${{ steps.test_warning.outcome }}" = "success" ]; then
-            echo "✅ Test passed: Action completed successfully with empty directory"
+            echo -e "${GREEN}✅ TEST PASSED: Action completed successfully with empty directory${NC}"
           else
-            echo "❌ Test failed: Action failed with empty directory"
+            echo -e "${RED}❌ TEST FAILED: Action failed with empty directory${NC}"
             exit 1
           fi
+          
+      - name: Test Summary
+        run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== ERROR HANDLING TEST SUMMARY ========${NC}"
+          echo -e "${GREEN}${BOLD}✓ All error handling tests passed successfully${NC}"
+          echo -e "${BOLD}Tests verified:${NC}"
+          echo -e "  • Expected failure with fail_on_error=true"
+          echo -e "  • Warning behavior with fail_on_error=false"
+          echo -e "  • Empty directory handling\n"
 
- 
   test-github-workspace:
     name: Test GitHub Workspace Path
     runs-on: ubuntu-latest
@@ -222,24 +328,37 @@ jobs:
       # Verify the results
       - name: Verify Compression Results
         run: |
-          echo "Checking output directory contents:"
-          ls -la ./output/
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
           
-          # Test default case
+          echo -e "\n${BOLD}${BLUE}======== GITHUB WORKSPACE COMPRESSION TEST ========${NC}"
+          echo -e "${BOLD}Output Directory Contents:${NC}"
+          ls -la ./output/ | sed 's/^/  /'
+          
+          # Test default case (includeRoot: true)
+          echo -e "\n${BOLD}${BLUE}======== CASE 1: DEFAULT WORKSPACE COMPRESSION ========${NC}"
           if [ -f "./output/workspace_default.zip" ]; then
-            echo "✅ Default workspace compression successful"
-            unzip -l ./output/workspace_default.zip
+            echo -e "${GREEN}✅ SUCCESS: Default workspace compression${NC}"
+            echo -e "${BOLD}Archive Contents:${NC}"
+            unzip -l ./output/workspace_default.zip | sed 's/^/  /'
           else
-            echo "❌ Default workspace compression failed"
+            echo -e "${RED}❌ FAILED: Default workspace compression${NC}"
             exit 1
           fi
           
-          # Test no root case
+          # Test no root case (includeRoot: false)
+          echo -e "\n${BOLD}${BLUE}======== CASE 2: NO ROOT WORKSPACE COMPRESSION ========${NC}"
           if [ -f "./output/workspace_no_root.zip" ]; then
-            echo "✅ No root workspace compression successful"
-            unzip -l ./output/workspace_no_root.zip
+            echo -e "${GREEN}✅ SUCCESS: No root workspace compression${NC}"
+            echo -e "${BOLD}Archive Contents:${NC}"
+            unzip -l ./output/workspace_no_root.zip | sed 's/^/  /'
           else
-            echo "❌ No root workspace compression failed"
+            echo -e "${RED}❌ FAILED: No root workspace compression${NC}"
             exit 1
           fi
 
