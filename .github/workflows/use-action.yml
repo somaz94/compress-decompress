@@ -60,13 +60,6 @@ jobs:
           destfilename: ${{ matrix.dest_config.destfilename }}
           verbose: 'true'
 
-      - name: List Workspace Contents
-        run: |
-          echo "Current directory contents:"
-          ls -la
-          echo "Source directory contents:"
-          ls -la ./${{ matrix.source }}
-
       # Set the correct source path based on configuration
       - name: Set Source Path
         id: set-path
@@ -95,30 +88,69 @@ jobs:
           source: ${{ steps.set-path.outputs.source_path }}
           format: ${{ matrix.format }}
           dest: './unpacked-${{ matrix.format }}-${{ matrix.source }}'
-          verbose: 'false'
 
       - name: Verify Contents
         run: |
-          echo "Verifying ${{ matrix.format }} format with includeRoot: ${{ matrix.include_root }}, dest: ${{ matrix.dest_config.type }}"
-          echo "Listing unpacked directory contents:"
-          ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
           
-          if [ "${{ matrix.include_root }}" = "true" ]; then
-            echo "Contents with root directory:"
-            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}
-            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}/${{ matrix.source }}.txt
-          else
-            echo "Contents without root directory:"
-            ls -la ./unpacked-${{ matrix.format }}-${{ matrix.source }}
-            cat ./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}.txt
+          echo -e "\n${BOLD}${BLUE}======== TEST CONFIGURATION ========${NC}"
+          echo -e "${BOLD}Format:${NC}      ${YELLOW}${{ matrix.format }}${NC}"
+          echo -e "${BOLD}Include Root:${NC} ${YELLOW}${{ matrix.include_root }}${NC}"
+          echo -e "${BOLD}Destination:${NC}  ${YELLOW}${{ matrix.dest_config.type }}${NC}"
+          echo -e "${BOLD}Source Path:${NC}  ${YELLOW}${{ steps.set-path.outputs.source_path }}${NC}"
+          echo -e "${BOLD}Extract Path:${NC} ${YELLOW}./unpacked-${{ matrix.format }}-${{ matrix.source }}${NC}\n"
+          
+          # Check if unpacked directory exists
+          if [ ! -d "./unpacked-${{ matrix.format }}-${{ matrix.source }}" ]; then
+            echo -e "${RED}❌ FAILED: Unpacked directory does not exist!${NC}"
+            exit 1
           fi
+          
+          echo -e "${BOLD}${BLUE}======== UNPACKED DIRECTORY STRUCTURE ========${NC}"
+          find "./unpacked-${{ matrix.format }}-${{ matrix.source }}" -type f | sort | sed 's/^/  /'
+          echo ""
+          
+          # Different verification based on includeRoot setting
+          if [ "${{ matrix.include_root }}" = "true" ]; then
+            echo -e "${BOLD}${BLUE}======== VERIFYING WITH ROOT DIRECTORY ========${NC}"
+            expected_path="./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}/${{ matrix.source }}.txt"
+            
+            if [ -f "$expected_path" ]; then
+              echo -e "${GREEN}✅ SUCCESS: Root directory structure preserved${NC}"
+              echo -e "${BOLD}Content of $expected_path:${NC}"
+              echo -e "${YELLOW}$(cat "$expected_path")${NC}"
+            else
+              echo -e "${RED}❌ FAILED: Expected file $expected_path not found!${NC}"
+              exit 1
+            fi
+          else
+            echo -e "${BOLD}${BLUE}======== VERIFYING WITHOUT ROOT DIRECTORY ========${NC}"
+            expected_path="./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}.txt"
+            
+            if [ -f "$expected_path" ]; then
+              echo -e "${GREEN}✅ SUCCESS: Files extracted without root directory${NC}"
+              echo -e "${BOLD}Content of $expected_path:${NC}"
+              echo -e "${YELLOW}$(cat "$expected_path")${NC}"
+            else
+              echo -e "${RED}❌ FAILED: Expected file $expected_path not found!${NC}"
+              exit 1
+            fi
+          fi
+          
+          echo -e "\n${GREEN}${BOLD}✓ ALL VERIFICATION TESTS PASSED${NC}\n"
 
       - name: Print Compression Output
         run: |
           echo "Compression output for ${{ matrix.format }} (includeRoot: ${{ matrix.include_root }}): ${{ steps.compress.outputs.file_path }}"
 
-  test-error-handling:
-    name: Test Error Handling
+  test-features-and-errors:
+    name: Test Features and Error Handling
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -138,11 +170,24 @@ jobs:
 
       - name: Verify Expected Failure
         run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE: EXPECTED FAILURE ========${NC}"
+          echo -e "${BOLD}Test:${NC} Non-existent source with fail_on_error=true"
+          echo -e "${BOLD}Expected Outcome:${NC} Action should fail"
+          echo -e "${BOLD}Actual Outcome:${NC} ${YELLOW}${{ steps.test_fail.outcome }}${NC}\n"
+          
           if [ "${{ steps.test_fail.outcome }}" != "failure" ]; then
-            echo "Expected failure but got success"
+            echo -e "${RED}❌ TEST FAILED: Expected failure but got success${NC}"
             exit 1
           else
-            echo "✅ Test passed: Action failed as expected with fail_on_error=true"
+            echo -e "${GREEN}✅ TEST PASSED: Action failed as expected with fail_on_error=true${NC}"
           fi
 
       # Case 2: Should complete with warning (fail_on_error: false)
@@ -158,10 +203,23 @@ jobs:
 
       - name: Verify Warning Behavior
         run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE: WARNING BEHAVIOR ========${NC}"
+          echo -e "${BOLD}Test:${NC} Non-existent source with fail_on_error=false"
+          echo -e "${BOLD}Expected Outcome:${NC} Action should complete with warning"
+          echo -e "${BOLD}Actual Outcome:${NC} ${YELLOW}${{ steps.test_no_fail.outcome }}${NC}\n"
+          
           if [ "${{ steps.test_no_fail.outcome }}" = "success" ]; then
-            echo "✅ Test passed: Action completed with warning as expected"
+            echo -e "${GREEN}✅ TEST PASSED: Action completed with warning as expected${NC}"
           else
-            echo "❌ Test failed: Action failed when it should have completed with warning"
+            echo -e "${RED}❌ TEST FAILED: Action failed when it should have completed with warning${NC}"
             exit 1
           fi
 
@@ -170,6 +228,15 @@ jobs:
         run: |
           mkdir -p test_warning
           touch test_warning/.gitkeep
+          
+          # Define colors for better readability
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== PREPARING TEST CASE: EMPTY DIRECTORY ========${NC}"
+          echo -e "Created empty test directory with only .gitkeep file:"
+          ls -la test_warning/
 
       - name: Test Valid Source with Warning
         id: test_warning
@@ -183,12 +250,40 @@ jobs:
 
       - name: Verify Warning Case
         run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE: EMPTY DIRECTORY ========${NC}"
+          echo -e "${BOLD}Test:${NC} Empty directory with fail_on_error=false"
+          echo -e "${BOLD}Expected Outcome:${NC} Action should complete successfully"
+          echo -e "${BOLD}Actual Outcome:${NC} ${YELLOW}${{ steps.test_warning.outcome }}${NC}\n"
+          
           if [ "${{ steps.test_warning.outcome }}" = "success" ]; then
-            echo "✅ Test passed: Action completed successfully with empty directory"
+            echo -e "${GREEN}✅ TEST PASSED: Action completed successfully with empty directory${NC}"
           else
-            echo "❌ Test failed: Action failed with empty directory"
+            echo -e "${RED}❌ TEST FAILED: Action failed with empty directory${NC}"
             exit 1
           fi
+          
+      - name: Test Summary
+        run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== ERROR HANDLING TEST SUMMARY ========${NC}"
+          echo -e "${GREEN}${BOLD}✓ All error handling tests passed successfully${NC}"
+          echo -e "${BOLD}Tests verified:${NC}"
+          echo -e "  • Expected failure with fail_on_error=true"
+          echo -e "  • Warning behavior with fail_on_error=false"
+          echo -e "  • Empty directory handling\n"
 
   test-github-workspace:
     name: Test GitHub Workspace Path
@@ -234,24 +329,37 @@ jobs:
       # Verify the results
       - name: Verify Compression Results
         run: |
-          echo "Checking output directory contents:"
-          ls -la ./output/
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
           
-          # Test default case
+          echo -e "\n${BOLD}${BLUE}======== GITHUB WORKSPACE COMPRESSION TEST ========${NC}"
+          echo -e "${BOLD}Output Directory Contents:${NC}"
+          ls -la ./output/ | sed 's/^/  /'
+          
+          # Test default case (includeRoot: true)
+          echo -e "\n${BOLD}${BLUE}======== CASE 1: DEFAULT WORKSPACE COMPRESSION ========${NC}"
           if [ -f "./output/workspace_default.zip" ]; then
-            echo "✅ Default workspace compression successful"
-            unzip -l ./output/workspace_default.zip
+            echo -e "${GREEN}✅ SUCCESS: Default workspace compression${NC}"
+            echo -e "${BOLD}Archive Contents:${NC}"
+            unzip -l ./output/workspace_default.zip | sed 's/^/  /'
           else
-            echo "❌ Default workspace compression failed"
+            echo -e "${RED}❌ FAILED: Default workspace compression${NC}"
             exit 1
           fi
           
-          # Test no root case
+          # Test no root case (includeRoot: false)
+          echo -e "\n${BOLD}${BLUE}======== CASE 2: NO ROOT WORKSPACE COMPRESSION ========${NC}"
           if [ -f "./output/workspace_no_root.zip" ]; then
-            echo "✅ No root workspace compression successful"
-            unzip -l ./output/workspace_no_root.zip
+            echo -e "${GREEN}✅ SUCCESS: No root workspace compression${NC}"
+            echo -e "${BOLD}Archive Contents:${NC}"
+            unzip -l ./output/workspace_no_root.zip | sed 's/^/  /'
           else
-            echo "❌ No root workspace compression failed"
+            echo -e "${RED}❌ FAILED: No root workspace compression${NC}"
             exit 1
           fi
 
@@ -276,27 +384,49 @@ jobs:
 
       - name: Verify Decompression Results
         run: |
-          echo "Checking extracted contents (Default):"
-          ls -la ./extracted_default/
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
           
-          echo "Checking extracted contents (No Root):"
-          ls -la ./extracted_no_root/
+          echo -e "\n${BOLD}${BLUE}======== GITHUB WORKSPACE DECOMPRESSION TEST ========${NC}"
           
-          # Verify file contents for default case (with workspace directory)
+          # Check default case (with root directory)
+          echo -e "\n${BOLD}${BLUE}======== CASE 1: DEFAULT WORKSPACE EXTRACTION ========${NC}"
+          echo -e "${BOLD}Extracted Contents:${NC}"
+          find "./extracted_default" -type f | sort | sed 's/^/  /'
+          
           if [ -f "./extracted_default/workspace/test.txt" ] && [ -f "./extracted_default/workspace/subdir/subdir.txt" ]; then
-            echo "✅ Default extraction verified"
+            echo -e "${GREEN}✅ SUCCESS: Default extraction verified${NC}"
+            echo -e "${BOLD}Content of test.txt:${NC}"
+            echo -e "${YELLOW}$(cat ./extracted_default/workspace/test.txt)${NC}"
+            echo -e "${BOLD}Content of subdir/subdir.txt:${NC}"
+            echo -e "${YELLOW}$(cat ./extracted_default/workspace/subdir/subdir.txt)${NC}"
           else
-            echo "❌ Default extraction failed"
+            echo -e "${RED}❌ FAILED: Default extraction failed${NC}"
             exit 1
           fi
           
-          # Verify file contents for no root case (files directly in directory)
+          # Check no root case (files directly in directory)
+          echo -e "\n${BOLD}${BLUE}======== CASE 2: NO ROOT WORKSPACE EXTRACTION ========${NC}"
+          echo -e "${BOLD}Extracted Contents:${NC}"
+          find "./extracted_no_root" -type f | sort | sed 's/^/  /'
+          
           if [ -f "./extracted_no_root/test.txt" ] && [ -f "./extracted_no_root/subdir/subdir.txt" ]; then
-            echo "✅ No root extraction verified"
+            echo -e "${GREEN}✅ SUCCESS: No root extraction verified${NC}"
+            echo -e "${BOLD}Content of test.txt:${NC}"
+            echo -e "${YELLOW}$(cat ./extracted_no_root/test.txt)${NC}"
+            echo -e "${BOLD}Content of subdir/subdir.txt:${NC}"
+            echo -e "${YELLOW}$(cat ./extracted_no_root/subdir/subdir.txt)${NC}"
           else
-            echo "❌ No root extraction failed"
+            echo -e "${RED}❌ FAILED: No root extraction failed${NC}"
             exit 1
           fi
+          
+          echo -e "\n${GREEN}${BOLD}✓ ALL GITHUB WORKSPACE TESTS PASSED${NC}\n"
 
   test-github-workspace-paths:
     name: Test GitHub Workspace Path Variants
@@ -345,25 +475,41 @@ jobs:
       # Verify both archives
       - name: Verify Compression Results
         run: |
-          echo "Checking output directories contents:"
-          ls -la ./output1/
-          ls -la ./output2/
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== WORKSPACE PATH VARIANTS TEST ========${NC}"
+          
+          echo -e "${BOLD}${BLUE}======== OUTPUT DIRECTORIES CONTENTS ========${NC}"
+          echo -e "${BOLD}Output1 Directory:${NC}"
+          ls -la ./output1/ | sed 's/^/  /'
+          echo -e "\n${BOLD}Output2 Directory:${NC}"
+          ls -la ./output2/ | sed 's/^/  /'
           
           # Test direct case
+          echo -e "\n${BOLD}${BLUE}======== CASE 1: DIRECT WORKSPACE PATH ========${NC}"
           if [ -f "./output1/direct_workspace.zip" ]; then
-            echo "✅ Direct workspace compression successful"
-            unzip -l ./output1/direct_workspace.zip
+            echo -e "${GREEN}✅ SUCCESS: Direct workspace compression${NC}"
+            echo -e "${BOLD}Archive Contents:${NC}"
+            unzip -l ./output1/direct_workspace.zip | sed 's/^/  /'
           else
-            echo "❌ Direct workspace compression failed"
+            echo -e "${RED}❌ FAILED: Direct workspace compression${NC}"
             exit 1
           fi
           
           # Test space case
+          echo -e "\n${BOLD}${BLUE}======== CASE 2: WORKSPACE PATH WITH SPACE ========${NC}"
           if [ -f "./output2/space_workspace.zip" ]; then
-            echo "✅ Space workspace compression successful"
-            unzip -l ./output2/space_workspace.zip
+            echo -e "${GREEN}✅ SUCCESS: Space-padded workspace compression${NC}"
+            echo -e "${BOLD}Archive Contents:${NC}"
+            unzip -l ./output2/space_workspace.zip | sed 's/^/  /'
           else
-            echo "❌ Space workspace compression failed"
+            echo -e "${RED}❌ FAILED: Space-padded workspace compression${NC}"
             exit 1
           fi
 
@@ -388,85 +534,47 @@ jobs:
 
       - name: Verify Decompression Results
         run: |
-          echo "Checking extracted contents (Direct):"
-          ls -la ./extracted_direct/
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
           
-          echo "Checking extracted contents (Space):"
-          ls -la ./extracted_space/
+          echo -e "\n${BOLD}${BLUE}======== WORKSPACE PATH VARIANTS EXTRACTION TEST ========${NC}"
+          
+          echo -e "${BOLD}${BLUE}======== EXTRACTION DIRECTORY CONTENTS ========${NC}"
+          echo -e "${BOLD}Direct Extraction Directory:${NC}"
+          find "./extracted_direct" -type f | sort | sed 's/^/  /'
+          echo -e "\n${BOLD}Space-padded Extraction Directory:${NC}"
+          find "./extracted_space" -type f | sort | sed 's/^/  /'
           
           # Verify file contents for both cases
+          extraction_success=true
+          
           for dir in "./extracted_direct" "./extracted_space"; do
+            dir_name=$(basename "$dir")
+            echo -e "\n${BOLD}${BLUE}======== VERIFYING $dir_name ========${NC}"
+            
             if [ -f "$dir/test1.txt" ] && [ -f "$dir/test2.txt" ] && [ -f "$dir/subdir/test3.txt" ]; then
-              echo "✅ Extraction verified for $dir"
-              echo "Contents of test files:"
-              cat "$dir/test1.txt"
-              cat "$dir/test2.txt"
-              cat "$dir/subdir/test3.txt"
+              echo -e "${GREEN}✅ SUCCESS: Extraction verified for $dir${NC}"
+              echo -e "${BOLD}Content of test files:${NC}"
+              echo -e "${YELLOW}test1.txt:${NC} ${YELLOW}$(cat "$dir/test1.txt")${NC}"
+              echo -e "${YELLOW}test2.txt:${NC} ${YELLOW}$(cat "$dir/test2.txt")${NC}"
+              echo -e "${YELLOW}subdir/test3.txt:${NC} ${YELLOW}$(cat "$dir/subdir/test3.txt")${NC}"
             else
-              echo "❌ Extraction failed for $dir"
-              exit 1
+              echo -e "${RED}❌ FAILED: Extraction failed for $dir${NC}"
+              extraction_success=false
+              break
             fi
           done
-
-  test-tmp-issue:
-    name: Test Fabio's Issue with /tmp
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # First, check the github.workspace value
-      - name: Check workspace path
-        run: |
-          echo "GitHub Workspace: ${{ github.workspace }}"
-          ls ${{ github.workspace }}
-
-      # Fabio's first case: no space
-      - name: Test Compression without space
-        id: compress_no_space
-        uses: somaz94/compress-decompress@v1
-        with:
-          command: compress
-          source: '${{ github.workspace }}'
-          format: zip
-          verbose: 'true'
-          includeRoot: 'false'
-          dest: './tmp'
-          destfilename: test1
-
-      # Next, check the file existence in /tmp
-      - name: Check /tmp after first compression
-        run: |
-          echo "Checking /tmp after compression without space:"
-          ls -la ./tmp/test1.zip || echo "File not found in /tmp"
-
-      # Fabio's second case: space
-      - name: Test Compression with space
-        id: compress_with_space
-        uses: somaz94/compress-decompress@v1
-        with:
-          command: compress
-          source: ' ${{ github.workspace }}'
-          format: zip
-          verbose: 'true'
-          includeRoot: 'false'
-          dest: './tmp'
-          destfilename: test2
-
-      # Next, check the file existence in /tmp
-      - name: Check /tmp after second compression
-        run: |
-          echo "Checking /tmp after compression with space:"
-          ls -la ./tmp/test2.zip || echo "File not found in /tmp"
-
-      # Summarize results
-      - name: Summarize results
-        run: |
-          echo "=== Test Results ==="
-          echo "Test 1 (no space):"
-          ls -la ./tmp/test1.zip 2>/dev/null && echo "✅ File exists" || echo "❌ File not found"
-          echo "Test 2 (with space):"
-          ls -la ./tmp/test2.zip 2>/dev/null && echo "✅ File exists" || echo "❌ File not found"
+          
+          if [ "$extraction_success" = false ]; then
+            exit 1
+          fi
+          
+          echo -e "\n${GREEN}${BOLD}✓ ALL WORKSPACE VARIANT TESTS PASSED${NC}\n"
 
   test-exclude-functionality:
     name: Test Exclude Functionality
@@ -477,7 +585,7 @@ jobs:
 
       - name: Create Test Structure
         run: |
-          # Create a test directory structure
+          # Creating a Test Directory Structure
           mkdir -p test_exclude/include_folder test_exclude/exclude_folder
           mkdir -p test_exclude/mixed_folder
           
@@ -545,75 +653,6 @@ jobs:
           exclude: '*.log'
           verbose: 'true'
 
-      - name: Verify Exclusion Results
-        run: |
-          echo "Checking compressed archives contents:"
-          mkdir -p verify
-          
-          # Check single file exclusion
-          unzip -l ./output/single_file_exclude.zip
-          unzip -q ./output/single_file_exclude.zip -d ./verify/single_file
-          echo "Single file exclusion contents:"
-          find ./verify/single_file -type f | sort
-          if grep -q "exclude_file.txt" <(find ./verify/single_file -type f); then
-            echo "❌ Exclusion failed: exclude_file.txt was found when it should be excluded"
-            exit 1
-          else
-            echo "✅ Single file exclusion successful"
-          fi
-          
-          # Check directory exclusion
-          unzip -l ./output/directory_exclude.zip
-          unzip -q ./output/directory_exclude.zip -d ./verify/directory
-          echo "Directory exclusion contents:"
-          find ./verify/directory -type f | sort
-          if grep -q "exclude_folder" <(find ./verify/directory -type d); then
-            echo "❌ Exclusion failed: exclude_folder was found when it should be excluded"
-            exit 1
-          else
-            echo "✅ Directory exclusion successful"
-          fi
-          
-          # Check multiple exclusion
-          unzip -l ./output/multiple_exclude.zip
-          unzip -q ./output/multiple_exclude.zip -d ./verify/multiple
-          echo "Multiple exclusion contents:"
-          find ./verify/multiple -type f | sort
-          
-          EXCLUSION_FAILED=false
-          if grep -q "exclude_file.txt" <(find ./verify/multiple -type f); then
-            echo "❌ Exclusion failed: exclude_file.txt was found"
-            EXCLUSION_FAILED=true
-          fi
-          
-          if grep -q "exclude_folder" <(find ./verify/multiple -type d); then
-            echo "❌ Exclusion failed: exclude_folder was found"
-            EXCLUSION_FAILED=true
-          fi
-          
-          if grep -q ".log" <(find ./verify/multiple/mixed_folder -type f 2>/dev/null || echo ""); then
-            echo "❌ Exclusion failed: .log files were found in mixed_folder"
-            EXCLUSION_FAILED=true
-          fi
-          
-          if [ "$EXCLUSION_FAILED" = "false" ]; then
-            echo "✅ Multiple exclusion successful"
-          else
-            exit 1
-          fi
-          
-          # Check pattern exclusion
-          unzip -l ./output/pattern_exclude.zip
-          unzip -q ./output/pattern_exclude.zip -d ./verify/pattern
-          echo "Pattern exclusion contents:"
-          find ./verify/pattern -type f | sort
-          if grep -q ".log" <(find ./verify/pattern -type f); then
-            echo "❌ Exclusion failed: .log files were found when they should be excluded"
-            exit 1
-          else
-            echo "✅ Pattern exclusion successful"
-          fi
-
       - name: Test TAR Format with Exclusion
         id: exclude_tar
         uses: somaz94/compress-decompress@v1
@@ -626,29 +665,124 @@ jobs:
           exclude: 'exclude_file.txt exclude_folder'
           verbose: 'true'
 
-      - name: Verify TAR Exclusion
+      - name: Verify Exclusion Results
         run: |
-          echo "Checking TAR archive contents:"
-          mkdir -p verify/tar
-          tar -tvf ./output/tar_exclude.tar
-          tar -xf ./output/tar_exclude.tar -C ./verify/tar
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
           
-          echo "TAR exclusion contents:"
-          find ./verify/tar -type f | sort
+          echo -e "\n${BOLD}${BLUE}======== EXCLUSION FUNCTIONALITY TEST ========${NC}"
+          echo -e "${BOLD}Preparing verification directories...${NC}"
+          mkdir -p verify
+          
+          # Check single file exclusion
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 1: SINGLE FILE EXCLUSION ========${NC}"
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./output/single_file_exclude.zip | sed 's/^/  /'
+          unzip -q ./output/single_file_exclude.zip -d ./verify/single_file
+          
+          echo -e "\n${BOLD}Extracted Contents:${NC}"
+          find ./verify/single_file -type f | sort | sed 's/^/  /'
+          
+          if grep -q "exclude_file.txt" <(find ./verify/single_file -type f); then
+            echo -e "${RED}❌ FAILED: exclude_file.txt was found when it should be excluded${NC}"
+            exit 1
+          else
+            echo -e "${GREEN}✅ SUCCESS: Single file exclusion verified${NC}"
+          fi
+          
+          # Check directory exclusion
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 2: DIRECTORY EXCLUSION ========${NC}"
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./output/directory_exclude.zip | sed 's/^/  /'
+          unzip -q ./output/directory_exclude.zip -d ./verify/directory
+          
+          echo -e "\n${BOLD}Extracted Contents:${NC}"
+          find ./verify/directory -type f | sort | sed 's/^/  /'
+          
+          if grep -q "exclude_folder" <(find ./verify/directory -type d); then
+            echo -e "${RED}❌ FAILED: exclude_folder was found when it should be excluded${NC}"
+            exit 1
+          else
+            echo -e "${GREEN}✅ SUCCESS: Directory exclusion verified${NC}"
+          fi
+          
+          # Check multiple exclusion
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 3: MULTIPLE EXCLUSIONS ========${NC}"
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./output/multiple_exclude.zip | sed 's/^/  /'
+          unzip -q ./output/multiple_exclude.zip -d ./verify/multiple
+          
+          echo -e "\n${BOLD}Extracted Contents:${NC}"
+          find ./verify/multiple -type f | sort | sed 's/^/  /'
           
           EXCLUSION_FAILED=false
-          if grep -q "exclude_file.txt" <(find ./verify/tar -type f); then
-            echo "❌ TAR Exclusion failed: exclude_file.txt was found"
+          if grep -q "exclude_file.txt" <(find ./verify/multiple -type f); then
+            echo -e "${RED}❌ FAILED: exclude_file.txt was found${NC}"
             EXCLUSION_FAILED=true
           fi
           
-          if grep -q "exclude_folder" <(find ./verify/tar -type d); then
-            echo "❌ TAR Exclusion failed: exclude_folder was found"
+          if grep -q "exclude_folder" <(find ./verify/multiple -type d); then
+            echo -e "${RED}❌ FAILED: exclude_folder was found${NC}"
+            EXCLUSION_FAILED=true
+          fi
+          
+          if grep -q ".log" <(find ./verify/multiple/mixed_folder -type f 2>/dev/null || echo ""); then
+            echo -e "${RED}❌ FAILED: .log files were found in mixed_folder${NC}"
             EXCLUSION_FAILED=true
           fi
           
           if [ "$EXCLUSION_FAILED" = "false" ]; then
-            echo "✅ TAR exclusion successful"
+            echo -e "${GREEN}✅ SUCCESS: Multiple exclusion patterns verified${NC}"
           else
             exit 1
           fi
+          
+          # Check pattern exclusion
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 4: WILDCARD PATTERN EXCLUSION ========${NC}"
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./output/pattern_exclude.zip | sed 's/^/  /'
+          unzip -q ./output/pattern_exclude.zip -d ./verify/pattern
+          
+          echo -e "\n${BOLD}Extracted Contents:${NC}"
+          find ./verify/pattern -type f | sort | sed 's/^/  /'
+          
+          if grep -q ".log" <(find ./verify/pattern -type f); then
+            echo -e "${RED}❌ FAILED: .log files were found when they should be excluded${NC}"
+            exit 1
+          else
+            echo -e "${GREEN}✅ SUCCESS: Pattern exclusion verified${NC}"
+          fi
+          
+          # TAR format exclusion verification
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 5: TAR FORMAT EXCLUSION ========${NC}"
+          echo -e "${BOLD}Archive Contents:${NC}"
+          tar -tvf ./output/tar_exclude.tar | sed 's/^/  /'
+          mkdir -p verify/tar
+          tar -xf ./output/tar_exclude.tar -C ./verify/tar
+          
+          echo -e "\n${BOLD}Extracted Contents:${NC}"
+          find ./verify/tar -type f | sort | sed 's/^/  /'
+          
+          TAR_EXCLUSION_FAILED=false
+          if grep -q "exclude_file.txt" <(find ./verify/tar -type f); then
+            echo -e "${RED}❌ FAILED: exclude_file.txt was found in TAR archive${NC}"
+            TAR_EXCLUSION_FAILED=true
+          fi
+          
+          if grep -q "exclude_folder" <(find ./verify/tar -type d); then
+            echo -e "${RED}❌ FAILED: exclude_folder was found in TAR archive${NC}"
+            TAR_EXCLUSION_FAILED=true
+          fi
+          
+          if [ "$TAR_EXCLUSION_FAILED" = "false" ]; then
+            echo -e "${GREEN}✅ SUCCESS: TAR exclusion verified${NC}"
+          else
+            exit 1
+          fi
+          
+          echo -e "\n${GREEN}${BOLD}✓ ALL EXCLUSION TESTS PASSED${NC}\n"
