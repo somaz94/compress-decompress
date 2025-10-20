@@ -1,8 +1,8 @@
 # Changelog
 
-## [v1.5.1](https://github.com/somaz94/compress-decompress/tree/v1.5.1) (2025-10-20)
+## [v1.6.0](https://github.com/somaz94/compress-decompress/tree/v1.6.0) (2025-10-20)
 
-[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.5.1...v1.5.1)
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.5.1...v1.6.0)
 
 **Merged pull requests:**
 
