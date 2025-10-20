@@ -27,6 +27,7 @@ class ActionRunner:
         # Behavior settings
         self.include_root = os.getenv("INCLUDEROOT", "true")
         self.preserve_glob_structure = os.getenv("PRESERVE_GLOB_STRUCTURE", "false")
+        self.strip_prefix = os.getenv("STRIP_PREFIX", "")
         self.verbose = os.getenv("VERBOSE", "false").lower() == "true"
         self.fail_on_error = os.getenv("FAIL_ON_ERROR", "true").lower() == "true"
         
@@ -81,6 +82,8 @@ class ActionRunner:
         # Print behavior settings
         print(f"  • Include Root: {self.include_root}")
         print(f"  • Preserve Glob Structure: {self.preserve_glob_structure}")
+        if self.strip_prefix:
+            print(f"  • Strip Prefix: {self.strip_prefix}")
         print(f"  • Verbose: {self.verbose}")
         print(f"  • Fail on Error: {self.fail_on_error}")
         
@@ -100,7 +103,7 @@ class ActionRunner:
         Raises an error for unsupported commands.
         """
         if self.command == "compress":
-            compress(self.source, self.format, self.include_root, self.preserve_glob_structure)
+            compress(self.source, self.format, self.include_root, self.preserve_glob_structure, self.strip_prefix)
         elif self.command == "decompress":
             decompress(self.source, self.format)
         else:

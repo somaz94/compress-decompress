@@ -1049,6 +1049,67 @@ jobs:
             exit 1
           fi
 
+      - name: Test Glob Pattern - Strip Prefix
+        id: glob_strip_prefix
+        uses: ./
+        with:
+          command: 'compress'
+          source: 'test_glob/**/*.doc'
+          format: 'zip'
+          dest: './glob_output'
+          destfilename: 'stripped_prefix'
+          preserveGlobStructure: 'true'
+          stripPrefix: 'test_glob/'
+          verbose: 'true'
+
+      - name: Verify Strip Prefix
+        run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== STRIP PREFIX TEST ========${NC}"
+          
+          if [ ! -f "./glob_output/stripped_prefix.zip" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./glob_output/stripped_prefix.zip | sed 's/^/  /'
+          
+          mkdir -p verify/stripped
+          unzip -q ./glob_output/stripped_prefix.zip -d ./verify/stripped
+          
+          echo -e "\n${BOLD}Extracted Structure:${NC}"
+          find ./verify/stripped -type f | sort | sed 's/^/  /'
+          
+          # Check if 'test_glob/' prefix was stripped
+          # Files should be like: docs/file1.doc (NOT test_glob/docs/file1.doc)
+          stripped_count=$(find ./verify/stripped -path "*/docs/file*.doc" -o \
+                                                   -path "*/nested/file*.doc" -o \
+                                                   -path "*/nested/level1/file*.doc" -o \
+                                                   -path "*/nested/level1/level2/file*.doc" | wc -l)
+          
+          # Check that test_glob directory does NOT exist (prefix was stripped)
+          if find ./verify/stripped -type d -name "test_glob" | grep -q .; then
+            echo -e "${RED}❌ FAILED: test_glob directory found - prefix was not stripped${NC}"
+            exit 1
+          fi
+          
+          if [ "$stripped_count" -eq 5 ]; then
+            echo -e "${GREEN}✅ SUCCESS: Prefix 'test_glob/' was stripped correctly (5 files)${NC}"
+            echo -e "\n${BOLD}Files with stripped prefix:${NC}"
+            find ./verify/stripped -name "*.doc" | sort | sed 's|.*/verify/stripped/||' | sed 's|.*/compress_glob_[0-9]*/||' | sed 's/^/  /'
+          else
+            echo -e "${RED}❌ FAILED: Expected 5 files with stripped prefix but found $stripped_count${NC}"
+            exit 1
+          fi
+
       - name: Test Glob Pattern - Preserve Structure (True)
         id: glob_preserve_true
         uses: ./
@@ -1329,6 +1390,7 @@ jobs:
           echo -e "  • Nested path patterns (nested/**/*.doc)"
           echo -e "  • No match error handling"
           echo -e "  • Different compression formats (zip, tar, tgz)"
+          echo -e "  • Prefix stripping (stripPrefix: 'test_glob/')"
           echo -e "  • Directory structure preservation (preserveGlobStructure: true)"
           echo -e "  • Flattened structure (preserveGlobStructure: false)"
           echo -e "  • Same filename conflict handling\n"

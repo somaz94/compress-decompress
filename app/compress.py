@@ -16,7 +16,7 @@ class Compressor(BaseProcessor):
     like preserving root directory structure or excluding specific files.
     Supports glob patterns for matching multiple files (e.g., **/*.doc).
     """
-    def __init__(self, source: str, format: str, include_root: str, preserve_glob_structure: str = "false"):
+    def __init__(self, source: str, format: str, include_root: str, preserve_glob_structure: str = "false", strip_prefix: str = ""):
         """
         Initialize Compressor with required parameters
         
@@ -25,12 +25,14 @@ class Compressor(BaseProcessor):
             format: Compression format (zip, tar, tgz, tbz2)
             include_root: Whether to include root directory in compressed file ("true" or "false")
             preserve_glob_structure: Whether to preserve directory structure when using glob patterns ("true" or "false")
+            strip_prefix: Prefix to remove from file paths when preserving structure (e.g., 'src/' or 'dir/')
         """
         super().__init__()
         self.source = source
         self.format = format
         self.include_root = include_root.lower() == "true"
         self.preserve_glob_structure = preserve_glob_structure.lower() == "true"
+        self.strip_prefix = strip_prefix
         self.is_glob_pattern = False
         self.matched_files = []
         self.temp_dir = None
@@ -490,12 +492,15 @@ class Compressor(BaseProcessor):
         print(f"  • Creating temporary directory: {self.temp_dir}")
         print(f"  • Copying {len(self.matched_files)} matched file(s)")
         print(f"  • Preserve structure: {self.preserve_glob_structure}")
+        if self.strip_prefix:
+            print(f"  • Strip prefix: {self.strip_prefix}")
         
         # Copy matched files to temp directory
         FileUtils.copy_files_to_temp_directory(
             self.matched_files, 
             self.temp_dir, 
-            preserve_structure=self.preserve_glob_structure
+            preserve_structure=self.preserve_glob_structure,
+            strip_prefix=self.strip_prefix
         )
         
         # Update source to temp directory
@@ -529,7 +534,7 @@ class Compressor(BaseProcessor):
             except Exception as e:
                 logger.logger.warning(f"Failed to clean up temporary directory: {str(e)}")
 
-def compress(source: str, format: str, include_root: str, preserve_glob_structure: str = "false") -> bool:
+def compress(source: str, format: str, include_root: str, preserve_glob_structure: str = "false", strip_prefix: str = "") -> bool:
     """
     Main compression function that's called from the action
     
@@ -540,10 +545,11 @@ def compress(source: str, format: str, include_root: str, preserve_glob_structur
         format: Compression format (zip, tar, tgz, tbz2)
         include_root: Whether to include root directory ("true" or "false")
         preserve_glob_structure: Whether to preserve directory structure when using glob patterns ("true" or "false")
+        strip_prefix: Prefix to remove from file paths when preserving structure (e.g., 'src/' or 'dir/')
         
     Returns:
         True if compression succeeded, False otherwise
     """
-    compressor = Compressor(source, format, include_root, preserve_glob_structure)
+    compressor = Compressor(source, format, include_root, preserve_glob_structure, strip_prefix)
     result = compressor.compress()
     return result.success

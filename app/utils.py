@@ -474,7 +474,7 @@ class FileUtils:
             os.chdir(original_dir)
 
     @staticmethod
-    def copy_files_to_temp_directory(file_paths: List[str], temp_dir: str, preserve_structure: bool = False) -> None:
+    def copy_files_to_temp_directory(file_paths: List[str], temp_dir: str, preserve_structure: bool = False, strip_prefix: str = "") -> None:
         """
         Copy multiple files to a temporary directory
         
@@ -482,14 +482,23 @@ class FileUtils:
             file_paths: List of file paths to copy
             temp_dir: Destination temporary directory
             preserve_structure: If True, preserve directory structure; if False, flatten all files
+            strip_prefix: Prefix to remove from file paths when preserving structure (e.g., 'src/' or 'dir/')
         """
         os.makedirs(temp_dir, exist_ok=True)
+        
+        # Normalize strip_prefix for consistent comparison
+        if strip_prefix:
+            strip_prefix = strip_prefix.rstrip(os.sep) + os.sep
         
         for file_path in file_paths:
             if preserve_structure:
                 # Preserve directory structure
-                # Find common base path
                 relative_path = os.path.relpath(file_path)
+                
+                # Strip prefix if specified
+                if strip_prefix and relative_path.startswith(strip_prefix):
+                    relative_path = relative_path[len(strip_prefix):]
+                
                 dest_path = os.path.join(temp_dir, relative_path)
                 os.makedirs(os.path.dirname(dest_path), exist_ok=True)
                 shutil.copy2(file_path, dest_path)
