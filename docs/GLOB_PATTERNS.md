@@ -181,8 +181,129 @@ When using glob patterns, the action follows these steps:
 3. **Structure Handling**: 
    - **Default (preserveGlobStructure: false)**: Flattens all files to a single directory level
    - **Preserved (preserveGlobStructure: true)**: Maintains original directory structure with relative paths
+   - **With stripPrefix**: Removes specified path prefix while preserving remaining structure
 4. **Creates Archive**: Compresses the collected files into a single archive
 5. **Cleans Up**: Automatically removes temporary files after compression
+
+<br/>
+
+## Strip Prefix Feature
+
+The `stripPrefix` option allows you to remove a common path prefix from all matched files while preserving the remaining directory structure. This is useful when you want to archive files without their top-level directory.
+
+### Basic Usage
+
+```yaml
+- name: Archive Source Files
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'project/src/**/*.ts'
+    format: zip
+    preserveGlobStructure: true
+    stripPrefix: 'project/'
+```
+
+**Result:**
+- Input: `project/src/app/main.ts`
+- Output: `src/app/main.ts` (prefix `project/` removed)
+
+<br/>
+
+### Common Use Cases
+
+#### 1. Remove Project Root
+
+```yaml
+- name: Archive Only Source Directory
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'myproject/src/**/*.py'
+    format: zip
+    preserveGlobStructure: true
+    stripPrefix: 'myproject/'
+```
+
+**Before:** `myproject/src/utils/helper.py`  
+**After:** `src/utils/helper.py`
+
+<br/>
+
+#### 2. Clean Log Archives
+
+```yaml
+- name: Archive Application Logs
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: '/var/log/app/**/*.log'
+    format: tgz
+    preserveGlobStructure: true
+    stripPrefix: '/var/log/app/'
+```
+
+**Before:** `/var/log/app/2024/01/app.log`  
+**After:** `2024/01/app.log`
+
+<br/>
+
+#### 3. Build Artifacts
+
+```yaml
+- name: Archive Distribution Files
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'build/dist/**/*.js'
+    format: zip
+    preserveGlobStructure: true
+    stripPrefix: 'build/dist/'
+```
+
+**Before:** `build/dist/assets/main.js`  
+**After:** `assets/main.js`
+
+<br/>
+
+### Important Notes
+
+- ✅ `stripPrefix` **only works** with `preserveGlobStructure: true`
+- ✅ `stripPrefix` **only works** with glob patterns (e.g., `**/*.doc`)
+- ✅ Trailing slash is optional: `'src/'` and `'src'` both work
+- ✅ **Recommended**: Use `includeRoot: false` to avoid including the temporary directory in the archive
+- ⚠️ If a file doesn't start with the prefix, it's archived with its full path
+- ⚠️ Case-sensitive on Linux/macOS, case-insensitive on Windows
+
+**Best Practice Example:**
+```yaml
+- name: Archive Source Files with Clean Structure
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'project/src/**/*.ts'
+    format: zip
+    preserveGlobStructure: true
+    stripPrefix: 'project/'
+    includeRoot: false  # Recommended: Prevents temporary directory in archive
+```
+
+**Result without `includeRoot: false`:**
+```
+archive.zip
+├── compress_glob_123/    ← Temporary directory included
+    └── src/
+        └── app/
+            └── main.ts
+```
+
+**Result with `includeRoot: false`:**
+```
+archive.zip
+├── src/                  ← Clean structure
+    └── app/
+        └── main.ts
+```
 
 <br/>
 

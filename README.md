@@ -28,6 +28,7 @@ compression and decompression tasks efficiently.
 | `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2`.                            | Yes      | -       |
 | `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | yes     |
 | `preserveGlobStructure` | When using glob patterns, preserve the directory structure in the archive. If false, all matched files are flattened to the root level. | No       | false   |
+| `stripPrefix` | Remove this prefix from file paths when preserving directory structure. Works only with glob patterns and `preserveGlobStructure: true`. Example: `'src/'` changes `src/app/main.py` to `app/main.py` in the archive. | No       | ""      |
 | `fail_on_error` | Whether to fail the action if compression/decompression fails.                                                 | No       | true    |
 | `verbose`     | Enable verbose logging for debugging purposes.                                                                   | No       | false   |
 
@@ -141,6 +142,7 @@ This action supports glob patterns for matching multiple files across your repos
 **Key Behaviors:**
 - Files are collected into a flattened archive structure by default
 - Use `preserveGlobStructure: true` to maintain directory structure
+- Use `stripPrefix` to remove path prefixes (e.g., `'src/'` removes src/ from all paths)
 - No matches will fail by default (use `fail_on_error: false` to override)
 - Enable `verbose: true` to see matched files
 
@@ -153,6 +155,18 @@ This action supports glob patterns for matching multiple files across your repos
     source: '**/*.log'
     format: zip
     preserveGlobStructure: true  # Preserves dir/subdir1/file.log structure
+```
+
+**Example with stripped prefix:**
+```yaml
+- name: Archive Source Files Without Project Root
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'project/src/**/*.ts'
+    format: zip
+    preserveGlobStructure: true
+    stripPrefix: 'project/'  # Changes project/src/app/main.ts to src/app/main.ts
 ```
 
 📖 **[View Complete Glob Pattern Guide →](docs/GLOB_PATTERNS.md)**
