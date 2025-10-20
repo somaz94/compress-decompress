@@ -21,7 +21,7 @@ compression and decompression tasks efficiently.
 | Input         | Description                                                                                                      | Required | Default |
 | ------------- | ---------------------------------------------------------------------------------------------------------------- | -------- | ------- |
 | `command`     | The operation to perform. It can be either "compress" or "decompress"                                            | Yes      | -       |
-| `source`      | The source directory or file to compress or decompress.                                                          | Yes      | -       |
+| `source`      | The source directory, file, or glob pattern to compress or decompress. Supports glob patterns like `**/*.doc` to match multiple files. | Yes      | -       |
 | `dest`        | The destination directory for the output. If not provided, it defaults to the current working directory. | No       | -       |
 | `destfilename` | The destination filename for the output (extension is appended depending on the format). If not provided, it defaults to the current working directory's name. | No       | -       |
 | `exclude` | Filename (or pattern) to exclude from compression process. | No       | -       |
