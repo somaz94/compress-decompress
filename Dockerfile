@@ -1,5 +1,5 @@
 # 🏗 Stage 1: Build dependencies
-FROM python:3.13-slim AS builder
+FROM python:3.14-slim AS builder
 
 # Set working directory
 WORKDIR /usr/src
@@ -8,7 +8,7 @@ WORKDIR /usr/src
 COPY app/ app/
 
 # 🏗 Final Stage: Minimal runtime image
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 # Install only necessary system utilities (avoid unnecessary dependencies)
 RUN apt-get update && \
