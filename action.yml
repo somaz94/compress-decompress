@@ -28,6 +28,10 @@ inputs:
     description: "Whether to include the root folder itself in the compressed file."
     required: false
     default: "true"
+  preserveGlobStructure:
+    description: "When using glob patterns, preserve the directory structure in the archive. If false, all matched files are flattened to the root level."
+    required: false
+    default: "false"
   fail_on_error:
     description: "Whether to fail the action if compression/decompression fails."
     required: false
@@ -50,6 +54,7 @@ runs:
     EXCLUDE: ${{ inputs.exclude }}
     FORMAT: ${{ inputs.format }}
     INCLUDEROOT: ${{ inputs.includeRoot }}
+    PRESERVE_GLOB_STRUCTURE: ${{ inputs.preserveGlobStructure }}
     FAIL_ON_ERROR: ${{ inputs.fail_on_error }}
     VERBOSE: ${{ inputs.verbose }}
 branding:

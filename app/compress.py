@@ -16,7 +16,7 @@ class Compressor(BaseProcessor):
     like preserving root directory structure or excluding specific files.
     Supports glob patterns for matching multiple files (e.g., **/*.doc).
     """
-    def __init__(self, source: str, format: str, include_root: str):
+    def __init__(self, source: str, format: str, include_root: str, preserve_glob_structure: str = "false"):
         """
         Initialize Compressor with required parameters
         
@@ -24,11 +24,13 @@ class Compressor(BaseProcessor):
             source: Source directory, file, or glob pattern to compress
             format: Compression format (zip, tar, tgz, tbz2)
             include_root: Whether to include root directory in compressed file ("true" or "false")
+            preserve_glob_structure: Whether to preserve directory structure when using glob patterns ("true" or "false")
         """
         super().__init__()
         self.source = source
         self.format = format
         self.include_root = include_root.lower() == "true"
+        self.preserve_glob_structure = preserve_glob_structure.lower() == "true"
         self.is_glob_pattern = False
         self.matched_files = []
         self.temp_dir = None
@@ -487,12 +489,13 @@ class Compressor(BaseProcessor):
         UI.print_section("Preparing Files")
         print(f"  • Creating temporary directory: {self.temp_dir}")
         print(f"  • Copying {len(self.matched_files)} matched file(s)")
+        print(f"  • Preserve structure: {self.preserve_glob_structure}")
         
-        # Copy matched files to temp directory (flattened)
+        # Copy matched files to temp directory
         FileUtils.copy_files_to_temp_directory(
             self.matched_files, 
             self.temp_dir, 
-            preserve_structure=False
+            preserve_structure=self.preserve_glob_structure
         )
         
         # Update source to temp directory
@@ -526,7 +529,7 @@ class Compressor(BaseProcessor):
             except Exception as e:
                 logger.logger.warning(f"Failed to clean up temporary directory: {str(e)}")
 
-def compress(source: str, format: str, include_root: str) -> bool:
+def compress(source: str, format: str, include_root: str, preserve_glob_structure: str = "false") -> bool:
     """
     Main compression function that's called from the action
     
@@ -536,10 +539,11 @@ def compress(source: str, format: str, include_root: str) -> bool:
         source: Source directory or file to compress
         format: Compression format (zip, tar, tgz, tbz2)
         include_root: Whether to include root directory ("true" or "false")
+        preserve_glob_structure: Whether to preserve directory structure when using glob patterns ("true" or "false")
         
     Returns:
         True if compression succeeded, False otherwise
     """
-    compressor = Compressor(source, format, include_root)
+    compressor = Compressor(source, format, include_root, preserve_glob_structure)
     result = compressor.compress()
     return result.success
