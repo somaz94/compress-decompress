@@ -178,7 +178,9 @@ When using glob patterns, the action follows these steps:
 
 1. **Searches for Matches**: Recursively scans the workspace for files matching the pattern
 2. **Collects Files**: Gathers all matched files into a temporary directory
-3. **Flattens Structure**: Places all files at the root of the archive (no subdirectories)
+3. **Structure Handling**: 
+   - **Default (preserveGlobStructure: false)**: Flattens all files to a single directory level
+   - **Preserved (preserveGlobStructure: true)**: Maintains original directory structure with relative paths
 4. **Creates Archive**: Compresses the collected files into a single archive
 5. **Cleans Up**: Automatically removes temporary files after compression
 
@@ -190,9 +192,37 @@ When using glob patterns, the action follows these steps:
 
 ⚠️ **Understanding File Collection:**
 - All matched files are collected and compressed into a single archive
-- The directory structure is **flattened** - all files are placed at the root of the archive
-- File name conflicts are handled automatically with numeric suffixes
+- **Default behavior (preserveGlobStructure: false)**: Files are **flattened** - all files are placed at the root of the archive
+  - File name conflicts are handled automatically with numeric suffixes (e.g., `file.txt`, `file_1.txt`, `file_2.txt`)
+- **With preserveGlobStructure: true**: Directory structure is **preserved** - files maintain their relative paths
+  - Allows files with the same name in different directories (e.g., `dir1/file.txt` and `dir2/file.txt`)
 - The `includeRoot` option is automatically handled
+
+**Example with preserved structure:**
+```yaml
+- name: Archive Logs with Directory Structure
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'logs/**/*.log'
+    format: zip
+    dest: './archives'
+    destfilename: 'all-logs'
+    preserveGlobStructure: true  # Keeps logs/2024/app.log structure
+```
+
+**Example with flattened structure (default):**
+```yaml
+- name: Archive All Config Files (Flattened)
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: '**/*.conf'
+    format: zip
+    dest: './archives'
+    destfilename: 'configs'
+    # preserveGlobStructure defaults to false - all files at root level
+```
 
 <br/>
 

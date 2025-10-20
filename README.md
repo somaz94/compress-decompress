@@ -27,6 +27,7 @@ compression and decompression tasks efficiently.
 | `exclude` | Filename (or pattern) to exclude from compression process. | No       | -       |
 | `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2`.                            | Yes      | -       |
 | `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | yes     |
+| `preserveGlobStructure` | When using glob patterns, preserve the directory structure in the archive. If false, all matched files are flattened to the root level. | No       | false   |
 | `fail_on_error` | Whether to fail the action if compression/decompression fails.                                                 | No       | true    |
 | `verbose`     | Enable verbose logging for debugging purposes.                                                                   | No       | false   |
 
@@ -138,9 +139,21 @@ This action supports glob patterns for matching multiple files across your repos
 - `**/*.{ext1,ext2}` - Multiple file types
 
 **Key Behaviors:**
-- Files are collected into a flattened archive structure
+- Files are collected into a flattened archive structure by default
+- Use `preserveGlobStructure: true` to maintain directory structure
 - No matches will fail by default (use `fail_on_error: false` to override)
 - Enable `verbose: true` to see matched files
+
+**Example with preserved structure:**
+```yaml
+- name: Archive Logs with Directory Structure
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: '**/*.log'
+    format: zip
+    preserveGlobStructure: true  # Preserves dir/subdir1/file.log structure
+```
 
 📖 **[View Complete Glob Pattern Guide →](docs/GLOB_PATTERNS.md)**
 
