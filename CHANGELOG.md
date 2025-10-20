@@ -6,6 +6,7 @@
 
 **Merged pull requests:**
 
+- build\(deps\): bump python from 3.13-slim to 3.14-slim in the docker-minor group [\#35](https://github.com/somaz94/compress-decompress/pull/35) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump super-linter/super-linter from 8.1.0 to 8.2.0 in the actions-minor group [\#34](https://github.com/somaz94/compress-decompress/pull/34) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump actions/checkout from 4 to 5 [\#33](https://github.com/somaz94/compress-decompress/pull/33) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump super-linter/super-linter from 8.0.0 to 8.1.0 in the actions-minor group [\#32](https://github.com/somaz94/compress-decompress/pull/32) ([dependabot[bot]](https://github.com/apps/dependabot))
