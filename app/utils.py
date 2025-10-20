@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from enum import Enum
 import time
 from functools import wraps
+import glob
+import shutil
 
 # Type variable for generic typing
 T = TypeVar('T')
@@ -421,6 +423,87 @@ class FileUtils:
             
         # If GITHUB_WORKSPACE is not set, create an absolute path based on the current directory
         return os.path.abspath(os.path.join(os.getcwd(), path))
+
+    @staticmethod
+    def is_glob_pattern(path: str) -> bool:
+        """
+        Check if a path string contains glob pattern characters
+        
+        Detects patterns like *, ?, [, ], **, etc.
+        
+        Args:
+            path: Path string to check
+            
+        Returns:
+            True if the path contains glob pattern characters, False otherwise
+        """
+        glob_chars = ['*', '?', '[', ']']
+        return any(char in path for char in glob_chars)
+
+    @staticmethod
+    def find_files_by_pattern(pattern: str, base_dir: Optional[str] = None) -> List[str]:
+        """
+        Find files matching a glob pattern
+        
+        Supports patterns like:
+        - **/*.doc (all .doc files in all subdirectories)
+        - *.txt (all .txt files in current directory)
+        - folder/**/*.py (all .py files in folder and subdirectories)
+        
+        Args:
+            pattern: Glob pattern to match files
+            base_dir: Base directory to search from (defaults to current directory)
+            
+        Returns:
+            List of absolute paths to matched files
+        """
+        if base_dir is None:
+            base_dir = os.getcwd()
+        
+        # Change to base directory for pattern matching
+        original_dir = os.getcwd()
+        try:
+            os.chdir(base_dir)
+            # Use recursive glob to find all matching files
+            matched_files = glob.glob(pattern, recursive=True)
+            # Convert to absolute paths
+            absolute_paths = [os.path.abspath(f) for f in matched_files if os.path.isfile(f)]
+            return absolute_paths
+        finally:
+            # Always restore original directory
+            os.chdir(original_dir)
+
+    @staticmethod
+    def copy_files_to_temp_directory(file_paths: List[str], temp_dir: str, preserve_structure: bool = False) -> None:
+        """
+        Copy multiple files to a temporary directory
+        
+        Args:
+            file_paths: List of file paths to copy
+            temp_dir: Destination temporary directory
+            preserve_structure: If True, preserve directory structure; if False, flatten all files
+        """
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        for file_path in file_paths:
+            if preserve_structure:
+                # Preserve directory structure
+                # Find common base path
+                relative_path = os.path.relpath(file_path)
+                dest_path = os.path.join(temp_dir, relative_path)
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                shutil.copy2(file_path, dest_path)
+            else:
+                # Flatten: copy all files to temp_dir root
+                file_name = os.path.basename(file_path)
+                dest_path = os.path.join(temp_dir, file_name)
+                # Handle duplicate filenames by adding counter
+                counter = 1
+                base_name, ext = os.path.splitext(file_name)
+                while os.path.exists(dest_path):
+                    dest_path = os.path.join(temp_dir, f"{base_name}_{counter}{ext}")
+                    counter += 1
+                shutil.copy2(file_path, dest_path)
 
 # ======================================================================
 # User Interface

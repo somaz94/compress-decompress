@@ -14,13 +14,14 @@ class Compressor(BaseProcessor):
     This class provides functionality to compress directories or files using
     different compression formats (zip, tar, tgz, tbz2) with various options
     like preserving root directory structure or excluding specific files.
+    Supports glob patterns for matching multiple files (e.g., **/*.doc).
     """
     def __init__(self, source: str, format: str, include_root: str):
         """
         Initialize Compressor with required parameters
         
         Args:
-            source: Source directory or file to compress
+            source: Source directory, file, or glob pattern to compress
             format: Compression format (zip, tar, tgz, tbz2)
             include_root: Whether to include root directory in compressed file ("true" or "false")
         """
@@ -28,15 +29,19 @@ class Compressor(BaseProcessor):
         self.source = source
         self.format = format
         self.include_root = include_root.lower() == "true"
+        self.is_glob_pattern = False
+        self.matched_files = []
+        self.temp_dir = None
 
     def validate(self) -> bool:
         """
-        Validate that source path exists
+        Validate that source path exists or glob pattern matches files
         
         Also handles GitHub Actions runner path conversion for Docker container compatibility.
+        Supports glob patterns like **/*.doc to match multiple files.
         
         Returns:
-            True if source path is valid, False otherwise
+            True if source path is valid or pattern matches files, False otherwise
         """
         # Strip leading/trailing whitespace from path
         self.source = self.source.strip()
@@ -46,6 +51,33 @@ class Compressor(BaseProcessor):
         if self.source.startswith('/home/runner/work/'):
             self.source = '/github/workspace'
         
+        # Check if source is a glob pattern
+        if FileUtils.is_glob_pattern(self.source):
+            self.is_glob_pattern = True
+            UI.print_section("Glob Pattern Detected")
+            print(f"  • Pattern: {self.source}")
+            
+            # Find files matching the pattern
+            self.matched_files = FileUtils.find_files_by_pattern(self.source)
+            
+            if not self.matched_files:
+                error_msg = f"No files matched the pattern: {self.source}"
+                if self.fail_on_error:
+                    UI.print_error(error_msg)
+                    sys.exit(1)
+                logger.logger.warning(error_msg)
+                return False
+            
+            print(f"  • Matched {len(self.matched_files)} file(s)")
+            if self.verbose:
+                for i, file_path in enumerate(self.matched_files[:10], 1):
+                    print(f"    {i}. {file_path}")
+                if len(self.matched_files) > 10:
+                    print(f"    ... and {len(self.matched_files) - 10} more files")
+            
+            return True
+        
+        # Regular path validation
         return self.validate_path(self.source, "Source path")
 
     def get_compression_command(self) -> str:
@@ -335,10 +367,12 @@ class Compressor(BaseProcessor):
         Execute the compression process
         
         This is the main method that orchestrates the entire compression process:
-        1. Validates the source
+        1. Validates the source (including glob pattern matching)
         2. Prepares the environment and configuration
-        3. Executes the compression command
-        4. Handles results and errors
+        3. If glob pattern: copies matched files to temp directory
+        4. Executes the compression command
+        5. Cleans up temporary files if needed
+        6. Handles results and errors
         
         Returns:
             ProcessResult object with success status and message
@@ -348,6 +382,11 @@ class Compressor(BaseProcessor):
             if not self.validate():
                 return ProcessResult(False, "Validation failed")
 
+            # Handle glob pattern by creating temp directory with matched files
+            if self.is_glob_pattern:
+                return self._compress_glob_pattern()
+            
+            # Regular compression flow
             source_size = self._get_source_size()
             start_time = datetime.now()
             self.source = FileUtils.adjust_path(self.source)
@@ -365,6 +404,9 @@ class Compressor(BaseProcessor):
             
         except Exception as e:
             return self.handle_error(e, "Compression")
+        finally:
+            # Clean up temporary directory if it was created
+            self._cleanup_temp_directory()
 
     def _get_source_size(self) -> int:
         """
@@ -420,6 +462,69 @@ class Compressor(BaseProcessor):
             print(f"  • Compressed Size: {FileUtils.get_size(compressed_size)}")
             print(f"  • Compression Ratio: {compression_ratio:.1f}%")
             print(f"  • Duration: {duration.total_seconds():.2f} seconds")
+
+    def _compress_glob_pattern(self) -> ProcessResult:
+        """
+        Compress files matched by glob pattern
+        
+        Creates a temporary directory, copies matched files, compresses them,
+        and cleans up the temporary directory.
+        
+        Returns:
+            ProcessResult object with success status and message
+        """
+        import tempfile
+        
+        start_time = datetime.now()
+        
+        # Calculate total size of matched files
+        source_size = sum(os.path.getsize(f) for f in self.matched_files if os.path.exists(f))
+        
+        # Create temporary directory for matched files
+        temp_base = tempfile.gettempdir()
+        self.temp_dir = os.path.join(temp_base, f"compress_glob_{os.getpid()}")
+        
+        UI.print_section("Preparing Files")
+        print(f"  • Creating temporary directory: {self.temp_dir}")
+        print(f"  • Copying {len(self.matched_files)} matched file(s)")
+        
+        # Copy matched files to temp directory (flattened)
+        FileUtils.copy_files_to_temp_directory(
+            self.matched_files, 
+            self.temp_dir, 
+            preserve_structure=False
+        )
+        
+        # Update source to temp directory
+        original_source = self.source
+        self.source = self.temp_dir
+        
+        # Print configuration
+        self._print_configuration(source_size)
+        self.prepare_destination()
+        
+        # Execute compression
+        command = self.get_compression_command()
+        result = CommandExecutor.run(command, self.verbose)
+        
+        if result.success:
+            self._print_results(start_time, source_size)
+            UI.print_success(f"Successfully compressed {len(self.matched_files)} file(s) matching pattern: {original_source}")
+        
+        return result
+
+    def _cleanup_temp_directory(self) -> None:
+        """
+        Clean up temporary directory created for glob pattern compression
+        """
+        if self.temp_dir and os.path.exists(self.temp_dir):
+            try:
+                import shutil
+                shutil.rmtree(self.temp_dir)
+                if self.verbose:
+                    logger.logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
+            except Exception as e:
+                logger.logger.warning(f"Failed to clean up temporary directory: {str(e)}")
 
 def compress(source: str, format: str, include_root: str) -> bool:
     """

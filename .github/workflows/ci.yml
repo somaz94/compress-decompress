@@ -785,3 +785,291 @@ jobs:
           fi
           
           echo -e "\n${GREEN}${BOLD}✓ ALL EXCLUSION TESTS PASSED${NC}\n"
+
+  test-glob-patterns:
+    name: Test Glob Pattern Matching
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Create Test Files for Glob Patterns
+        run: |
+          # Create directory structure with various file types
+          mkdir -p test_glob/docs test_glob/images test_glob/data
+          mkdir -p test_glob/nested/level1/level2
+          
+          # Create .doc files
+          echo "Document 1" > test_glob/docs/file1.doc
+          echo "Document 2" > test_glob/docs/file2.doc
+          echo "Document 3" > test_glob/nested/file3.doc
+          echo "Document 4" > test_glob/nested/level1/file4.doc
+          echo "Document 5" > test_glob/nested/level1/level2/file5.doc
+          
+          # Create other file types
+          echo "Text file" > test_glob/data/data.txt
+          echo "Image file" > test_glob/images/image.jpg
+          echo "Another text" > test_glob/nested/readme.txt
+          
+          # Create files with multiple extensions
+          echo "Markdown 1" > test_glob/docs/readme.md
+          echo "Markdown 2" > test_glob/nested/level1/guide.md
+          
+          echo "Created test structure for glob patterns:"
+          find test_glob -type f | sort
+
+      - name: Test Glob Pattern - All .doc Files
+        id: glob_doc_files
+        uses: ./
+        with:
+          command: 'compress'
+          source: 'test_glob/**/*.doc'
+          format: 'zip'
+          dest: './glob_output'
+          destfilename: 'all_doc_files'
+          verbose: 'true'
+
+      - name: Test Glob Pattern - Single Directory Wildcard
+        id: glob_single_dir
+        uses: ./
+        with:
+          command: 'compress'
+          source: 'test_glob/docs/*.doc'
+          format: 'zip'
+          dest: './glob_output'
+          destfilename: 'docs_only'
+          verbose: 'true'
+
+      - name: Test Glob Pattern - All .txt Files
+        id: glob_txt_files
+        uses: ./
+        with:
+          command: 'compress'
+          source: 'test_glob/**/*.txt'
+          format: 'tar'
+          dest: './glob_output'
+          destfilename: 'all_txt_files'
+          verbose: 'true'
+
+      - name: Test Glob Pattern - All .md Files
+        id: glob_md_files
+        uses: ./
+        with:
+          command: 'compress'
+          source: 'test_glob/**/*.md'
+          format: 'tgz'
+          dest: './glob_output'
+          destfilename: 'all_md_files'
+          verbose: 'true'
+
+      - name: Test Glob Pattern - Specific Nested Path
+        id: glob_nested_path
+        uses: ./
+        with:
+          command: 'compress'
+          source: 'test_glob/nested/**/*.doc'
+          format: 'zip'
+          dest: './glob_output'
+          destfilename: 'nested_docs'
+          verbose: 'true'
+
+      - name: Verify Glob Pattern Results
+        run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== GLOB PATTERN MATCHING TEST ========${NC}"
+          echo -e "${BOLD}Output Directory Contents:${NC}"
+          ls -la ./glob_output/ | sed 's/^/  /'
+          
+          # Test Case 1: All .doc files
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 1: ALL .doc FILES PATTERN ========${NC}"
+          echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/**/*.doc${NC}"
+          
+          if [ ! -f "./glob_output/all_doc_files.zip" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./glob_output/all_doc_files.zip | sed 's/^/  /'
+          
+          mkdir -p verify/glob_doc
+          unzip -q ./glob_output/all_doc_files.zip -d ./verify/glob_doc
+          
+          doc_count=$(find ./verify/glob_doc -name "*.doc" | wc -l)
+          echo -e "${BOLD}Number of .doc files extracted:${NC} ${YELLOW}$doc_count${NC}"
+          
+          if [ "$doc_count" -eq 5 ]; then
+            echo -e "${GREEN}✅ SUCCESS: All 5 .doc files matched and compressed${NC}"
+          else
+            echo -e "${RED}❌ FAILED: Expected 5 .doc files but found $doc_count${NC}"
+            exit 1
+          fi
+          
+          # Test Case 2: Single directory wildcard
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 2: SINGLE DIRECTORY WILDCARD ========${NC}"
+          echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/docs/*.doc${NC}"
+          
+          if [ ! -f "./glob_output/docs_only.zip" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./glob_output/docs_only.zip | sed 's/^/  /'
+          
+          mkdir -p verify/glob_docs
+          unzip -q ./glob_output/docs_only.zip -d ./verify/glob_docs
+          
+          docs_count=$(find ./verify/glob_docs -name "*.doc" | wc -l)
+          echo -e "${BOLD}Number of .doc files extracted:${NC} ${YELLOW}$docs_count${NC}"
+          
+          if [ "$docs_count" -eq 2 ]; then
+            echo -e "${GREEN}✅ SUCCESS: Only docs directory .doc files (2) matched${NC}"
+          else
+            echo -e "${RED}❌ FAILED: Expected 2 .doc files but found $docs_count${NC}"
+            exit 1
+          fi
+          
+          # Test Case 3: All .txt files
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 3: ALL .txt FILES PATTERN ========${NC}"
+          echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/**/*.txt${NC}"
+          
+          if [ ! -f "./glob_output/all_txt_files.tar" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          tar -tvf ./glob_output/all_txt_files.tar | sed 's/^/  /'
+          
+          mkdir -p verify/glob_txt
+          tar -xf ./glob_output/all_txt_files.tar -C ./verify/glob_txt
+          
+          txt_count=$(find ./verify/glob_txt -name "*.txt" | wc -l)
+          echo -e "${BOLD}Number of .txt files extracted:${NC} ${YELLOW}$txt_count${NC}"
+          
+          if [ "$txt_count" -eq 2 ]; then
+            echo -e "${GREEN}✅ SUCCESS: All 2 .txt files matched and compressed${NC}"
+          else
+            echo -e "${RED}❌ FAILED: Expected 2 .txt files but found $txt_count${NC}"
+            exit 1
+          fi
+          
+          # Test Case 4: All .md files
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 4: ALL .md FILES PATTERN ========${NC}"
+          echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/**/*.md${NC}"
+          
+          if [ ! -f "./glob_output/all_md_files.tgz" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          tar -tzf ./glob_output/all_md_files.tgz | sed 's/^/  /'
+          
+          mkdir -p verify/glob_md
+          tar -xzf ./glob_output/all_md_files.tgz -C ./verify/glob_md
+          
+          md_count=$(find ./verify/glob_md -name "*.md" | wc -l)
+          echo -e "${BOLD}Number of .md files extracted:${NC} ${YELLOW}$md_count${NC}"
+          
+          if [ "$md_count" -eq 2 ]; then
+            echo -e "${GREEN}✅ SUCCESS: All 2 .md files matched and compressed${NC}"
+          else
+            echo -e "${RED}❌ FAILED: Expected 2 .md files but found $md_count${NC}"
+            exit 1
+          fi
+          
+          # Test Case 5: Specific nested path
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 5: NESTED PATH PATTERN ========${NC}"
+          echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/nested/**/*.doc${NC}"
+          
+          if [ ! -f "./glob_output/nested_docs.zip" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./glob_output/nested_docs.zip | sed 's/^/  /'
+          
+          mkdir -p verify/glob_nested
+          unzip -q ./glob_output/nested_docs.zip -d ./verify/glob_nested
+          
+          nested_count=$(find ./verify/glob_nested -name "*.doc" | wc -l)
+          echo -e "${BOLD}Number of .doc files extracted:${NC} ${YELLOW}$nested_count${NC}"
+          
+          if [ "$nested_count" -eq 3 ]; then
+            echo -e "${GREEN}✅ SUCCESS: All 3 nested .doc files matched and compressed${NC}"
+          else
+            echo -e "${RED}❌ FAILED: Expected 3 .doc files but found $nested_count${NC}"
+            exit 1
+          fi
+          
+          echo -e "\n${GREEN}${BOLD}✓ ALL GLOB PATTERN TESTS PASSED${NC}\n"
+
+      - name: Test Glob Pattern - No Match Scenario
+        id: glob_no_match
+        uses: ./
+        continue-on-error: true
+        with:
+          command: 'compress'
+          source: 'test_glob/**/*.xyz'
+          format: 'zip'
+          dest: './glob_output'
+          destfilename: 'no_match'
+          fail_on_error: 'true'
+          verbose: 'true'
+
+      - name: Verify No Match Behavior
+        run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE: NO MATCH PATTERN ========${NC}"
+          echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/**/*.xyz${NC}"
+          echo -e "${BOLD}Expected Outcome:${NC} Action should fail (no files match)"
+          echo -e "${BOLD}Actual Outcome:${NC} ${YELLOW}${{ steps.glob_no_match.outcome }}${NC}\n"
+          
+          if [ "${{ steps.glob_no_match.outcome }}" = "failure" ]; then
+            echo -e "${GREEN}✅ TEST PASSED: Action failed as expected when no files match the pattern${NC}"
+          else
+            echo -e "${RED}❌ TEST FAILED: Expected failure but got success${NC}"
+            exit 1
+          fi
+
+      - name: Upload Glob Pattern Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: glob-pattern-archives
+          path: ./glob_output/*.{zip,tar,tgz}
+          if-no-files-found: error
+
+      - name: Glob Pattern Test Summary
+        run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== GLOB PATTERN TEST SUMMARY ========${NC}"
+          echo -e "${GREEN}${BOLD}✓ All glob pattern tests passed successfully${NC}"
+          echo -e "${BOLD}Tests verified:${NC}"
+          echo -e "  • Recursive pattern matching (**/*.doc)"
+          echo -e "  • Single directory wildcard (docs/*.doc)"
+          echo -e "  • Multiple file type patterns (.txt, .md)"
+          echo -e "  • Nested path patterns (nested/**/*.doc)"
+          echo -e "  • No match error handling"
+          echo -e "  • Different compression formats (zip, tar, tgz)\n"

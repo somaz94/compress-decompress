@@ -118,6 +118,53 @@ jobs:
 
 <br/>
 
+### Using Glob Patterns
+
+This example demonstrates how to compress files matching a glob pattern. This is useful when you want to archive all files of a specific type across your repository:
+
+```yaml
+name: Compress Files by Pattern
+
+on: [push]
+
+jobs:
+  compress-pattern:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Compress All Documentation Files
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: '**/*.doc'
+          format: zip
+          dest: './artifacts'
+          destfilename: 'all-docs'
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-archive
+          path: ./artifacts/all-docs.zip
+```
+
+**Supported Glob Patterns:**
+
+- `**/*.doc` - All `.doc` files in all subdirectories
+- `*.txt` - All `.txt` files in the current directory
+- `docs/**/*.md` - All `.md` files in the `docs` directory and subdirectories
+- `**/*.{jpg,png,gif}` - All image files with specified extensions
+
+**Note:** When using glob patterns:
+- All matched files are collected and compressed into a single archive
+- The directory structure is flattened (all files are placed at the root of the archive)
+- The `includeRoot` option is automatically handled
+- If no files match the pattern, the action will fail (unless `fail_on_error: false`)
+
+<br/>
+
 ### includeRoot: true(default)
 
 This example demonstrates how to use the Compress-Decompress action to compress

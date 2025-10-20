@@ -8,7 +8,7 @@ inputs:
     description: 'Command to perform ("compress" or "decompress").'
     required: true
   source:
-    description: "Source directory or file to compress or decompress."
+    description: "Source directory, file, or glob pattern to compress or decompress. Supports glob patterns like **/*.doc to match multiple files."
     required: true
   dest:
     description: "Destination directory for the output."
