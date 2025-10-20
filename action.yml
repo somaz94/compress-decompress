@@ -63,5 +63,5 @@ runs:
     FAIL_ON_ERROR: ${{ inputs.fail_on_error }}
     VERBOSE: ${{ inputs.verbose }}
 branding:
-  icon: "at-sign"
-  color: "white"
+  icon: "archive"
+  color: "blue"
