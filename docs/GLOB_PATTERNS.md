@@ -63,6 +63,7 @@ Glob patterns allow you to match multiple files across your repository based on 
     format: tgz
     dest: './archives'
     destfilename: 'documentation'
+    includeRoot: false  # Clean archive structure
 ```
 
 <br/>
@@ -78,6 +79,8 @@ Glob patterns allow you to match multiple files across your repository based on 
     format: zip
     dest: './backups'
     destfilename: 'python-sources'
+    preserveGlobStructure: true
+    includeRoot: false
 ```
 
 <br/>
@@ -182,8 +185,11 @@ When using glob patterns, the action follows these steps:
    - **Default (preserveGlobStructure: false)**: Flattens all files to a single directory level
    - **Preserved (preserveGlobStructure: true)**: Maintains original directory structure with relative paths
    - **With stripPrefix**: Removes specified path prefix while preserving remaining structure
-4. **Creates Archive**: Compresses the collected files into a single archive
-5. **Cleans Up**: Automatically removes temporary files after compression
+4. **Root Directory Handling**:
+   - **Default (includeRoot: true)**: Includes temporary directory in archive (e.g., `compress_glob_123/`)
+   - **Clean (includeRoot: false)**: Excludes temporary directory for clean archive structure
+5. **Creates Archive**: Compresses the collected files into a single archive
+6. **Cleans Up**: Automatically removes temporary files after compression
 
 <br/>
 
@@ -223,6 +229,7 @@ The `stripPrefix` option allows you to remove a common path prefix from all matc
     format: zip
     preserveGlobStructure: true
     stripPrefix: 'myproject/'
+    includeRoot: false  # Recommended
 ```
 
 **Before:** `myproject/src/utils/helper.py`  
@@ -241,6 +248,7 @@ The `stripPrefix` option allows you to remove a common path prefix from all matc
     format: tgz
     preserveGlobStructure: true
     stripPrefix: '/var/log/app/'
+    includeRoot: false  # Recommended
 ```
 
 **Before:** `/var/log/app/2024/01/app.log`  
@@ -259,6 +267,7 @@ The `stripPrefix` option allows you to remove a common path prefix from all matc
     format: zip
     preserveGlobStructure: true
     stripPrefix: 'build/dist/'
+    includeRoot: false  # Recommended
 ```
 
 **Before:** `build/dist/assets/main.js`  
@@ -271,13 +280,19 @@ The `stripPrefix` option allows you to remove a common path prefix from all matc
 - ✅ `stripPrefix` **only works** with `preserveGlobStructure: true`
 - ✅ `stripPrefix` **only works** with glob patterns (e.g., `**/*.doc`)
 - ✅ Trailing slash is optional: `'src/'` and `'src'` both work
-- ✅ **Recommended**: Use `includeRoot: false` to avoid including the temporary directory in the archive
+- ✅ **Highly Recommended**: Use `includeRoot: false` to avoid including the temporary directory in the archive
 - ⚠️ If a file doesn't start with the prefix, it's archived with its full path
 - ⚠️ Case-sensitive on Linux/macOS, case-insensitive on Windows
 
-**Best Practice Example:**
+<br/>
+
+### Understanding `includeRoot` Parameter
+
+The `includeRoot` parameter controls whether the temporary directory (used internally for glob pattern processing) is included in the final archive.
+
+#### With `includeRoot: true` (Default)
 ```yaml
-- name: Archive Source Files with Clean Structure
+- name: Archive with Temporary Directory
   uses: somaz94/compress-decompress@v1
   with:
     command: compress
@@ -285,25 +300,64 @@ The `stripPrefix` option allows you to remove a common path prefix from all matc
     format: zip
     preserveGlobStructure: true
     stripPrefix: 'project/'
-    includeRoot: false  # Recommended: Prevents temporary directory in archive
+    # includeRoot: true (default)
 ```
 
-**Result without `includeRoot: false`:**
+**Archive Structure:**
 ```
 archive.zip
-├── compress_glob_123/    ← Temporary directory included
+├── compress_glob_123/      ← Temporary directory included
     └── src/
         └── app/
             └── main.ts
 ```
 
-**Result with `includeRoot: false`:**
+#### With `includeRoot: false` (Recommended)
+```yaml
+- name: Archive with Clean Structure
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'project/src/**/*.ts'
+    format: zip
+    preserveGlobStructure: true
+    stripPrefix: 'project/'
+    includeRoot: false        ← Clean output
+```
+
+**Archive Structure:**
 ```
 archive.zip
-├── src/                  ← Clean structure
+├── src/                    ← Clean, no temporary directory
     └── app/
         └── main.ts
 ```
+
+<br/>
+
+**Best Practice Recommendation:**
+
+When using `stripPrefix` or when you want clean archive structures, **always set `includeRoot: false`**:
+
+```yaml
+- name: Archive Source Files (Best Practice)
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'project/src/**/*.ts'
+    format: zip
+    preserveGlobStructure: true
+    stripPrefix: 'project/'
+    includeRoot: false        # ← Prevents temporary directory inclusion
+    verbose: true
+```
+
+**Why `includeRoot: false` is recommended:**
+- ✅ Creates cleaner, more professional archives
+- ✅ Archives are easier to extract and use
+- ✅ No confusing temporary directory names
+- ✅ More portable across different systems
+- ✅ Better for distribution and deployment scenarios
 
 <br/>
 
@@ -317,9 +371,11 @@ archive.zip
   - File name conflicts are handled automatically with numeric suffixes (e.g., `file.txt`, `file_1.txt`, `file_2.txt`)
 - **With preserveGlobStructure: true**: Directory structure is **preserved** - files maintain their relative paths
   - Allows files with the same name in different directories (e.g., `dir1/file.txt` and `dir2/file.txt`)
-- The `includeRoot` option is automatically handled
+- **The `includeRoot` parameter** affects whether the temporary processing directory appears in the archive
+  - `includeRoot: true` (default): Includes temporary directory (e.g., `compress_glob_123/`)
+  - `includeRoot: false` (recommended): Excludes temporary directory for clean structure
 
-**Example with preserved structure:**
+**Example with preserved structure (recommended approach):**
 ```yaml
 - name: Archive Logs with Directory Structure
   uses: somaz94/compress-decompress@v1
@@ -330,9 +386,10 @@ archive.zip
     dest: './archives'
     destfilename: 'all-logs'
     preserveGlobStructure: true  # Keeps logs/2024/app.log structure
+    includeRoot: false            # Clean output without temp directory
 ```
 
-**Example with flattened structure (default):**
+**Example with flattened structure:**
 ```yaml
 - name: Archive All Config Files (Flattened)
   uses: somaz94/compress-decompress@v1
@@ -342,6 +399,7 @@ archive.zip
     format: zip
     dest: './archives'
     destfilename: 'configs'
+    includeRoot: false  # Still recommended for clean archives
     # preserveGlobStructure defaults to false - all files at root level
 ```
 
