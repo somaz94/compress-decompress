@@ -1050,6 +1050,259 @@ jobs:
             exit 1
           fi
 
+      - name: Test Glob Pattern - Preserve Structure (True)
+        id: glob_preserve_true
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: 'compress'
+          source: 'test_glob/**/*.doc'
+          format: 'zip'
+          dest: './glob_output'
+          destfilename: 'preserved_structure'
+          preserveGlobStructure: 'true'
+          verbose: 'true'
+
+      - name: Test Glob Pattern - Flatten Structure (False/Default)
+        id: glob_preserve_false
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: 'compress'
+          source: 'test_glob/**/*.doc'
+          format: 'zip'
+          dest: './glob_output'
+          destfilename: 'flattened_structure'
+          preserveGlobStructure: 'false'
+          verbose: 'true'
+
+      - name: Verify Structure Preservation
+        run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== STRUCTURE PRESERVATION TEST ========${NC}"
+          
+          # Test Case 1: Preserved Structure
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 1: PRESERVED STRUCTURE (preserveGlobStructure: true) ========${NC}"
+          
+          if [ ! -f "./glob_output/preserved_structure.zip" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./glob_output/preserved_structure.zip | sed 's/^/  /'
+          
+          mkdir -p verify/preserved
+          unzip -q ./glob_output/preserved_structure.zip -d ./verify/preserved
+          
+          echo -e "\n${BOLD}Extracted Structure:${NC}"
+          find ./verify/preserved -type f | sort | sed 's/^/  /'
+          
+          # Check if directory structure is preserved
+          # The archive includes compress_glob_* temporary directory, so we need to search within it
+          preserved_count=$(find ./verify/preserved -path "*/test_glob/docs/file*.doc" -o \
+                                                     -path "*/test_glob/nested/file*.doc" -o \
+                                                     -path "*/test_glob/nested/level1/file*.doc" -o \
+                                                     -path "*/test_glob/nested/level1/level2/file*.doc" | wc -l)
+          
+          echo -e "${BOLD}Files found with preserved structure:${NC} ${YELLOW}$preserved_count${NC}"
+          
+          # Verify structure is maintained (not flattened)
+          if [ "$preserved_count" -eq 5 ]; then
+            # Check that subdirectories exist
+            if find ./verify/preserved -type d -name "test_glob" | grep -q .; then
+              echo -e "${GREEN}  ✓ Found test_glob directory structure${NC}"
+              echo -e "${GREEN}  ✓ All 5 files with preserved paths:${NC}"
+              find ./verify/preserved -name "*.doc" | sort | sed 's|.*/verify/preserved/||' | sed 's/^/    /'
+              echo -e "${GREEN}✅ SUCCESS: Directory structure preserved correctly (all 5 files with paths)${NC}"
+            else
+              echo -e "${RED}❌ FAILED: Directory structure not preserved${NC}"
+              exit 1
+            fi
+          else
+            echo -e "${RED}❌ FAILED: Expected 5 files with preserved structure but found $preserved_count${NC}"
+            exit 1
+          fi
+          
+          # Test Case 2: Flattened Structure
+          echo -e "\n${BOLD}${BLUE}======== TEST CASE 2: FLATTENED STRUCTURE (preserveGlobStructure: false) ========${NC}"
+          
+          if [ ! -f "./glob_output/flattened_structure.zip" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./glob_output/flattened_structure.zip | sed 's/^/  /'
+          
+          mkdir -p verify/flattened
+          unzip -q ./glob_output/flattened_structure.zip -d ./verify/flattened
+          
+          echo -e "\n${BOLD}Extracted Structure:${NC}"
+          find ./verify/flattened -type f | sort | sed 's/^/  /'
+          
+          # Check if files are flattened (all files should be in compress_glob_* directory without subdirectories)
+          # Find the temp directory first
+          temp_dir=$(find ./verify/flattened -type d -name "compress_glob_*" | head -1)
+          
+          if [ -z "$temp_dir" ]; then
+            echo -e "${RED}❌ FAILED: Could not find compress_glob_* directory${NC}"
+            exit 1
+          fi
+          
+          # Count files directly in temp directory (no subdirectories)
+          flattened_count=$(find "$temp_dir" -maxdepth 1 -name "*.doc" | wc -l)
+          # Count all files (should be same if truly flattened)
+          total_count=$(find "$temp_dir" -name "*.doc" | wc -l)
+          
+          echo -e "${BOLD}Files at temp directory root:${NC} ${YELLOW}$flattened_count${NC}"
+          echo -e "${BOLD}Total files:${NC} ${YELLOW}$total_count${NC}"
+          
+          if [ "$flattened_count" -eq "$total_count" ] && [ "$total_count" -eq 5 ]; then
+            echo -e "${GREEN}✅ SUCCESS: All files flattened to root level (5 files without subdirectories)${NC}"
+            
+            # List flattened files
+            echo -e "\n${BOLD}Flattened files:${NC}"
+            find "$temp_dir" -maxdepth 1 -name "*.doc" -exec basename {} \; | sort | sed 's/^/  /'
+          else
+            echo -e "${RED}❌ FAILED: Expected all 5 files at root level, found $flattened_count at root out of $total_count total${NC}"
+            exit 1
+          fi
+          
+          echo -e "\n${GREEN}${BOLD}✓ STRUCTURE PRESERVATION TESTS PASSED${NC}\n"
+
+      - name: Test Same Filename Conflict with Preserved Structure
+        run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== SAME FILENAME CONFLICT TEST ========${NC}"
+          
+          # Create test structure with same filename in different directories
+          mkdir -p conflict_test/dir1 conflict_test/dir2 conflict_test/dir3
+          echo "File in dir1" > conflict_test/dir1/file.txt
+          echo "File in dir2" > conflict_test/dir2/file.txt
+          echo "File in dir3" > conflict_test/dir3/file.txt
+          
+          echo -e "${BOLD}Created test structure:${NC}"
+          find conflict_test -type f | sort | sed 's/^/  /'
+          echo ""
+
+      - name: Test Conflict - Preserved Structure
+        id: conflict_preserve
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: 'compress'
+          source: 'conflict_test/**/*.txt'
+          format: 'zip'
+          dest: './glob_output'
+          destfilename: 'conflict_preserved'
+          preserveGlobStructure: 'true'
+          verbose: 'true'
+
+      - name: Test Conflict - Flattened Structure
+        id: conflict_flatten
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: 'compress'
+          source: 'conflict_test/**/*.txt'
+          format: 'zip'
+          dest: './glob_output'
+          destfilename: 'conflict_flattened'
+          preserveGlobStructure: 'false'
+          verbose: 'true'
+
+      - name: Verify Conflict Handling
+        run: |
+          # Define colors for better readability
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m' # No Color
+          
+          echo -e "\n${BOLD}${BLUE}======== FILENAME CONFLICT HANDLING TEST ========${NC}"
+          
+          # Test Case 1: Preserved structure (no conflicts)
+          echo -e "\n${BOLD}${BLUE}======== PRESERVED STRUCTURE (No Conflicts) ========${NC}"
+          
+          mkdir -p verify/conflict_preserved
+          unzip -q ./glob_output/conflict_preserved.zip -d ./verify/conflict_preserved
+          
+          echo -e "${BOLD}Extracted Structure:${NC}"
+          find ./verify/conflict_preserved -type f | sort | sed 's/^/  /'
+          
+          # Verify all 3 files exist with their paths (accounting for temp directory)
+          preserved_files=$(find ./verify/conflict_preserved -path "*/conflict_test/dir*/file.txt" | wc -l)
+          
+          if [ "$preserved_files" -eq 3 ]; then
+            echo -e "${GREEN}✅ SUCCESS: All 3 files preserved with directory structure (no conflicts)${NC}"
+            
+            # Verify content is different
+            echo -e "\n${BOLD}File Contents:${NC}"
+            file1=$(find ./verify/conflict_preserved -path "*/dir1/file.txt")
+            file2=$(find ./verify/conflict_preserved -path "*/dir2/file.txt")
+            file3=$(find ./verify/conflict_preserved -path "*/dir3/file.txt")
+            
+            if [ -f "$file1" ]; then
+              echo -e "${YELLOW}dir1/file.txt:${NC} $(cat "$file1")"
+            fi
+            if [ -f "$file2" ]; then
+              echo -e "${YELLOW}dir2/file.txt:${NC} $(cat "$file2")"
+            fi
+            if [ -f "$file3" ]; then
+              echo -e "${YELLOW}dir3/file.txt:${NC} $(cat "$file3")"
+            fi
+          else
+            echo -e "${RED}❌ FAILED: Expected 3 files but found $preserved_files${NC}"
+            echo -e "${BOLD}Files found:${NC}"
+            find ./verify/conflict_preserved -name "file.txt" | sort | sed 's/^/  /'
+            exit 1
+          fi
+          
+          # Test Case 2: Flattened structure (handles conflicts)
+          echo -e "\n${BOLD}${BLUE}======== FLATTENED STRUCTURE (With Conflict Handling) ========${NC}"
+          
+          mkdir -p verify/conflict_flattened
+          unzip -q ./glob_output/conflict_flattened.zip -d ./verify/conflict_flattened
+          
+          echo -e "${BOLD}Extracted Files:${NC}"
+          find ./verify/conflict_flattened -type f | sort | sed 's/^/  /'
+          
+          # Find the temp directory first
+          temp_dir=$(find ./verify/conflict_flattened -type d -name "compress_glob_*" | head -1)
+          
+          if [ -z "$temp_dir" ]; then
+            echo -e "${RED}❌ FAILED: Could not find compress_glob_* directory${NC}"
+            exit 1
+          fi
+          
+          # Count files directly in temp directory (should be 3 with numbered suffixes)
+          file_count=$(find "$temp_dir" -maxdepth 1 -name "file*.txt" | wc -l)
+          
+          if [ "$file_count" -eq 3 ]; then
+            echo -e "${GREEN}✅ SUCCESS: Conflict handled correctly (3 files with unique names)${NC}"
+            
+            echo -e "\n${BOLD}Flattened files with conflict resolution:${NC}"
+            find "$temp_dir" -maxdepth 1 -name "file*.txt" -exec basename {} \; | sort | sed 's/^/  /'
+          else
+            echo -e "${RED}❌ FAILED: Expected 3 files but found $file_count${NC}"
+            exit 1
+          fi
+          
+          echo -e "\n${GREEN}${BOLD}✓ FILENAME CONFLICT TESTS PASSED${NC}\n"
+
       - name: Upload Glob Pattern Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -1076,4 +1329,7 @@ jobs:
           echo -e "  • Multiple file type patterns (.txt, .md)"
           echo -e "  • Nested path patterns (nested/**/*.doc)"
           echo -e "  • No match error handling"
-          echo -e "  • Different compression formats (zip, tar, tgz)\n"
+          echo -e "  • Different compression formats (zip, tar, tgz)"
+          echo -e "  • Directory structure preservation (preserveGlobStructure: true)"
+          echo -e "  • Flattened structure (preserveGlobStructure: false)"
+          echo -e "  • Same filename conflict handling\n"
