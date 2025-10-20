@@ -548,17 +548,129 @@ You can combine glob patterns with exclude patterns for more precise control:
 
 <br/>
 
+## Symbolic Link Support
+
+The action **fully supports symbolic links** (symlinks), which is particularly useful for build tools like Bazel that use symlinks extensively.
+
+### How Symlinks Work
+
+The action automatically follows symbolic links to their actual targets:
+
+- **Symlink Directories**: Treated as regular directories and traversed recursively
+- **Symlink Files**: Compressed with their actual content from the target file
+- **Broken Symlinks**: Detected and reported with clear error messages
+
+<br/>
+
+### Bazel Integration Example
+
+Bazel creates symlink directories like `bazel-bin`, `bazel-out`, etc. These work seamlessly:
+
+```yaml
+- name: Archive Bazel Build Outputs
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'bazel-bin/**/*.binaryproto'  # Symlink directory
+    format: tgz
+    preserveGlobStructure: true
+    stripPrefix: 'bazel-bin/'
+    includeRoot: false
+    verbose: true
+```
+
+**Result:**
+- `bazel-bin` is a symlink to `/home/runner/.bazel/execroot/_main/bazel-out/k8-fastbuild/bin`
+- Action follows the symlink and compresses actual files
+- Output structure is clean without the symlink prefix
+
+<br/>
+
+### Common Symlink Scenarios
+
+#### 1. Build Tool Output Directories
+```yaml
+# Bazel, Buck, or similar build systems
+- name: Archive Build Artifacts
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'bazel-bin/**/*.so'
+    format: tgz
+    preserveGlobStructure: true
+    includeRoot: false
+```
+
+#### 2. Symlinked Configuration
+```yaml
+# When configs are symlinked from another location
+- name: Archive Config Files
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'config-link/**/*.yml'
+    format: zip
+    preserveGlobStructure: true
+```
+
+#### 3. Direct Symlink Compression
+```yaml
+# Compress a single symlinked file
+- name: Archive Symlinked Binary
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'latest-build'  # Symlink to actual binary
+    format: tgz
+```
+
+<br/>
+
+### Important Notes
+
+- ✅ **Automatic Resolution**: Symlinks are automatically followed to actual files
+- ✅ **Recursive Support**: Directory symlinks are traversed recursively
+- ✅ **Size Calculation**: File sizes are calculated from actual target files
+- ✅ **Error Detection**: Broken symlinks are detected and reported clearly
+- ⚠️ **Circular Links**: Avoid circular symlink references (can cause infinite loops)
+- ⚠️ **Performance**: Following many nested symlinks may impact performance
+
+<br/>
+
 ## Troubleshooting
 
 ### Pattern Not Matching Files
 
 1. Verify the pattern syntax is correct
 2. Check that files exist in the expected locations
-3. Enable `verbose: true` to see matched files
-4. Test the pattern locally with `find` command:
+3. **For symlinks**: Verify the symlink target exists
+4. Enable `verbose: true` to see matched files
+5. Test the pattern locally with `find` command:
    ```bash
    find . -path './src/**/*.py'
+   # For symlinks
+   find -L . -path './bazel-bin/**/*.proto'
    ```
+
+<br/>
+
+### Symlink Issues
+
+**Problem**: "No files matched the pattern" with symlink directories
+
+**Solutions**:
+1. Verify the symlink exists: `ls -la symlink_dir`
+2. Check symlink target: `readlink -f symlink_dir`
+3. Ensure target directory and files exist
+4. Enable `verbose: true` to see debug output
+
+**Problem**: "Broken symbolic link" error
+
+**Solutions**:
+1. Check if the symlink target exists
+2. Verify file permissions on the target
+3. Use `fail_on_error: false` to skip broken symlinks
+4. Fix or remove the broken symlink
 
 <br/>
 
@@ -577,6 +689,7 @@ You can combine glob patterns with exclude patterns for more precise control:
 2. Limit search scope with directory prefixes
 3. Use specific extensions instead of wildcards
 4. Check workspace size before running pattern matches
+5. **For symlinks**: Be aware that following many symlinks can be slower
 
 <br/>
 

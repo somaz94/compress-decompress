@@ -14,6 +14,13 @@ using various compression formats including `zip`, `tar`, `tgz`, and `tbz2`. It
 is designed to be easy to use within GitHub workflows for handling file
 compression and decompression tasks efficiently.
 
+**Key Features:**
+- **Glob Pattern Support** - Match multiple files with patterns like `**/*.doc`
+- **Symbolic Link Support** - Automatically follows symlinks (Bazel, Buck, and build tool integration)
+- **Path Stripping** - Remove path prefixes while preserving directory structure
+- **Multiple Formats** - Support for zip, tar, tgz, and tbz2
+- **Flexible Options** - Custom destinations, exclude patterns, and root control
+
 <br/>
 
 ## Inputs
