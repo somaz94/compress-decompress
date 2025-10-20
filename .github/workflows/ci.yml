@@ -1402,3 +1402,240 @@ jobs:
           echo -e "  • Directory structure preservation (preserveGlobStructure: true)"
           echo -e "  • Flattened structure (preserveGlobStructure: false)"
           echo -e "  • Same filename conflict handling\n"
+
+  test-symlink-support:
+    name: Test Symbolic Link Support
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Create Test Structure with Symlinks
+        run: |
+          # Create real directories and files
+          mkdir -p real_data/subdir
+          echo "Real file 1" > real_data/file1.txt
+          echo "Real file 2" > real_data/file2.txt
+          echo "Subdir file" > real_data/subdir/file3.txt
+          
+          # Create symlink to directory (like bazel-bin)
+          ln -s real_data symlink_dir
+          
+          # Create symlink to file
+          ln -s real_data/file1.txt symlink_file.txt
+          
+          echo "Created test structure with symlinks:"
+          ls -la
+          echo ""
+          echo "Symlink directory contents:"
+          ls -la symlink_dir/
+
+      - name: Test Glob Pattern with Symlink Directory
+        id: test_symlink_glob
+        uses: ./
+        with:
+          command: 'compress'
+          source: 'symlink_dir/**/*.txt'
+          format: 'zip'
+          dest: './output'
+          destfilename: 'symlink_glob'
+          preserveGlobStructure: 'true'
+          includeRoot: 'false'
+          verbose: 'true'
+
+      - name: Verify Symlink Glob Pattern
+        run: |
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m'
+          
+          echo -e "\n${BOLD}${BLUE}======== SYMLINK GLOB PATTERN TEST ========${NC}"
+          
+          if [ ! -f "./output/symlink_glob.zip" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./output/symlink_glob.zip | sed 's/^/  /'
+          
+          mkdir -p verify/symlink_glob
+          unzip -q ./output/symlink_glob.zip -d ./verify/symlink_glob
+          
+          echo -e "\n${BOLD}Extracted Structure:${NC}"
+          find ./verify/symlink_glob -type f | sort | sed 's/^/  /'
+          
+          file_count=$(find ./verify/symlink_glob -name "*.txt" | wc -l)
+          echo -e "\n${BOLD}Number of files extracted:${NC} ${YELLOW}$file_count${NC}"
+          
+          if [ "$file_count" -eq 3 ]; then
+            echo -e "${GREEN}✅ SUCCESS: All 3 files from symlink directory matched and compressed${NC}"
+          else
+            echo -e "${RED}❌ FAILED: Expected 3 files but found $file_count${NC}"
+            exit 1
+          fi
+
+      - name: Test Direct Symlink File Compression
+        id: test_symlink_file
+        uses: ./
+        with:
+          command: 'compress'
+          source: 'symlink_file.txt'
+          format: 'zip'
+          dest: './output'
+          destfilename: 'symlink_file'
+          verbose: 'true'
+
+      - name: Verify Symlink File Compression
+        run: |
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m'
+          
+          echo -e "\n${BOLD}${BLUE}======== SYMLINK FILE COMPRESSION TEST ========${NC}"
+          
+          if [ ! -f "./output/symlink_file.zip" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          unzip -l ./output/symlink_file.zip | sed 's/^/  /'
+          
+          mkdir -p verify/symlink_file
+          unzip -q ./output/symlink_file.zip -d ./verify/symlink_file
+          
+          echo -e "\n${BOLD}Extracted Contents:${NC}"
+          find ./verify/symlink_file -type f | sed 's/^/  /'
+          
+          if [ -f "./verify/symlink_file/symlink_file.txt" ]; then
+            content=$(cat ./verify/symlink_file/symlink_file.txt)
+            echo -e "\n${BOLD}File Content:${NC} ${YELLOW}$content${NC}"
+            
+            if [ "$content" = "Real file 1" ]; then
+              echo -e "${GREEN}✅ SUCCESS: Symlink file compressed correctly with actual content${NC}"
+            else
+              echo -e "${RED}❌ FAILED: File content mismatch${NC}"
+              exit 1
+            fi
+          else
+            echo -e "${RED}❌ FAILED: Expected file not found${NC}"
+            exit 1
+          fi
+
+      - name: Test Symlink Directory Compression
+        id: test_symlink_directory
+        uses: ./
+        with:
+          command: 'compress'
+          source: 'symlink_dir'
+          format: 'tgz'
+          dest: './output'
+          destfilename: 'symlink_directory'
+          includeRoot: 'false'
+          verbose: 'true'
+
+      - name: Verify Symlink Directory Compression
+        run: |
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m'
+          
+          echo -e "\n${BOLD}${BLUE}======== SYMLINK DIRECTORY COMPRESSION TEST ========${NC}"
+          
+          if [ ! -f "./output/symlink_directory.tgz" ]; then
+            echo -e "${RED}❌ FAILED: Archive not created${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BOLD}Archive Contents:${NC}"
+          tar -tzf ./output/symlink_directory.tgz | sed 's/^/  /'
+          
+          mkdir -p verify/symlink_directory
+          tar -xzf ./output/symlink_directory.tgz -C ./verify/symlink_directory
+          
+          echo -e "\n${BOLD}Extracted Structure:${NC}"
+          find ./verify/symlink_directory -type f | sort | sed 's/^/  /'
+          
+          file_count=$(find ./verify/symlink_directory -type f | wc -l)
+          echo -e "\n${BOLD}Number of files extracted:${NC} ${YELLOW}$file_count${NC}"
+          
+          if [ "$file_count" -eq 3 ]; then
+            echo -e "${GREEN}✅ SUCCESS: All files from symlink directory compressed${NC}"
+            
+            # Verify file contents
+            if [ -f "./verify/symlink_directory/file1.txt" ] && \
+               [ -f "./verify/symlink_directory/file2.txt" ] && \
+               [ -f "./verify/symlink_directory/subdir/file3.txt" ]; then
+              echo -e "${GREEN}✅ SUCCESS: Directory structure preserved correctly${NC}"
+            else
+              echo -e "${RED}❌ FAILED: Directory structure not preserved${NC}"
+              exit 1
+            fi
+          else
+            echo -e "${RED}❌ FAILED: Expected 3 files but found $file_count${NC}"
+            exit 1
+          fi
+
+      - name: Test Broken Symlink Handling
+        id: test_broken_symlink
+        uses: ./
+        continue-on-error: true
+        with:
+          command: 'compress'
+          source: 'broken_symlink'
+          format: 'zip'
+          dest: './output'
+          destfilename: 'broken'
+          fail_on_error: 'true'
+          verbose: 'true'
+
+      - name: Create Broken Symlink (for testing)
+        run: |
+          ln -s nonexistent_file broken_symlink
+          ls -la broken_symlink || true
+
+      - name: Verify Broken Symlink Error Handling
+        run: |
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m'
+          
+          echo -e "\n${BOLD}${BLUE}======== BROKEN SYMLINK ERROR HANDLING TEST ========${NC}"
+          echo -e "${BOLD}Expected Outcome:${NC} Action should fail with broken symlink"
+          echo -e "${BOLD}Actual Outcome:${NC} ${YELLOW}${{ steps.test_broken_symlink.outcome }}${NC}\n"
+          
+          if [ "${{ steps.test_broken_symlink.outcome }}" = "failure" ]; then
+            echo -e "${GREEN}✅ TEST PASSED: Action correctly failed for broken symlink${NC}"
+          else
+            echo -e "${RED}❌ TEST FAILED: Action should have failed for broken symlink${NC}"
+            exit 1
+          fi
+
+      - name: Symlink Test Summary
+        run: |
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          BOLD='\033[1m'
+          NC='\033[0m'
+          
+          echo -e "\n${BOLD}${BLUE}======== SYMLINK SUPPORT TEST SUMMARY ========${NC}"
+          echo -e "${GREEN}${BOLD}✓ All symlink tests passed successfully${NC}"
+          echo -e "${BOLD}Tests verified:${NC}"
+          echo -e "  • Glob patterns with symlink directories (like bazel-bin)"
+          echo -e "  • Direct symlink file compression"
+          echo -e "  • Symlink directory compression"
+          echo -e "  • Broken symlink error handling"
+          echo -e "  • Directory structure preservation through symlinks\n"

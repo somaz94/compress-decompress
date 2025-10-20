@@ -240,9 +240,10 @@ class BaseProcessor:
         Validate that a path exists
         
         Handles error reporting based on fail_on_error setting.
+        Also resolves symbolic links to check if the target exists.
         
         Args:
-            path: File or directory path to validate
+            path: File or directory path to validate (can be a symlink)
             error_prefix: Prefix for error messages
             
         Returns:
@@ -251,13 +252,28 @@ class BaseProcessor:
         # Remove leading/trailing whitespace
         path = path.strip()
         
-        if not os.path.exists(path):
+        # Check if path exists (including symlinks)
+        # os.path.exists() returns False for broken symlinks
+        # os.path.lexists() returns True even for broken symlinks
+        if not os.path.lexists(path):
             error_msg = f"{error_prefix} '{path}' does not exist"
             if self.fail_on_error:
                 UI.print_error(error_msg)
                 sys.exit(1)
             logger.logger.warning(error_msg)
             return False
+        
+        # If it's a symlink, verify the target exists
+        if os.path.islink(path):
+            real_path = os.path.realpath(path)
+            if not os.path.exists(real_path):
+                error_msg = f"{error_prefix} '{path}' is a broken symbolic link (target: '{real_path}' does not exist)"
+                if self.fail_on_error:
+                    UI.print_error(error_msg)
+                    sys.exit(1)
+                logger.logger.warning(error_msg)
+                return False
+        
         return True
 
     def prepare_destination(self) -> None:
@@ -380,19 +396,23 @@ class FileUtils:
         Calculate total size of a directory
         
         Recursively traverses directory to sum the size of all files.
+        Follows symbolic links to get actual file sizes.
         
         Args:
-            path: Directory path
+            path: Directory path (can be a symlink to a directory)
             
         Returns:
             Total size in bytes
         """
         total = 0
-        for dirpath, _, filenames in os.walk(path):
-            total += sum(
-                os.path.getsize(os.path.join(dirpath, f))
-                for f in filenames if os.path.exists(os.path.join(dirpath, f))
-            )
+        # followlinks=True makes os.walk follow symbolic links
+        for dirpath, _, filenames in os.walk(path, followlinks=True):
+            for f in filenames:
+                filepath = os.path.join(dirpath, f)
+                # Use os.path.exists which follows symlinks
+                if os.path.exists(filepath):
+                    # Get size of actual file (following symlink if needed)
+                    total += os.path.getsize(filepath)
         return total
 
     @staticmethod
@@ -465,9 +485,18 @@ class FileUtils:
         try:
             os.chdir(base_dir)
             # Use recursive glob to find all matching files
-            matched_files = glob.glob(pattern, recursive=True)
+            # Note: glob doesn't follow symlinks by default in Python < 3.13
+            # We need to resolve symlinks manually
+            matched_files = []
+            for match in glob.glob(pattern, recursive=True):
+                # Resolve symlinks to actual paths
+                real_path = os.path.realpath(match)
+                # Check if it's a file (following symlinks)
+                if os.path.isfile(real_path):
+                    matched_files.append(match)
+            
             # Convert to absolute paths
-            absolute_paths = [os.path.abspath(f) for f in matched_files if os.path.isfile(f)]
+            absolute_paths = [os.path.abspath(f) for f in matched_files]
             return absolute_paths
         finally:
             # Always restore original directory

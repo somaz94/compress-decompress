@@ -417,13 +417,17 @@ class Compressor(BaseProcessor):
         Get size of source directory or file
         
         Handles both directory and file size calculations.
+        Resolves symbolic links to get actual size.
         
         Returns:
             Size in bytes of the source
         """
-        if os.path.isdir(self.source):
-            return FileUtils.get_directory_size(self.source)
-        return os.path.getsize(self.source)
+        # Resolve symlink to actual path
+        real_source = os.path.realpath(self.source)
+        
+        if os.path.isdir(real_source):
+            return FileUtils.get_directory_size(real_source)
+        return os.path.getsize(real_source)
 
     def _print_configuration(self, source_size: int) -> None:
         """
