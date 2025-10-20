@@ -1145,11 +1145,21 @@ jobs:
           echo -e "\n${BOLD}Extracted Structure:${NC}"
           find ./verify/flattened -type f | sort | sed 's/^/  /'
           
-          # Check if files are flattened (all at root level)
-          flattened_count=$(find ./verify/flattened -maxdepth 1 -name "*.doc" | wc -l)
-          total_count=$(find ./verify/flattened -name "*.doc" | wc -l)
+          # Check if files are flattened (all files should be in compress_glob_* directory without subdirectories)
+          # Find the temp directory first
+          temp_dir=$(find ./verify/flattened -type d -name "compress_glob_*" | head -1)
           
-          echo -e "${BOLD}Files at root level:${NC} ${YELLOW}$flattened_count${NC}"
+          if [ -z "$temp_dir" ]; then
+            echo -e "${RED}❌ FAILED: Could not find compress_glob_* directory${NC}"
+            exit 1
+          fi
+          
+          # Count files directly in temp directory (no subdirectories)
+          flattened_count=$(find "$temp_dir" -maxdepth 1 -name "*.doc" | wc -l)
+          # Count all files (should be same if truly flattened)
+          total_count=$(find "$temp_dir" -name "*.doc" | wc -l)
+          
+          echo -e "${BOLD}Files at temp directory root:${NC} ${YELLOW}$flattened_count${NC}"
           echo -e "${BOLD}Total files:${NC} ${YELLOW}$total_count${NC}"
           
           if [ "$flattened_count" -eq "$total_count" ] && [ "$total_count" -eq 5 ]; then
@@ -1157,7 +1167,7 @@ jobs:
             
             # List flattened files
             echo -e "\n${BOLD}Flattened files:${NC}"
-            find ./verify/flattened -maxdepth 1 -name "*.doc" -exec basename {} \; | sort | sed 's/^/  /'
+            find "$temp_dir" -maxdepth 1 -name "*.doc" -exec basename {} \; | sort | sed 's/^/  /'
           else
             echo -e "${RED}❌ FAILED: Expected all 5 files at root level, found $flattened_count at root out of $total_count total${NC}"
             exit 1
@@ -1269,14 +1279,22 @@ jobs:
           echo -e "${BOLD}Extracted Files:${NC}"
           find ./verify/conflict_flattened -type f | sort | sed 's/^/  /'
           
-          # Count files (should be 3 with numbered suffixes)
-          file_count=$(find ./verify/conflict_flattened -name "file*.txt" | wc -l)
+          # Find the temp directory first
+          temp_dir=$(find ./verify/conflict_flattened -type d -name "compress_glob_*" | head -1)
+          
+          if [ -z "$temp_dir" ]; then
+            echo -e "${RED}❌ FAILED: Could not find compress_glob_* directory${NC}"
+            exit 1
+          fi
+          
+          # Count files directly in temp directory (should be 3 with numbered suffixes)
+          file_count=$(find "$temp_dir" -maxdepth 1 -name "file*.txt" | wc -l)
           
           if [ "$file_count" -eq 3 ]; then
             echo -e "${GREEN}✅ SUCCESS: Conflict handled correctly (3 files with unique names)${NC}"
             
             echo -e "\n${BOLD}Flattened files with conflict resolution:${NC}"
-            find ./verify/conflict_flattened -name "file*.txt" -exec basename {} \; | sort | sed 's/^/  /'
+            find "$temp_dir" -maxdepth 1 -name "file*.txt" -exec basename {} \; | sort | sed 's/^/  /'
           else
             echo -e "${RED}❌ FAILED: Expected 3 files but found $file_count${NC}"
             exit 1
