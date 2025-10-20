@@ -1,11 +1,12 @@
 # Changelog
 
-## [v1.5.1](https://github.com/somaz94/compress-decompress/tree/v1.5.1) (2025-08-26)
+## [v1.5.1](https://github.com/somaz94/compress-decompress/tree/v1.5.1) (2025-10-20)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.5.1...v1.5.1)
 
 **Merged pull requests:**
 
+- build\(deps\): bump super-linter/super-linter from 8.1.0 to 8.2.0 in the actions-minor group [\#34](https://github.com/somaz94/compress-decompress/pull/34) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump actions/checkout from 4 to 5 [\#33](https://github.com/somaz94/compress-decompress/pull/33) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump super-linter/super-linter from 8.0.0 to 8.1.0 in the actions-minor group [\#32](https://github.com/somaz94/compress-decompress/pull/32) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump super-linter/super-linter from 7.4.0 to 8.0.0 [\#31](https://github.com/somaz94/compress-decompress/pull/31) ([dependabot[bot]](https://github.com/apps/dependabot))
