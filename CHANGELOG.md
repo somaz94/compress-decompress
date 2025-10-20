@@ -6,6 +6,7 @@
 
 **Merged pull requests:**
 
+- build\(deps\): bump actions/stale from 9 to 10 [\#40](https://github.com/somaz94/compress-decompress/pull/40) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump super-linter/super-linter from 8.2.0 to 8.2.1 in the actions-minor group [\#39](https://github.com/somaz94/compress-decompress/pull/39) ([dependabot[bot]](https://github.com/apps/dependabot))
 
 ## [v1.8.1](https://github.com/somaz94/compress-decompress/tree/v1.8.1) (2025-10-20)
