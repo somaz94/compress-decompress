@@ -1060,6 +1060,7 @@ jobs:
           destfilename: 'stripped_prefix'
           preserveGlobStructure: 'true'
           stripPrefix: 'test_glob/'
+          includeRoot: 'false'
           verbose: 'true'
 
       - name: Verify Strip Prefix
@@ -1088,8 +1089,8 @@ jobs:
           echo -e "\n${BOLD}Extracted Structure:${NC}"
           find ./verify/stripped -type f | sort | sed 's/^/  /'
           
-          # Check if 'test_glob/' prefix was stripped
-          # Files should be like: docs/file1.doc (NOT test_glob/docs/file1.doc)
+          # With includeRoot: false, files should be directly under verify/stripped/
+          # Files should be like: docs/file1.doc (NOT test_glob/docs/file1.doc or compress_glob_*/docs/file1.doc)
           stripped_count=$(find ./verify/stripped -path "*/docs/file*.doc" -o \
                                                    -path "*/nested/file*.doc" -o \
                                                    -path "*/nested/level1/file*.doc" -o \
@@ -1101,10 +1102,17 @@ jobs:
             exit 1
           fi
           
+          # Check that compress_glob_* directory does NOT exist (includeRoot: false)
+          if find ./verify/stripped -type d -name "compress_glob_*" | grep -q .; then
+            echo -e "${RED}❌ FAILED: compress_glob_* directory found - includeRoot should be false${NC}"
+            exit 1
+          fi
+          
           if [ "$stripped_count" -eq 5 ]; then
             echo -e "${GREEN}✅ SUCCESS: Prefix 'test_glob/' was stripped correctly (5 files)${NC}"
+            echo -e "${GREEN}✅ SUCCESS: No temporary directory (includeRoot: false works correctly)${NC}"
             echo -e "\n${BOLD}Files with stripped prefix:${NC}"
-            find ./verify/stripped -name "*.doc" | sort | sed 's|.*/verify/stripped/||' | sed 's|.*/compress_glob_[0-9]*/||' | sed 's/^/  /'
+            find ./verify/stripped -name "*.doc" | sort | sed 's|.*/verify/stripped/||' | sed 's/^/  /'
           else
             echo -e "${RED}❌ FAILED: Expected 5 files with stripped prefix but found $stripped_count${NC}"
             exit 1
