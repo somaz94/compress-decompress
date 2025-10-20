@@ -120,7 +120,11 @@ jobs:
 
 ### Using Glob Patterns
 
-This example demonstrates how to compress files matching a glob pattern. This is useful when you want to archive all files of a specific type across your repository:
+This action supports glob patterns for matching multiple files across your repository. This is particularly useful when you need to archive specific file types or patterns without compressing entire directories.
+
+<br/>
+
+#### Basic Glob Pattern Example
 
 ```yaml
 name: Compress Files by Pattern
@@ -150,18 +154,202 @@ jobs:
           path: ./artifacts/all-docs.zip
 ```
 
-**Supported Glob Patterns:**
+<br/>
 
-- `**/*.doc` - All `.doc` files in all subdirectories
-- `*.txt` - All `.txt` files in the current directory
-- `docs/**/*.md` - All `.md` files in the `docs` directory and subdirectories
-- `**/*.{jpg,png,gif}` - All image files with specified extensions
+#### Advanced Glob Pattern Examples
 
-**Note:** When using glob patterns:
+**1. Compress All Markdown Files:**
+```yaml
+- name: Archive All Markdown Documentation
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: '**/*.md'
+    format: tgz
+    dest: './archives'
+    destfilename: 'documentation'
+```
+
+**2. Compress Files from Specific Directory:**
+```yaml
+- name: Archive Source Files Only
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'src/**/*.py'
+    format: zip
+    dest: './backups'
+    destfilename: 'python-sources'
+```
+
+**3. Compress Multiple File Types:**
+```yaml
+- name: Archive Configuration Files
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: '**/*.{yml,yaml,json,toml}'
+    format: tar
+    dest: './configs'
+    destfilename: 'all-configs'
+```
+
+**4. Archive Log Files:**
+```yaml
+- name: Collect and Archive Logs
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'logs/**/*.log'
+    format: tgz
+    dest: './archived-logs'
+    destfilename: 'application-logs'
+```
+
+**5. Single Directory Wildcard:**
+```yaml
+- name: Archive Top-Level Text Files
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: '*.txt'
+    format: zip
+    dest: './output'
+    destfilename: 'text-files'
+```
+
+**6. Nested Path Pattern:**
+```yaml
+- name: Archive Test Results
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'tests/**/results/*.xml'
+    format: zip
+    dest: './test-archives'
+    destfilename: 'test-results'
+```
+
+**7. Archive Images:**
+```yaml
+- name: Backup All Images
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: '**/*.{jpg,jpeg,png,gif,svg}'
+    format: zip
+    dest: './image-backups'
+    destfilename: 'all-images'
+```
+
+**8. Archive Build Artifacts:**
+```yaml
+- name: Archive Build Output
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'dist/**/*.js'
+    format: tgz
+    dest: './releases'
+    destfilename: 'build-artifacts'
+```
+
+<br/>
+
+#### Supported Glob Patterns
+
+| Pattern | Description | Example Match |
+|---------|-------------|---------------|
+| `**/*.ext` | All files with extension in all subdirectories | `docs/readme.md`, `src/test/file.md` |
+| `*.ext` | All files with extension in current directory | `readme.txt`, `notes.txt` |
+| `dir/**/*.ext` | All files with extension in specific directory tree | `src/utils/helper.py`, `src/main.py` |
+| `**/filename.ext` | Specific filename in all subdirectories | `config.json`, `settings/config.json` |
+| `dir/*.ext` | Files in specific directory (non-recursive) | `src/main.py` (not `src/sub/test.py`) |
+| `**/*.{ext1,ext2}` | Multiple extensions in all subdirectories | `file.jpg`, `image.png` |
+
+<br/>
+
+#### How Glob Patterns Work
+
+When using glob patterns, the action:
+
+1. **Searches for Matches**: Recursively scans the workspace for files matching the pattern
+2. **Collects Files**: Gathers all matched files into a temporary directory
+3. **Flattens Structure**: Places all files at the root of the archive (no subdirectories)
+4. **Creates Archive**: Compresses the collected files into a single archive
+5. **Cleans Up**: Automatically removes temporary files after compression
+
+<br/>
+
+#### Important Notes on Glob Patterns
+
+⚠️ **Pattern Behavior:**
 - All matched files are collected and compressed into a single archive
-- The directory structure is flattened (all files are placed at the root of the archive)
+- The directory structure is **flattened** - all files are placed at the root of the archive
+- File name conflicts are handled automatically with numeric suffixes
 - The `includeRoot` option is automatically handled
-- If no files match the pattern, the action will fail (unless `fail_on_error: false`)
+
+⚠️ **Error Handling:**
+- If no files match the pattern, the action will **fail by default**
+- Use `fail_on_error: false` to allow workflows to continue when no matches are found
+- Enable `verbose: true` to see which files are being matched
+
+⚠️ **Performance Considerations:**
+- Glob patterns are processed from the current working directory
+- Large pattern matches may take time to process and copy
+- Consider using more specific patterns for better performance
+
+<br/>
+
+#### Real-World Glob Pattern Use Cases
+
+**Backup Configuration Files:**
+```yaml
+- name: Backup All Config Files
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: '**/*.{conf,cfg,ini,config}'
+    format: tgz
+    dest: './config-backups'
+    destfilename: 'configs-backup'
+```
+
+**Archive Documentation:**
+```yaml
+- name: Create Documentation Archive
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: '**/*.{md,rst,adoc}'
+    format: zip
+    dest: './docs-archive'
+    destfilename: 'documentation'
+```
+
+**Collect Test Coverage Reports:**
+```yaml
+- name: Archive Coverage Reports
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'coverage/**/*.{html,xml,json}'
+    format: zip
+    dest: './test-reports'
+    destfilename: 'coverage-reports'
+```
+
+**Backup Database Dumps:**
+```yaml
+- name: Archive Database Backups
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: 'backups/**/*.{sql,dump}'
+    format: tgz
+    dest: './db-archives'
+    destfilename: 'database-backups'
+```
 
 <br/>
 
