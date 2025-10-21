@@ -75,10 +75,7 @@ class CompressionFormat(Enum):
         Returns:
             File extension with leading dot (e.g., '.zip')
         """
-        for format_enum in cls:
-            if format_enum.value == format_str:
-                return f".{format_str}"
-        return ""
+        return f".{format_str}" if format_str in cls.list() else ""
 
 # ======================================================================
 # Command Configuration
@@ -171,9 +168,8 @@ def retry_on_failure(max_retries: int = 3, delay: int = 1):
                 except Exception as e:
                     if attempt == max_retries - 1:
                         raise
-                    logger.logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+                    logger.logger.warning(f"Attempt {attempt + 1}/{max_retries} failed: {str(e)}")
                     time.sleep(delay * (attempt + 1))
-            return None
         return wrapper
     return decorator
 
@@ -194,14 +190,16 @@ class Logger:
 
     def _setup_logging(self):
         """Configure logging format and handlers"""
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.INFO)
+        # Only add handler if none exists to prevent duplicates
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                '%(asctime)s - %(levelname)s - %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S'
+            )
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+            self.logger.setLevel(logging.INFO)
 
     def set_verbose(self, verbose: bool):
         """
