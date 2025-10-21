@@ -1,7 +1,7 @@
 import os
 import sys
 from typing import Optional, Dict, List
-from utils import UI, CompressionFormat, logger
+from utils import UI, CompressionFormat, logger, FileUtils
 from compress import compress
 from decompress import decompress
 
@@ -28,8 +28,8 @@ class ActionRunner:
         self.include_root = os.getenv("INCLUDEROOT", "true")
         self.preserve_glob_structure = os.getenv("PRESERVE_GLOB_STRUCTURE", "false")
         self.strip_prefix = os.getenv("STRIP_PREFIX", "")
-        self.verbose = os.getenv("VERBOSE", "false").lower() == "true"
-        self.fail_on_error = os.getenv("FAIL_ON_ERROR", "true").lower() == "true"
+        self.verbose = FileUtils.str_to_bool(os.getenv("VERBOSE", "false"))
+        self.fail_on_error = FileUtils.str_to_bool(os.getenv("FAIL_ON_ERROR", "true"))
         
         # Destination settings
         self.dest = os.getenv("DEST", "")

@@ -30,8 +30,8 @@ class Compressor(BaseProcessor):
         super().__init__()
         self.source = source
         self.format = format
-        self.include_root = include_root.lower() == "true"
-        self.preserve_glob_structure = preserve_glob_structure.lower() == "true"
+        self.include_root = FileUtils.str_to_bool(include_root)
+        self.preserve_glob_structure = FileUtils.str_to_bool(preserve_glob_structure)
         self.strip_prefix = strip_prefix
         self.is_glob_pattern = False
         self.matched_files = []
@@ -422,12 +422,7 @@ class Compressor(BaseProcessor):
         Returns:
             Size in bytes of the source
         """
-        # Resolve symlink to actual path
-        real_source = os.path.realpath(self.source)
-        
-        if os.path.isdir(real_source):
-            return FileUtils.get_directory_size(real_source)
-        return os.path.getsize(real_source)
+        return FileUtils.get_path_size(self.source)
 
     def _print_configuration(self, source_size: int) -> None:
         """

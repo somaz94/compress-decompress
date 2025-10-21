@@ -227,8 +227,8 @@ class BaseProcessor:
     def __init__(self):
         """Initialize with environment variables and default settings"""
         # Load configuration from environment variables
-        self.fail_on_error = os.getenv("FAIL_ON_ERROR", "true").lower() == "true"
-        self.verbose = os.getenv("VERBOSE", "false").lower() == "true"
+        self.fail_on_error = FileUtils.str_to_bool(os.getenv("FAIL_ON_ERROR", "true"))
+        self.verbose = FileUtils.str_to_bool(os.getenv("VERBOSE", "false"))
         self.dest = os.getenv("DEST", os.getenv("GITHUB_WORKSPACE", os.getcwd()))
         self.destfilename = os.getenv("DESTFILENAME", "")
         self.exclude = os.getenv("EXCLUDE", "")
@@ -359,6 +359,29 @@ class FileUtils:
     Provides helper methods for file operations, path handling, and size calculations.
     """
     @staticmethod
+    def str_to_bool(value: str, default: bool = False) -> bool:
+        """
+        Convert string to boolean
+        
+        Args:
+            value: String value to convert (e.g., "true", "false", "yes", "no", "1", "0")
+            default: Default value if string is empty or None
+            
+        Returns:
+            Boolean value
+            
+        Examples:
+            str_to_bool("true") -> True
+            str_to_bool("false") -> False
+            str_to_bool("yes") -> True
+            str_to_bool("1") -> True
+            str_to_bool("") -> False (default)
+        """
+        if not value:
+            return default
+        return value.lower() in ("true", "yes", "1")
+
+    @staticmethod
     def get_size(size_or_path: Union[int, str]) -> str:
         """
         Convert bytes to human-readable size format
@@ -412,6 +435,32 @@ class FileUtils:
                     # Get size of actual file (following symlink if needed)
                     total += os.path.getsize(filepath)
         return total
+
+    @staticmethod
+    def get_path_size(path: str) -> int:
+        """
+        Get size of file or directory (follows symlinks)
+        
+        Automatically determines if path is a file or directory and
+        returns the appropriate size. Resolves symbolic links to actual paths.
+        
+        Args:
+            path: File or directory path (can be a symlink)
+            
+        Returns:
+            Size in bytes
+            
+        Examples:
+            get_path_size("/path/to/file.txt") -> 1024
+            get_path_size("/path/to/directory") -> 5242880
+            get_path_size("symlink_to_dir") -> (size of actual directory)
+        """
+        # Resolve symlink to actual path
+        real_path = os.path.realpath(path)
+        
+        if os.path.isdir(real_path):
+            return FileUtils.get_directory_size(real_path)
+        return os.path.getsize(real_path)
 
     @staticmethod
     def adjust_path(path: str) -> str:
