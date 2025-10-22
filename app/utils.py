@@ -609,7 +609,7 @@ class UI:
             title: Header title
         """
         print("\n" + "=" * 50)
-        print(f"🚀 {title}")
+        print(f"▶️ {title}")
         print("=" * 50 + "\n")
 
     @staticmethod
