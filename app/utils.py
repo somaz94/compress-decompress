@@ -53,15 +53,11 @@ class CompressionFormat(Enum):
             True if format is valid, False otherwise
         """
         if format_str not in cls.list():
-            error_msg = f"Invalid format: {format_str}"
-            if os.getenv("FAIL_ON_ERROR", "true").lower() == "true":
-                UI.print_error(error_msg)
-                print(f"Supported formats: {', '.join(cls.list())}")
+            UI.error(f"Invalid format: {format_str}")
+            print(f"Supported formats: {', '.join(cls.list())}")
+            if FileUtils.str_to_bool(os.getenv("FAIL_ON_ERROR", "true")):
                 sys.exit(1)
-            else:
-                logger.logger.warning(error_msg)
-                logger.logger.warning(f"Supported formats: {', '.join(cls.list())}")
-                return False
+            return False
         return True
 
     @classmethod
@@ -344,7 +340,7 @@ class CommandExecutor:
             return ProcessResult(True, "Command executed successfully")
         except subprocess.CalledProcessError as e:
             error_msg = f"Command failed: {e}"
-            if os.getenv("FAIL_ON_ERROR", "true").lower() == "true":
+            if FileUtils.str_to_bool(os.getenv("FAIL_ON_ERROR", "true")):
                 raise RuntimeError(f"{error_msg}\nError output:\n{e.stderr}")
             return ProcessResult(False, error_msg, {"stderr": e.stderr})
 
