@@ -75,7 +75,7 @@ jobs:
           fi
 
       - name: Upload Compressed Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: compressed-${{ matrix.format }}-${{ matrix.source }}-root-${{ matrix.include_root }}-dest-${{ matrix.dest_config.type }}
           path: ${{ steps.set-path.outputs.source_path }}
@@ -1373,7 +1373,7 @@ jobs:
           echo -e "\n${GREEN}${BOLD}✓ FILENAME CONFLICT TESTS PASSED${NC}\n"
 
       - name: Upload Glob Pattern Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: glob-pattern-archives
           path: |
