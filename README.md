@@ -205,15 +205,90 @@ This action supports glob patterns for matching multiple files across your repos
 
 <br/>
 
+## Troubleshooting
+
+<br/>
+
+#### Common Issues:
+
+<details>
+<summary>Compression fails with "Source not found"?</summary>
+
+1. Verify source path exists: `ls -la ./data-folder`
+2. Use absolute paths: `${{ github.workspace }}/data-folder`
+3. Check workspace state: `ls -la ${{ github.workspace }}`
+4. See [Troubleshooting Guide](docs/TROUBLESHOOTING.md#compression-issues)
+
+</details>
+
+<details>
+<summary>Glob pattern not matching files?</summary>
+
+1. Verify files exist: `find . -name "*.doc"`
+2. Enable verbose mode: `verbose: true`
+3. Check pattern syntax: Use single quotes `'**/*.doc'`
+4. See [Glob Pattern Guide](docs/GLOB_PATTERNS.md#troubleshooting)
+
+</details>
+
+<details>
+<summary>Archive size is too large?</summary>
+
+1. Use exclude patterns: `exclude: 'node_modules .git *.log'`
+2. Use better compression: `format: tbz2` instead of `zip`
+3. Split into multiple archives
+4. See [Troubleshooting Guide](docs/TROUBLESHOOTING.md#archive-size-is-too-large)
+
+</details>
+
+<details>
+<summary>Exclude patterns not working?</summary>
+
+**Correct syntax** (space-separated):
+```yaml
+exclude: 'node_modules .git *.log'
+```
+
+**Incorrect** (comma-separated):
+```yaml
+exclude: 'node_modules,.git,*.log'  # Wrong!
+```
+
+See [Advanced Usage - Exclude Patterns](docs/ADVANCED_USAGE.md#using-exclude-patterns)
+
+</details>
+
+[→ See full troubleshooting guide](docs/TROUBLESHOOTING.md)
+
+<br/>
+
+## Contributing
+
+<br/>
+
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes and test locally
+4. Commit: `git commit -am "feat: Add new feature"`
+5. Push and create a Pull Request
+
+[→ See development and testing guide](docs/ADVANCED_USAGE.md)
+
+<br/>
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE) file for details.
 
 <br/>
 
-## Contributing
+## Support
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+- **Issues**: [GitHub Issues](https://github.com/somaz94/compress-decompress/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/somaz94/compress-decompress/discussions)
+- **Documentation**: [Full Documentation](docs/)
 
 <br/>
 
@@ -224,3 +299,13 @@ Thanks to all contributors:
 <a href="https://github.com/somaz94/compress-decompress/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=somaz94/compress-decompress" />
 </a>
+
+---
+
+<div align="center">
+
+**Made with efficiency for GitHub Actions workflows**
+
+[Documentation](docs/) | [Examples](docs/ADVANCED_USAGE.md) | [Troubleshooting](docs/TROUBLESHOOTING.md)
+
+</div>
