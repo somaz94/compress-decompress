@@ -55,4 +55,5 @@ jobs:
         user_email: "actions@github.com"
         user_name: "GitHub Actions"
         file_pattern: "CHANGELOG.md"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
 

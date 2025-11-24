@@ -81,6 +81,7 @@ jobs:
           user_name: 'GitHub Action'
           tag_name: ${{ env.MAJOR_VERSION }}
           delete_tag: true
+          github_token: ${{ secrets.PAT_TOKEN }}
 
       # Create new major version tag
       - name: Create new major version tag
@@ -90,4 +91,5 @@ jobs:
           user_name: 'GitHub Action'
           tag_name: ${{ env.MAJOR_VERSION }}
           tag_reference: ${{ env.COMMIT_SHA }}
+          github_token: ${{ secrets.PAT_TOKEN }}
     
