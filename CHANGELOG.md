@@ -1,11 +1,12 @@
 # Changelog
 
-## [v1.8.4](https://github.com/somaz94/compress-decompress/tree/v1.8.4) (2025-10-27)
+## [v1.8.4](https://github.com/somaz94/compress-decompress/tree/v1.8.4) (2025-11-25)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.8.4...v1.8.4)
 
 **Merged pull requests:**
 
+- build\(deps\): bump actions/checkout from 5 to 6 [\#43](https://github.com/somaz94/compress-decompress/pull/43) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump actions/upload-artifact from 4 to 5 [\#42](https://github.com/somaz94/compress-decompress/pull/42) ([dependabot[bot]](https://github.com/apps/dependabot))
 
 ## [v1.8.4](https://github.com/somaz94/compress-decompress/tree/v1.8.4) (2025-10-22)
