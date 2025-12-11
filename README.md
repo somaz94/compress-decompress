@@ -302,6 +302,15 @@ Thanks to all contributors:
 
 ---
 
+## Star History
+<picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=somaz94/compress-decompress&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=somaz94/compress-decompress&type=date&legend=top-left" />
+   <img alt="Compress-Decompress Star History Chart" src="https://api.star-history.com/svg?repos=somaz94/compress-decompress&type=date&legend=top-left" />
+</picture>
+
+---
+
 <div align="center">
 
 **Made with efficiency for GitHub Actions workflows**
