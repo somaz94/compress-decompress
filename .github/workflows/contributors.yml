@@ -2,7 +2,7 @@ name: Generator Contributors
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Generate changelog"]  # release.yml의 name과 일치해야 함
+    workflows: ["Generate changelog"]
     types:
       - completed
 
@@ -13,11 +13,16 @@ jobs:
   update_contributors:
     name: Update Contributors
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}  # ✅ 추가
 
     steps:
       - uses: actions/checkout@v6
         with:
           token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 0  # ✅ 추가
+
+      - name: Pull latest changes  # ✅ 추가
+        run: git pull origin main
 
       - name: Get contributors
         run: |
@@ -45,3 +50,4 @@ jobs:
           commit_message: "docs: update CONTRIBUTORS.md"
           branch: main
           file_pattern: "CONTRIBUTORS.md"
+          github_token: ${{ secrets.PAT_TOKEN }}  # ✅ 추가
