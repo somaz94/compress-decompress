@@ -1,11 +1,12 @@
 # Changelog
 
-## [v1.8.4](https://github.com/somaz94/compress-decompress/tree/v1.8.4) (2025-12-29)
+## [v1.8.4](https://github.com/somaz94/compress-decompress/tree/v1.8.4) (2026-02-13)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.8.4...v1.8.4)
 
 **Merged pull requests:**
 
+- build\(deps\): bump super-linter/super-linter from 8.3.2 to 8.4.0 in the actions-minor group [\#48](https://github.com/somaz94/compress-decompress/pull/48) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump super-linter/super-linter from 8.3.1 to 8.3.2 in the actions-minor group [\#47](https://github.com/somaz94/compress-decompress/pull/47) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump super-linter/super-linter from 8.3.0 to 8.3.1 in the actions-minor group [\#46](https://github.com/somaz94/compress-decompress/pull/46) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build\(deps\): bump actions/upload-artifact from 5 to 6 [\#45](https://github.com/somaz94/compress-decompress/pull/45) ([dependabot[bot]](https://github.com/apps/dependabot))
