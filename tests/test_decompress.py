@@ -62,7 +62,7 @@ class TestDecompressIntegration:
         dest.mkdir()
         config = make_config(source=tmp_archive_zip, format="zip", dest=str(dest))
         result = decompress(config)
-        assert result is True
+        assert result
         # Verify files were extracted
         extracted = list(dest.rglob("*.txt"))
         assert len(extracted) > 0
@@ -72,7 +72,7 @@ class TestDecompressIntegration:
         dest.mkdir()
         config = make_config(source=tmp_archive_tar, format="tar", dest=str(dest))
         result = decompress(config)
-        assert result is True
+        assert result
         extracted = list(dest.rglob("*.txt"))
         assert len(extracted) > 0
 

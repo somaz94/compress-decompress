@@ -168,7 +168,7 @@ class TestCompressIntegration:
             include_root="true", dest=str(dest)
         )
         result = compress(config)
-        assert result is True
+        assert result
         # Verify archive was created
         archives = list(dest.glob("*.zip"))
         assert len(archives) == 1
@@ -181,7 +181,7 @@ class TestCompressIntegration:
             include_root="true", dest=str(dest)
         )
         result = compress(config)
-        assert result is True
+        assert result
         archives = list(dest.glob("*.tar"))
         assert len(archives) == 1
 
@@ -193,7 +193,7 @@ class TestCompressIntegration:
             include_root="false", dest=str(dest)
         )
         result = compress(config)
-        assert result is True
+        assert result
 
     def test_compress_with_custom_filename(self, make_config, tmp_source, tmp_path):
         dest = tmp_path / "output"
@@ -203,7 +203,7 @@ class TestCompressIntegration:
             dest=str(dest), destfilename="my_archive"
         )
         result = compress(config)
-        assert result is True
+        assert result
         assert (dest / "my_archive.zip").exists()
 
     def test_compress_tgz_with_root(self, make_config, tmp_source, tmp_path):
@@ -214,7 +214,7 @@ class TestCompressIntegration:
             include_root="true", dest=str(dest)
         )
         result = compress(config)
-        assert result is True
+        assert result
         archives = list(dest.glob("*.tgz"))
         assert len(archives) == 1
 
@@ -226,7 +226,7 @@ class TestCompressIntegration:
             include_root="false", dest=str(dest)
         )
         result = compress(config)
-        assert result is True
+        assert result
 
     def test_compress_tar_without_root(self, make_config, tmp_source, tmp_path):
         dest = tmp_path / "output"
@@ -236,7 +236,7 @@ class TestCompressIntegration:
             include_root="false", dest=str(dest)
         )
         result = compress(config)
-        assert result is True
+        assert result
 
 
 class TestGlobPatternEdgeCases:
@@ -283,7 +283,7 @@ class TestGlobPatternEdgeCases:
             dest=str(dest),
         )
         result = compress(config)
-        assert result is True
+        assert result
 
     def test_compress_glob_with_strip_prefix(self, make_config, tmp_source, tmp_path):
         dest = tmp_path / "output"
@@ -295,7 +295,7 @@ class TestGlobPatternEdgeCases:
             strip_prefix=str(tmp_source),
         )
         result = compress(config)
-        assert result is True
+        assert result
 
 
 class TestDestinationPath:
@@ -450,3 +450,93 @@ class TestCompressErrorHandling:
         monkeypatch.setattr(c, 'get_compression_command', lambda: (_ for _ in ()).throw(RuntimeError("test error")))
         result = c.compress()
         assert result.success is False
+
+
+class TestCompressionLevel:
+    def test_zip_with_level(self, make_config, tmp_source):
+        config = make_config(
+            source=str(tmp_source), format="zip",
+            compression_level="9",
+        )
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        cmd = c._get_zip_command("/out/test.zip", "test")
+        assert "zip -9 -r" in cmd
+
+    def test_zip_without_level(self, make_config, tmp_source):
+        config = make_config(source=str(tmp_source), format="zip")
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        cmd = c._get_zip_command("/out/test.zip", "test")
+        assert "zip -r" in cmd
+        assert "zip -r" in cmd  # no double space
+
+    def test_tgz_level_env(self, make_config, tmp_source):
+        config = make_config(
+            source=str(tmp_source), format="tgz",
+            compression_level="9",
+        )
+        c = Compressor(config)
+        assert "GZIP=-9" in c._get_tar_level_env()
+
+    def test_tbz2_level_env(self, make_config, tmp_source):
+        config = make_config(
+            source=str(tmp_source), format="tbz2",
+            compression_level="5",
+        )
+        c = Compressor(config)
+        assert "BZIP2=-5" in c._get_tar_level_env()
+
+    def test_tar_no_level_env(self, make_config, tmp_source):
+        config = make_config(source=str(tmp_source), format="tar")
+        c = Compressor(config)
+        assert c._get_tar_level_env() == ""
+
+    def test_compress_zip_with_level(self, make_config, tmp_source, tmp_path):
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source), format="zip",
+            dest=str(dest), compression_level="1",
+        )
+        result, checksum = compress(config)
+        assert result
+        assert checksum  # SHA256 hash
+
+
+class TestChecksum:
+    def test_checksum_on_compress(self, make_config, tmp_source, tmp_path):
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source), format="zip",
+            dest=str(dest),
+        )
+        output_path, checksum = compress(config)
+        assert output_path
+        assert len(checksum) == 64  # SHA256 hex length
+
+    def test_checksum_matches_file(self, make_config, tmp_source, tmp_path):
+        import hashlib
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source), format="zip",
+            dest=str(dest),
+        )
+        output_path, checksum = compress(config)
+        # Verify checksum manually
+        sha256 = hashlib.sha256()
+        with open(output_path, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                sha256.update(chunk)
+        assert checksum == sha256.hexdigest()
+
+    def test_no_checksum_on_failure(self, make_config):
+        config = make_config(
+            source="/nonexistent", format="zip",
+            fail_on_error=False,
+        )
+        output_path, checksum = compress(config)
+        assert output_path == ""
+        assert checksum == ""

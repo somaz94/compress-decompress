@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import hashlib
 import os
 import shlex
 import shutil
@@ -35,7 +36,10 @@ class Compressor(BaseProcessor):
         self.strip_prefix = config.strip_prefix
         self.is_glob_pattern = False
         self.matched_files: List[str] = []
+        self.compression_level = config.compression_level
         self.temp_dir = None
+        self.output_path = ""
+        self.checksum = ""
 
     def validate(self) -> bool:
         """Validate that source path exists or glob pattern matches files"""
@@ -76,6 +80,7 @@ class Compressor(BaseProcessor):
         base_name = self.destfilename or os.path.basename(self.source)
         extension = f".{self.format}"
         full_dest = self._determine_destination_path(base_name, extension)
+        self.output_path = full_dest
 
         if self.format == CompressionFormat.ZIP.value:
             return self._get_zip_command(full_dest, base_name)
@@ -94,13 +99,14 @@ class Compressor(BaseProcessor):
         source_path = os.path.abspath(self.source)
         source_path = os.getcwd() if source_path == '/github/workspace' else source_path
         exclude_cmd = self._build_zip_exclude(source_path)
+        level_flag = f" -{self.compression_level}" if self.compression_level else ""
 
         if self.include_root:
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"cd {shlex.quote(parent_dir)} && zip -r {shlex.quote(full_dest)} {shlex.quote(dir_name)} {exclude_cmd}"
+            return f"cd {shlex.quote(parent_dir)} && zip{level_flag} -r {shlex.quote(full_dest)} {shlex.quote(dir_name)} {exclude_cmd}"
 
-        return f"cd {shlex.quote(source_path)} && zip -r {shlex.quote(full_dest)} . {exclude_cmd}"
+        return f"cd {shlex.quote(source_path)} && zip{level_flag} -r {shlex.quote(full_dest)} . {exclude_cmd}"
 
     def _build_zip_exclude(self, source_path: str) -> str:
         """Build zip exclusion flags from parsed patterns"""
@@ -134,6 +140,17 @@ class Compressor(BaseProcessor):
             return [f"{pattern}/*", f"{pattern}/"]
         return [pattern]
 
+    def _get_tar_level_env(self) -> str:
+        """Get environment variable prefix for tar compression level"""
+        if not self.compression_level:
+            return ""
+        env_map = {
+            CompressionFormat.TGZ.value: f"GZIP=-{self.compression_level}",
+            CompressionFormat.TBZ2.value: f"BZIP2=-{self.compression_level}",
+        }
+        env = env_map.get(self.format, "")
+        return f"{env} " if env else ""
+
     def _get_tar_command(self, full_dest: str, base_name: str) -> str:
         """Generate tar compression command"""
         source_path = os.path.abspath(self.source)
@@ -145,6 +162,7 @@ class Compressor(BaseProcessor):
             CompressionFormat.TBZ2.value: "j"
         }
         opt = tar_options.get(self.format, "")
+        level_env = self._get_tar_level_env()
 
         # Special case for TGZ/TBZ2 without root
         if self.format in [CompressionFormat.TGZ.value, CompressionFormat.TBZ2.value] and not self.include_root:
@@ -155,9 +173,9 @@ class Compressor(BaseProcessor):
         if self.include_root:
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"tar {exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(parent_dir)} {shlex.quote(dir_name)}"
+            return f"{level_env}tar {exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(parent_dir)} {shlex.quote(dir_name)}"
 
-        return f"tar {exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(source_path)} ."
+        return f"{level_env}tar {exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(source_path)} ."
 
     def _build_tar_exclude(self, source_path: str) -> str:
         """Build tar exclusion flags from parsed patterns"""
@@ -186,10 +204,11 @@ class Compressor(BaseProcessor):
         q_temp = shlex.quote(temp_dir)
         q_src = shlex.quote(source_path)
         q_dest = shlex.quote(full_dest)
+        level_env = self._get_tar_level_env()
         return f"""
             mkdir -p {q_temp} &&
             cp -r {q_src}/* {q_temp}/ &&
-            tar {exclude_cmd} -c{opt}f {q_dest} -C {q_temp} . &&
+            {level_env}tar {exclude_cmd} -c{opt}f {q_dest} -C {q_temp} . &&
             rm -rf {q_temp}
         """
 
@@ -215,6 +234,7 @@ class Compressor(BaseProcessor):
 
             if result.success:
                 self._print_results(start_time, source_size)
+                self._compute_checksum()
 
             return result
 
@@ -281,9 +301,19 @@ class Compressor(BaseProcessor):
 
         if result.success:
             self._print_results(start_time, source_size)
+            self._compute_checksum()
             UI.print_success(f"Successfully compressed {len(self.matched_files)} file(s) matching pattern: {original_source}")
 
         return result
+
+    def _compute_checksum(self) -> None:
+        """Compute SHA256 checksum of the output archive"""
+        if self.output_path and os.path.exists(self.output_path):
+            sha256 = hashlib.sha256()
+            with open(self.output_path, "rb") as f:
+                for chunk in iter(lambda: f.read(8192), b""):
+                    sha256.update(chunk)
+            self.checksum = sha256.hexdigest()
 
     def _cleanup_temp_directory(self) -> None:
         """Clean up temporary directory created for glob pattern compression"""
@@ -296,7 +326,7 @@ class Compressor(BaseProcessor):
                 logger.logger.warning(f"Failed to clean up temporary directory: {str(e)}")
 
 
-def compress(config: AppConfig) -> bool:
+def compress(config: AppConfig) -> tuple[str, str]:
     """
     Main compression function called from the action.
 
@@ -304,8 +334,10 @@ def compress(config: AppConfig) -> bool:
         config: Application configuration
 
     Returns:
-        True if compression succeeded, False otherwise
+        Tuple of (output_path, checksum). Empty strings if failed.
     """
     compressor = Compressor(config)
     result = compressor.compress()
-    return result.success
+    if result.success:
+        return compressor.output_path, compressor.checksum
+    return "", ""

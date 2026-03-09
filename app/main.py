@@ -1,3 +1,4 @@
+import os
 import sys
 from config import CompressionFormat, AppConfig
 from ui import UI
@@ -56,14 +57,26 @@ class ActionRunner:
     def execute_command(self) -> None:
         """Execute the appropriate compression or decompression command"""
         if self.config.command == "compress":
-            compress(self.config)
+            output_path, checksum = compress(self.config)
+            if checksum:
+                self._set_output("checksum", checksum)
         elif self.config.command == "decompress":
-            decompress(self.config)
+            output_path = decompress(self.config)
         else:
             raise ValidationError(
                 f"Invalid command: {self.config.command}. "
                 f"Supported commands: compress, decompress"
             )
+        if output_path:
+            self._set_output("file_path", output_path)
+
+    @staticmethod
+    def _set_output(name: str, value: str) -> None:
+        """Write output to GITHUB_OUTPUT for use in subsequent steps"""
+        github_output = os.getenv("GITHUB_OUTPUT")
+        if github_output:
+            with open(github_output, "a") as f:
+                f.write(f"{name}={value}\n")
 
     def run(self) -> None:
         """Main execution flow: validate, configure, execute"""

@@ -54,6 +54,7 @@ def make_config():
         fail_on_error=True,
         preserve_glob_structure="false",
         strip_prefix="",
+        compression_level="",
     ):
         return AppConfig(
             command=command,
@@ -67,6 +68,7 @@ def make_config():
             fail_on_error=fail_on_error,
             preserve_glob_structure=preserve_glob_structure,
             strip_prefix=strip_prefix,
+            compression_level=compression_level,
         )
 
     return _make

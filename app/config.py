@@ -69,6 +69,7 @@ class AppConfig:
     dest: str = ""
     destfilename: str = ""
     exclude: str = ""
+    compression_level: str = ""
 
     @classmethod
     def from_env(cls) -> 'AppConfig':
@@ -84,6 +85,7 @@ class AppConfig:
             dest=os.getenv("DEST", ""),
             destfilename=os.getenv("DESTFILENAME", ""),
             exclude=os.getenv("EXCLUDE", ""),
+            compression_level=os.getenv("COMPRESSION_LEVEL", ""),
         )
 
     @property

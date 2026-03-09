@@ -97,7 +97,7 @@ class Decompressor(BaseProcessor):
             return self.handle_error(e, "Decompression")
 
 
-def decompress(config: AppConfig) -> bool:
+def decompress(config: AppConfig) -> str:
     """
     Main decompression function called from the action.
 
@@ -105,8 +105,8 @@ def decompress(config: AppConfig) -> bool:
         config: Application configuration
 
     Returns:
-        True if decompression succeeded, False otherwise
+        Destination path if decompression succeeded, empty string otherwise
     """
     decompressor = Decompressor(config)
     result = decompressor.decompress()
-    return result.success
+    return decompressor.dest if result.success else ""

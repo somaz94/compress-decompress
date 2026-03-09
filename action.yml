@@ -40,6 +40,10 @@ inputs:
     description: "Whether to fail the action if compression/decompression fails."
     required: false
     default: "true"
+  compression_level:
+    description: "Compression level (0-9). 0 is store only, 9 is maximum compression. Applies to zip, tgz, and tbz2 formats."
+    required: false
+    default: ""
   verbose:
     description: "Enable verbose logging for debugging."
     required: false
@@ -47,6 +51,8 @@ inputs:
 outputs:
   file_path:
     description: "The path to the compressed or decompressed file."
+  checksum:
+    description: "SHA256 checksum of the compressed archive (compress only)."
 runs:
   using: "docker"
   image: "Dockerfile"
@@ -61,6 +67,7 @@ runs:
     PRESERVE_GLOB_STRUCTURE: ${{ inputs.preserveGlobStructure }}
     STRIP_PREFIX: ${{ inputs.stripPrefix }}
     FAIL_ON_ERROR: ${{ inputs.fail_on_error }}
+    COMPRESSION_LEVEL: ${{ inputs.compression_level }}
     VERBOSE: ${{ inputs.verbose }}
 branding:
   icon: "archive"

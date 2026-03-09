@@ -1,7 +1,5 @@
 [run]
 source = app
-omit =
-    app/utils.py
 
 [report]
 exclude_lines =
