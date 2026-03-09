@@ -36,9 +36,11 @@ cliff.toml                   # git-cliff config for release notes
 ## Build & Test
 
 ```bash
-python -m pytest tests/ -v                                    # Run all tests
-python -m pytest tests/ --cov=app --cov-report=term-missing   # Test with coverage
-python -m pytest tests/ --cov=app --cov-report=html           # HTML coverage report
+make venv          # Create virtualenv and install dev dependencies
+make test          # Run unit tests with coverage
+make coverage      # Generate HTML coverage report
+make clean         # Remove venv, cache, and build artifacts
+make help          # Show all available commands
 ```
 
 ## Key Inputs

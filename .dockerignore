@@ -29,6 +29,14 @@ docs/
 # Backup files
 backup/
 
+# Config files
+cliff.toml
+CLAUDE.md
+CODEOWNERS
+.prettierrc.json
+.coveragerc
+Makefile
+
 # Environment files
 .env
 .env.test
