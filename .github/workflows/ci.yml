@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        format: [zip, tar, tgz, tbz2]
+        format: [zip, tar, tgz, tbz2, txz]
         include_root: [true, false]
         source: [test2]
         dest_config:
@@ -1665,6 +1665,111 @@ jobs:
           echo -e "  • Broken symlink error handling"
           echo -e "  • Directory structure preservation through symlinks\n"
 
+  test-password-encryption:
+    name: Test Password Encryption
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Create Test Files
+        run: |
+          mkdir -p testdir/subdir
+          echo "Secret content" > testdir/secret.txt
+          echo "Nested secret" > testdir/subdir/nested.txt
+
+      - name: Compress with Password
+        id: compress
+        uses: ./
+        with:
+          command: 'compress'
+          source: './testdir'
+          format: 'zip'
+          password: 'test_password_123'
+          dest: './output'
+          destfilename: 'encrypted'
+          verbose: 'true'
+
+      - name: Verify Encrypted Archive Created
+        run: |
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          BOLD='\033[1m'
+          NC='\033[0m'
+
+          if [ ! -f "./output/encrypted.zip" ]; then
+            echo -e "${RED}❌ FAILED: Encrypted archive not created${NC}"
+            exit 1
+          fi
+          echo -e "${GREEN}✅ Encrypted archive created${NC}"
+
+          # Verify archive is password-protected (unzip without password should fail)
+          if unzip -t ./output/encrypted.zip 2>&1 | grep -q "incorrect password"; then
+            echo -e "${GREEN}✅ Archive is password-protected${NC}"
+          else
+            echo -e "${BOLD}Note: Archive created with password flag${NC}"
+          fi
+
+      - name: Decompress with Correct Password
+        uses: ./
+        with:
+          command: 'decompress'
+          source: './output/encrypted.zip'
+          format: 'zip'
+          password: 'test_password_123'
+          dest: './decrypted'
+
+      - name: Verify Decrypted Contents
+        run: |
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          BOLD='\033[1m'
+          NC='\033[0m'
+
+          echo -e "\n${BOLD}Decrypted contents:${NC}"
+          find ./decrypted -type f | sort | sed 's/^/  /'
+
+          if [ -f "./decrypted/testdir/secret.txt" ]; then
+            CONTENT=$(cat ./decrypted/testdir/secret.txt)
+            if [ "$CONTENT" = "Secret content" ]; then
+              echo -e "${GREEN}✅ Content verified after decryption${NC}"
+            else
+              echo -e "${RED}❌ Content mismatch after decryption${NC}"
+              exit 1
+            fi
+          else
+            echo -e "${RED}❌ Decrypted file not found${NC}"
+            exit 1
+          fi
+
+      - name: Decompress with Wrong Password (should fail)
+        id: wrong_password
+        continue-on-error: true
+        uses: ./
+        with:
+          command: 'decompress'
+          source: './output/encrypted.zip'
+          format: 'zip'
+          password: 'wrong_password'
+          dest: './wrong_decrypted'
+
+      - name: Verify Wrong Password Handling
+        run: |
+          GREEN='\033[0;32m'
+          RED='\033[0;31m'
+          BOLD='\033[1m'
+          NC='\033[0m'
+
+          echo -e "\n${BOLD}Wrong password test:${NC}"
+          if [ "${{ steps.wrong_password.outcome }}" = "failure" ]; then
+            echo -e "${GREEN}✅ Correctly failed with wrong password${NC}"
+          else
+            echo -e "${RED}❌ Should have failed with wrong password${NC}"
+            exit 1
+          fi
+
+          echo -e "\n${GREEN}${BOLD}✓ All password encryption tests passed${NC}"
+
   ci-result:
     name: CI Result
     if: always()
@@ -1677,6 +1782,7 @@ jobs:
       - test-exclude-functionality
       - test-glob-patterns
       - test-symlink-support
+      - test-password-encryption
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs

@@ -6,13 +6,14 @@ from config import AppConfig, CompressionFormat
 class TestCompressionFormat:
     def test_list_returns_all_formats(self):
         formats = CompressionFormat.list()
-        assert formats == ['zip', 'tar', 'tgz', 'tbz2']
+        assert formats == ['zip', 'tar', 'tgz', 'tbz2', 'txz']
 
     def test_get_extension_valid(self):
         assert CompressionFormat.get_extension('zip') == '.zip'
         assert CompressionFormat.get_extension('tar') == '.tar'
         assert CompressionFormat.get_extension('tgz') == '.tgz'
         assert CompressionFormat.get_extension('tbz2') == '.tbz2'
+        assert CompressionFormat.get_extension('txz') == '.txz'
 
     def test_get_extension_invalid(self):
         assert CompressionFormat.get_extension('rar') == ''

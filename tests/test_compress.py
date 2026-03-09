@@ -540,3 +540,85 @@ class TestChecksum:
         output_path, checksum = compress(config)
         assert output_path == ""
         assert checksum == ""
+
+
+class TestTxzFormat:
+    def test_txz_tar_options(self, make_config, tmp_source):
+        config = make_config(source=str(tmp_source), format="txz", include_root="true")
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        cmd = c._get_tar_command("/out/test.txz", "test")
+        assert "-cJf" in cmd
+
+    def test_txz_without_root(self, make_config, tmp_source):
+        config = make_config(source=str(tmp_source), format="txz", include_root="false")
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        cmd = c._get_tar_command("/out/test.txz", "test")
+        assert "mkdir -p" in cmd
+        assert "-cJf" in cmd
+
+    def test_txz_level_env(self, make_config, tmp_source):
+        config = make_config(
+            source=str(tmp_source), format="txz",
+            compression_level="6",
+        )
+        c = Compressor(config)
+        assert "XZ_OPT=-6" in c._get_tar_level_env()
+
+    def test_compress_txz_integration(self, make_config, tmp_source, tmp_path):
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source), format="txz",
+            include_root="true", dest=str(dest),
+        )
+        output_path, checksum = compress(config)
+        assert output_path
+        assert checksum
+        archives = list(dest.glob("*.txz"))
+        assert len(archives) == 1
+
+    def test_compress_txz_without_root(self, make_config, tmp_source, tmp_path):
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source), format="txz",
+            include_root="false", dest=str(dest),
+        )
+        output_path, checksum = compress(config)
+        assert output_path
+        assert checksum
+
+
+class TestPasswordEncryption:
+    def test_zip_command_with_password(self, make_config, tmp_source):
+        config = make_config(
+            source=str(tmp_source), format="zip",
+            password="secret123",
+        )
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        cmd = c._get_zip_command("/out/test.zip", "test")
+        assert "-P" in cmd
+        assert "secret123" in cmd
+
+    def test_zip_command_without_password(self, make_config, tmp_source):
+        config = make_config(source=str(tmp_source), format="zip")
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        cmd = c._get_zip_command("/out/test.zip", "test")
+        assert "-P" not in cmd
+
+    def test_compress_zip_with_password(self, make_config, tmp_source, tmp_path):
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source), format="zip",
+            dest=str(dest), password="testpass",
+        )
+        output_path, checksum = compress(config)
+        assert output_path
+        assert checksum
+        archives = list(dest.glob("*.zip"))
+        assert len(archives) == 1

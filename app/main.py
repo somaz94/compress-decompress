@@ -53,6 +53,8 @@ class ActionRunner:
             print(f"  \u2022 Destination Filename: {self.config.destfilename}")
         if self.config.exclude:
             print(f"  \u2022 Exclude Pattern: {self.config.exclude}")
+        if self.config.password:
+            print(f"  \u2022 Password: ***")
 
     def execute_command(self) -> None:
         """Execute the appropriate compression or decompression command"""

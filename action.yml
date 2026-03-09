@@ -1,7 +1,7 @@
 name: "Compress/Decompress"
 description:
   "GitHub Action to compress or decompress files using various formats like zip,
-  tar, tgz, and tbz2."
+  tar, tgz, tbz2, and txz."
 author: "somaz94"
 inputs:
   command:
@@ -21,8 +21,7 @@ inputs:
     required: false
   format:
     description:
-      "Compression format to use. Supported formats include zip, tar, tgz, and
-      tbz2."
+      "Compression format to use. Supported formats: zip, tar, tgz, tbz2, txz."
     required: true
   includeRoot:
     description: "Whether to include the root folder itself in the compressed file."
@@ -41,7 +40,11 @@ inputs:
     required: false
     default: "true"
   compression_level:
-    description: "Compression level (0-9). 0 is store only, 9 is maximum compression. Applies to zip, tgz, and tbz2 formats."
+    description: "Compression level (0-9). 0 is store only, 9 is maximum compression. Applies to zip, tgz, tbz2, and txz formats."
+    required: false
+    default: ""
+  password:
+    description: "Password for zip encryption/decryption. Use with secrets for security. Only applies to zip format."
     required: false
     default: ""
   verbose:
@@ -68,6 +71,7 @@ runs:
     STRIP_PREFIX: ${{ inputs.stripPrefix }}
     FAIL_ON_ERROR: ${{ inputs.fail_on_error }}
     COMPRESSION_LEVEL: ${{ inputs.compression_level }}
+    PASSWORD: ${{ inputs.password }}
     VERBOSE: ${{ inputs.verbose }}
 branding:
   icon: "archive"

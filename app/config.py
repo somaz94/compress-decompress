@@ -13,6 +13,7 @@ class CompressionFormat(Enum):
     TAR = 'tar'
     TGZ = 'tgz'
     TBZ2 = 'tbz2'
+    TXZ = 'txz'
 
     @classmethod
     def list(cls) -> List[str]:
@@ -51,6 +52,11 @@ DECOMPRESSION_COMMANDS = {
         "tar",
         lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
         lambda src, opt: f"-xjf {shlex.quote(src)} {opt}"
+    ),
+    CompressionFormat.TXZ.value: CommandConfig(
+        "tar",
+        lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
+        lambda src, opt: f"-xJf {shlex.quote(src)} {opt}"
     )
 }
 
@@ -70,6 +76,7 @@ class AppConfig:
     destfilename: str = ""
     exclude: str = ""
     compression_level: str = ""
+    password: str = ""
 
     @classmethod
     def from_env(cls) -> 'AppConfig':
@@ -86,6 +93,7 @@ class AppConfig:
             destfilename=os.getenv("DESTFILENAME", ""),
             exclude=os.getenv("EXCLUDE", ""),
             compression_level=os.getenv("COMPRESSION_LEVEL", ""),
+            password=os.getenv("PASSWORD", ""),
         )
 
     @property

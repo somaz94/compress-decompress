@@ -41,7 +41,7 @@ class TestActionRunnerValidation:
             runner.execute_command()
 
     def test_all_formats_valid(self, make_config):
-        for fmt in ["zip", "tar", "tgz", "tbz2"]:
+        for fmt in ["zip", "tar", "tgz", "tbz2", "txz"]:
             runner = ActionRunner(make_config(
                 command="compress", source="./src", format=fmt
             ))

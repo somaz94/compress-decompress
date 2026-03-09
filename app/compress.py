@@ -23,7 +23,7 @@ class Compressor(BaseProcessor):
     """
     Handles file/directory compression operations
 
-    Supports compression using zip, tar, tgz, tbz2 formats with options
+    Supports compression using zip, tar, tgz, tbz2, txz formats with options
     like preserving root directory structure, excluding files, and
     glob patterns for matching multiple files.
     """
@@ -37,6 +37,7 @@ class Compressor(BaseProcessor):
         self.is_glob_pattern = False
         self.matched_files: List[str] = []
         self.compression_level = config.compression_level
+        self.password = config.password
         self.temp_dir = None
         self.output_path = ""
         self.checksum = ""
@@ -100,13 +101,14 @@ class Compressor(BaseProcessor):
         source_path = os.getcwd() if source_path == '/github/workspace' else source_path
         exclude_cmd = self._build_zip_exclude(source_path)
         level_flag = f" -{self.compression_level}" if self.compression_level else ""
+        password_flag = f" -P {shlex.quote(self.password)}" if self.password else ""
 
         if self.include_root:
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"cd {shlex.quote(parent_dir)} && zip{level_flag} -r {shlex.quote(full_dest)} {shlex.quote(dir_name)} {exclude_cmd}"
+            return f"cd {shlex.quote(parent_dir)} && zip{level_flag}{password_flag} -r {shlex.quote(full_dest)} {shlex.quote(dir_name)} {exclude_cmd}"
 
-        return f"cd {shlex.quote(source_path)} && zip{level_flag} -r {shlex.quote(full_dest)} . {exclude_cmd}"
+        return f"cd {shlex.quote(source_path)} && zip{level_flag}{password_flag} -r {shlex.quote(full_dest)} . {exclude_cmd}"
 
     def _build_zip_exclude(self, source_path: str) -> str:
         """Build zip exclusion flags from parsed patterns"""
@@ -147,6 +149,7 @@ class Compressor(BaseProcessor):
         env_map = {
             CompressionFormat.TGZ.value: f"GZIP=-{self.compression_level}",
             CompressionFormat.TBZ2.value: f"BZIP2=-{self.compression_level}",
+            CompressionFormat.TXZ.value: f"XZ_OPT=-{self.compression_level}",
         }
         env = env_map.get(self.format, "")
         return f"{env} " if env else ""
@@ -159,13 +162,14 @@ class Compressor(BaseProcessor):
         tar_options = {
             CompressionFormat.TAR.value: "",
             CompressionFormat.TGZ.value: "z",
-            CompressionFormat.TBZ2.value: "j"
+            CompressionFormat.TBZ2.value: "j",
+            CompressionFormat.TXZ.value: "J"
         }
         opt = tar_options.get(self.format, "")
         level_env = self._get_tar_level_env()
 
-        # Special case for TGZ/TBZ2 without root
-        if self.format in [CompressionFormat.TGZ.value, CompressionFormat.TBZ2.value] and not self.include_root:
+        # Special case for TGZ/TBZ2/TXZ without root
+        if self.format in [CompressionFormat.TGZ.value, CompressionFormat.TBZ2.value, CompressionFormat.TXZ.value] and not self.include_root:
             return self._get_special_tar_command(full_dest, base_name, opt)
 
         exclude_cmd = self._build_tar_exclude(source_path)
@@ -194,7 +198,7 @@ class Compressor(BaseProcessor):
         return " ".join([f'--exclude={shlex.quote(p)}' for p in processed])
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
-        """Generate special tar command for TGZ/TBZ2 formats without root"""
+        """Generate special tar command for TGZ/TBZ2/TXZ formats without root"""
         source_path = os.path.abspath(self.source)
         temp_dir = os.path.join(os.path.dirname(source_path), f"temp_{base_name}_{self.format}")
 

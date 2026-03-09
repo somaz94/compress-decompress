@@ -55,6 +55,7 @@ def make_config():
         preserve_glob_structure="false",
         strip_prefix="",
         compression_level="",
+        password="",
     ):
         return AppConfig(
             command=command,
@@ -69,6 +70,7 @@ def make_config():
             preserve_glob_structure=preserve_glob_structure,
             strip_prefix=strip_prefix,
             compression_level=compression_level,
+            password=password,
         )
 
     return _make

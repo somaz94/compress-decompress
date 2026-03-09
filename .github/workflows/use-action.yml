@@ -24,7 +24,7 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     strategy:
       matrix:
-        format: [zip, tar, tgz, tbz2]
+        format: [zip, tar, tgz, tbz2, txz]
         include_root: [true, false]
       fail-fast: false
 

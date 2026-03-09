@@ -18,13 +18,14 @@ class Decompressor(BaseProcessor):
     """
     Handles archive decompression operations
 
-    Supports different formats (zip, tar, tgz, tbz2) with
+    Supports different formats (zip, tar, tgz, tbz2, txz) with
     custom destination paths.
     """
     def __init__(self, config: AppConfig):
         super().__init__(config)
         self.source = config.source
         self.format = config.format
+        self.password = config.password
 
     def validate(self) -> bool:
         """Validate source archive file exists"""
@@ -33,10 +34,15 @@ class Decompressor(BaseProcessor):
 
     def get_decompression_command(self) -> str:
         """Generate appropriate decompression command based on format"""
+        import shlex
         self._validate_format()
         cmd_config = self._get_command_config()
         options = cmd_config.options(self.dest)
-        return f"{cmd_config.command} {cmd_config.format(self.source, options)}"
+        base_cmd = f"{cmd_config.command} {cmd_config.format(self.source, options)}"
+        if self.password and self.format == "zip":
+            password_flag = f"-P {shlex.quote(self.password)} "
+            base_cmd = f"unzip {password_flag}{cmd_config.format(self.source, options)}"
+        return base_cmd
 
     def _validate_format(self) -> None:
         if self.format not in DECOMPRESSION_COMMANDS:
