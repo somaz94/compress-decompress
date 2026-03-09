@@ -60,7 +60,7 @@ jobs:
           CURRENT_TAG: ${{ github.ref_name }}
           MAJOR_VERSION: ${{ github.ref_name }}
         run: |
-          git checkout main
+          git switch main
           git fetch --tags
           MAJOR_VERSION="${CURRENT_TAG%%.*}"
           COMMIT_SHA=$(git rev-parse ${{ github.sha }})
