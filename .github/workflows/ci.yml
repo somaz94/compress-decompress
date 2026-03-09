@@ -1610,6 +1610,12 @@ jobs:
             exit 1
           fi
 
+      - name: Create Broken Symlink (for testing)
+        run: |
+          ln -s nonexistent_file broken_symlink
+          echo "Created broken symlink:"
+          ls -la broken_symlink || true
+
       - name: Test Broken Symlink Handling
         id: test_broken_symlink
         uses: ./
@@ -1622,11 +1628,6 @@ jobs:
           destfilename: 'broken'
           fail_on_error: 'true'
           verbose: 'true'
-
-      - name: Create Broken Symlink (for testing)
-        run: |
-          ln -s nonexistent_file broken_symlink
-          ls -la broken_symlink || true
 
       - name: Verify Broken Symlink Error Handling
         run: |
@@ -1663,3 +1664,26 @@ jobs:
           echo -e "  • Symlink directory compression"
           echo -e "  • Broken symlink error handling"
           echo -e "  • Directory structure preservation through symlinks\n"
+
+  ci-result:
+    name: CI Result
+    if: always()
+    needs:
+      - unit-tests
+      - test-compression-formats
+      - test-features-and-errors
+      - test-github-workspace
+      - test-github-workspace-paths
+      - test-exclude-functionality
+      - test-glob-patterns
+      - test-symlink-support
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || \
+             [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "❌ Some jobs failed or were cancelled"
+            exit 1
+          fi
+          echo "✅ All CI jobs passed"

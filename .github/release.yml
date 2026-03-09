@@ -1,0 +1,18 @@
+# GitHub auto-generated release notes configuration
+# Categorizes merged PRs by label in release notes
+changelog:
+  categories:
+    - title: "Features"
+      labels: [enhancement, feature]
+    - title: "Bug Fixes"
+      labels: [bug, fix]
+    - title: "Documentation"
+      labels: [documentation, docs]
+    - title: "Maintenance"
+      labels: [chore, refactor, dependencies]
+    - title: "Testing"
+      labels: [test, testing]
+    - title: "Other Changes"
+      labels: ["*"]
+  exclude:
+    labels: [skip-changelog]

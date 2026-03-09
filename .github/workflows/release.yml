@@ -20,44 +20,25 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Get previous tag
-        id: previoustag
-        run: |
-          # 현재 태그 이전의 가장 최신 태그 찾기
-          CURRENT_TAG="${{ github.ref_name }}"
-          PREVIOUS_TAG=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | grep -B1 "^${CURRENT_TAG}$" | head -n1)
-          echo "PREVIOUS_TAG=${PREVIOUS_TAG}" >> "$GITHUB_ENV"
-          echo "CURRENT_TAG=${CURRENT_TAG}" >> "$GITHUB_ENV"
-
-      - name: Generate changelog for release
-        id: changelog
-        uses: janheinrichmerker/action-github-changelog-generator@v2.4
+      - name: Generate changelog with git-cliff
+        uses: orhun/git-cliff-action@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          futureRelease: ${{ env.CURRENT_TAG }}
-          sinceTag: ${{ env.PREVIOUS_TAG }}  # 이전 태그부터
-          unreleased: false
-          excludeTagsRegex: "^v[0-9]$"
-          output: RELEASE.md
-
-      - name: Read changelog
-        id: read_changelog
-        run: |
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          cat RELEASE.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          rm -rf RELEASE.md
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: RELEASE.md
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Create GitHub release"
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body_path: RELEASE.md
+          generate_release_notes: true
           draft: false
           prerelease: false
-          body: ${{ steps.read_changelog.outputs.changelog }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Update major version tag"
         env:
