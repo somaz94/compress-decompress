@@ -1,8 +1,8 @@
 # Changelog
 
-## [v1.8.4](https://github.com/somaz94/compress-decompress/tree/v1.8.4) (2026-03-04)
+## [v1.9.0](https://github.com/somaz94/compress-decompress/tree/v1.9.0) (2026-03-09)
 
-[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.8.4...v1.8.4)
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.8.4...v1.9.0)
 
 **Merged pull requests:**
 
