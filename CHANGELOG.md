@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.9.1](https://github.com/somaz94/compress-decompress/tree/v1.9.1) (2026-03-09)
+
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.9.0...v1.9.1)
+
 ## [v1.9.0](https://github.com/somaz94/compress-decompress/tree/v1.9.0) (2026-03-09)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.8.4...v1.9.0)
