@@ -1,7 +1,7 @@
 import os
 import sys
 from typing import Optional, Dict, List
-from utils import UI, CompressionFormat, logger, FileUtils
+from utils import UI, CompressionFormat, logger, FileUtils, CompressError, ValidationError
 from compress import compress
 from decompress import decompress
 
@@ -45,24 +45,21 @@ class ActionRunner:
         """
         # Validate command parameter
         if not self.command:
-            UI.print_error("Command is required")
-            sys.exit(1)
-            
+            raise ValidationError("Command is required")
+
         # Validate source parameter
         if not self.source:
-            UI.print_error("Source is required")
-            sys.exit(1)
-            
+            raise ValidationError("Source is required")
+
         # Validate format parameter
         if not self.format:
-            UI.print_error("Format is required")
-            sys.exit(1)
-            
+            raise ValidationError("Format is required")
+
         # Validate compression format is supported
         if self.format not in CompressionFormat.list():
-            UI.print_error(f"Invalid format: {self.format}")
-            print(f"Supported formats: {', '.join(CompressionFormat.list())}")
-            sys.exit(1)
+            raise ValidationError(
+                f"Invalid format: {self.format}. Supported formats: {', '.join(CompressionFormat.list())}"
+            )
 
     def print_configuration(self) -> None:
         """
@@ -107,9 +104,9 @@ class ActionRunner:
         elif self.command == "decompress":
             decompress(self.source, self.format)
         else:
-            UI.print_error(f"Invalid command: {self.command}")
-            print("Supported commands: compress, decompress")
-            sys.exit(1)
+            raise ValidationError(
+                f"Invalid command: {self.command}. Supported commands: compress, decompress"
+            )
 
     def run(self) -> None:
         """
@@ -118,30 +115,33 @@ class ActionRunner:
         Main execution flow that validates inputs, displays configuration,
         sets up logging, and executes the requested command.
         """
-        try:
-            # Validate and prepare for execution
-            self.validate_inputs()
-            self.print_configuration()
-            
-            # Configure logging based on verbosity setting
-            logger.set_verbose(self.verbose)
+        # Validate and prepare for execution
+        self.validate_inputs()
+        self.print_configuration()
 
-            # Execute the command
-            self.execute_command()
-            
-        except Exception as e:
-            UI.print_error(f"An error occurred: {str(e)}")
-            sys.exit(1)
+        # Configure logging based on verbosity setting
+        logger.set_verbose(self.verbose)
+
+        # Execute the command
+        self.execute_command()
 
 
 def main():
     """
     Main entry point for the application
-    
+
     Creates and runs the ActionRunner to handle compression/decompression operations.
+    sys.exit() is called only here to keep exception flow clean.
     """
-    runner = ActionRunner()
-    runner.run()
+    try:
+        runner = ActionRunner()
+        runner.run()
+    except CompressError as e:
+        UI.print_error(str(e))
+        sys.exit(1)
+    except Exception as e:
+        UI.print_error(f"An unexpected error occurred: {str(e)}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

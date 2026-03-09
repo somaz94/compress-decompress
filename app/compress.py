@@ -1,10 +1,11 @@
 from datetime import datetime
 import os
+import shlex
 import sys
 from typing import Optional, List, Dict, Tuple
 from utils import (
     UI, FileUtils, CommandExecutor, CompressionFormat,
-    logger, ProcessResult, BaseProcessor
+    logger, ProcessResult, BaseProcessor, ValidationError
 )
 
 class Compressor(BaseProcessor):
@@ -67,8 +68,7 @@ class Compressor(BaseProcessor):
             if not self.matched_files:
                 error_msg = f"No files matched the pattern: {self.source}"
                 if self.fail_on_error:
-                    UI.print_error(error_msg)
-                    sys.exit(1)
+                    raise ValidationError(error_msg)
                 logger.logger.warning(error_msg)
                 return False
             
@@ -147,10 +147,10 @@ class Compressor(BaseProcessor):
             # When including root directory, we cd to parent dir and zip the source dir
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"cd {parent_dir} && zip -r {full_dest} {dir_name} {exclude_cmd}"
-        
+            return f"cd {shlex.quote(parent_dir)} && zip -r {shlex.quote(full_dest)} {shlex.quote(dir_name)} {exclude_cmd}"
+
         # When not including root directory, we cd into source dir and zip its contents
-        return f"cd {source_path} && zip -r {full_dest} . {exclude_cmd}"
+        return f"cd {shlex.quote(source_path)} && zip -r {shlex.quote(full_dest)} . {exclude_cmd}"
 
     def _process_zip_exclude_patterns(self, source_path: str) -> str:
         """
@@ -174,7 +174,7 @@ class Compressor(BaseProcessor):
             
         dir_name = os.path.basename(source_path)
         processed_patterns = self._format_zip_exclude_patterns(patterns, source_path, dir_name)
-        return " ".join([f'-x "{p}"' for p in processed_patterns])
+        return " ".join([f'-x {shlex.quote(p)}' for p in processed_patterns])
 
     def _format_zip_exclude_patterns(self, patterns: List[str], source_path: str, dir_name: str) -> List[str]:
         """
@@ -284,10 +284,10 @@ class Compressor(BaseProcessor):
             # When including root, use the parent directory as base and specify the dir name
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"tar {exclude_cmd} -c{opt}f {full_dest} -C {parent_dir} {dir_name}"
-        
+            return f"tar {exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(parent_dir)} {shlex.quote(dir_name)}"
+
         # When not including root, use the source directory as base and compress everything
-        return f"tar {exclude_cmd} -c{opt}f {full_dest} -C {source_path} ."
+        return f"tar {exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(source_path)} ."
 
     def _process_tar_exclude_patterns(self, source_path: str) -> str:
         """
@@ -318,7 +318,7 @@ class Compressor(BaseProcessor):
             else:
                 processed_patterns.append(pattern)
         
-        return " ".join([f'--exclude="{p}"' for p in processed_patterns])
+        return " ".join([f'--exclude={shlex.quote(p)}' for p in processed_patterns])
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
         """
@@ -340,11 +340,14 @@ class Compressor(BaseProcessor):
         temp_dir = os.path.join(os.path.dirname(source_path), f"temp_{base_name}_{self.format}")
         exclude_cmd = self._process_special_tar_exclude_patterns()
 
+        q_temp = shlex.quote(temp_dir)
+        q_src = shlex.quote(source_path)
+        q_dest = shlex.quote(full_dest)
         return f"""
-            mkdir -p {temp_dir} &&
-            cp -r {source_path}/* {temp_dir}/ &&
-            tar {exclude_cmd} -c{opt}f {full_dest} -C {temp_dir} . &&
-            rm -rf {temp_dir}
+            mkdir -p {q_temp} &&
+            cp -r {q_src}/* {q_temp}/ &&
+            tar {exclude_cmd} -c{opt}f {q_dest} -C {q_temp} . &&
+            rm -rf {q_temp}
         """
 
     def _process_special_tar_exclude_patterns(self) -> str:
@@ -364,7 +367,7 @@ class Compressor(BaseProcessor):
         if not patterns:
             return ""
             
-        return " ".join([f'--exclude="{p}"' for p in patterns])
+        return " ".join([f'--exclude={shlex.quote(p)}' for p in patterns])
 
     def compress(self) -> ProcessResult:
         """

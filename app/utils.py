@@ -2,6 +2,7 @@ import os
 import subprocess
 import logging
 import sys
+import shlex
 from typing import Union, Optional, Dict, List, Callable, Any, TypeVar, Generic
 from dataclasses import dataclass
 from enum import Enum
@@ -12,6 +13,22 @@ import shutil
 
 # Type variable for generic typing
 T = TypeVar('T')
+
+# ======================================================================
+# Custom Exceptions
+# ======================================================================
+
+class CompressError(Exception):
+    """Base exception for compress-decompress operations"""
+    pass
+
+class ValidationError(CompressError):
+    """Raised when input validation fails"""
+    pass
+
+class CommandError(CompressError):
+    """Raised when a shell command fails"""
+    pass
 
 # ======================================================================
 # Compression Format Configuration
@@ -53,10 +70,10 @@ class CompressionFormat(Enum):
             True if format is valid, False otherwise
         """
         if format_str not in cls.list():
-            UI.error(f"Invalid format: {format_str}")
+            UI.print_error(f"Invalid format: {format_str}")
             print(f"Supported formats: {', '.join(cls.list())}")
             if FileUtils.str_to_bool(os.getenv("FAIL_ON_ERROR", "true")):
-                sys.exit(1)
+                raise ValidationError(f"Invalid format: {format_str}")
             return False
         return True
 
@@ -93,23 +110,23 @@ class CommandConfig:
 DECOMPRESSION_COMMANDS = {
     CompressionFormat.ZIP.value: CommandConfig(
         "unzip",
-        lambda d: f"-d {d}" if d else "-j -d .",
-        lambda src, opt: f"{opt} {src}"
+        lambda d: f"-d {shlex.quote(d)}" if d else "-j -d .",
+        lambda src, opt: f"{opt} {shlex.quote(src)}"
     ),
     CompressionFormat.TAR.value: CommandConfig(
         "tar",
-        lambda d: f"-C {d}" if d else "-C .",
-        lambda src, opt: f"-xf {src} {opt}"
+        lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
+        lambda src, opt: f"-xf {shlex.quote(src)} {opt}"
     ),
     CompressionFormat.TGZ.value: CommandConfig(
         "tar",
-        lambda d: f"-C {d}" if d else "-C .",
-        lambda src, opt: f"-xzf {src} {opt}"
+        lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
+        lambda src, opt: f"-xzf {shlex.quote(src)} {opt}"
     ),
     CompressionFormat.TBZ2.value: CommandConfig(
         "tar",
-        lambda d: f"-C {d}" if d else "-C .",
-        lambda src, opt: f"-xjf {src} {opt}"
+        lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
+        lambda src, opt: f"-xjf {shlex.quote(src)} {opt}"
     )
 }
 
@@ -252,19 +269,17 @@ class BaseProcessor:
         if not os.path.lexists(path):
             error_msg = f"{error_prefix} '{path}' does not exist"
             if self.fail_on_error:
-                UI.print_error(error_msg)
-                sys.exit(1)
+                raise ValidationError(error_msg)
             logger.logger.warning(error_msg)
             return False
-        
+
         # If it's a symlink, verify the target exists
         if os.path.islink(path):
             real_path = os.path.realpath(path)
             if not os.path.exists(real_path):
                 error_msg = f"{error_prefix} '{path}' is a broken symbolic link (target: '{real_path}' does not exist)"
                 if self.fail_on_error:
-                    UI.print_error(error_msg)
-                    sys.exit(1)
+                    raise ValidationError(error_msg)
                 logger.logger.warning(error_msg)
                 return False
         
@@ -294,8 +309,7 @@ class BaseProcessor:
         """
         error_msg = f"{context} failed: {str(error)}"
         if self.fail_on_error:
-            UI.print_error(error_msg)
-            sys.exit(1)
+            raise CompressError(error_msg) from error
         logger.logger.warning(f"{context} warning: {str(error)}")
         return ProcessResult(False, str(error))
 
@@ -341,7 +355,7 @@ class CommandExecutor:
         except subprocess.CalledProcessError as e:
             error_msg = f"Command failed: {e}"
             if FileUtils.str_to_bool(os.getenv("FAIL_ON_ERROR", "true")):
-                raise RuntimeError(f"{error_msg}\nError output:\n{e.stderr}")
+                raise CommandError(f"{error_msg}\nError output:\n{e.stderr}") from e
             return ProcessResult(False, error_msg, {"stderr": e.stderr})
 
 # ======================================================================
