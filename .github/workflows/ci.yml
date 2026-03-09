@@ -15,6 +15,30 @@ permissions:
   contents: read
 
 jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install pytest pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ \
+            --cov=app \
+            --cov-config=.coveragerc \
+            --cov-report=term-missing \
+            --cov-fail-under=90 \
+            -v
+
   test-compression-formats:
     name: Test Compression Formats
     runs-on: ubuntu-latest

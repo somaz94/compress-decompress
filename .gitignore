@@ -23,3 +23,11 @@ Thumbs.db
 .idea
 .vscode
 *.code-workspace
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+htmlcov/
+.coverage

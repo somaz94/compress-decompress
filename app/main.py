@@ -1,140 +1,86 @@
-import os
 import sys
-from typing import Optional, Dict, List
-from utils import UI, CompressionFormat, logger, FileUtils, CompressError, ValidationError
+from config import CompressionFormat, AppConfig
+from ui import UI
+from app_logger import logger
+from exceptions import CompressError, ValidationError
 from compress import compress
 from decompress import decompress
+
 
 class ActionRunner:
     """
     Main action runner for compression/decompression operations
-    
-    This class handles the execution of compression and decompression operations
+
+    Handles execution of compression and decompression operations
     based on environment variables provided by the GitHub Action.
     """
-    def __init__(self):
-        """
-        Initialize configuration from environment variables
-        
-        Loads and stores all settings from environment variables that control
-        the behavior of compression/decompression operations.
-        """
-        # Command and source settings
-        self.command = os.getenv("COMMAND")
-        self.source = os.getenv("SOURCE")
-        self.format = os.getenv("FORMAT")
-        
-        # Behavior settings
-        self.include_root = os.getenv("INCLUDEROOT", "true")
-        self.preserve_glob_structure = os.getenv("PRESERVE_GLOB_STRUCTURE", "false")
-        self.strip_prefix = os.getenv("STRIP_PREFIX", "")
-        self.verbose = FileUtils.str_to_bool(os.getenv("VERBOSE", "false"))
-        self.fail_on_error = FileUtils.str_to_bool(os.getenv("FAIL_ON_ERROR", "true"))
-        
-        # Destination settings
-        self.dest = os.getenv("DEST", "")
-        self.destfilename = os.getenv("DESTFILENAME", "")
-        self.exclude = os.getenv("EXCLUDE", "")
+    def __init__(self, config: AppConfig):
+        self.config = config
 
     def validate_inputs(self) -> None:
-        """
-        Validate required inputs are provided and valid
-        
-        Checks that all required parameters are present and valid before
-        proceeding with the operation. Exits with error code if validation fails.
-        """
-        # Validate command parameter
-        if not self.command:
+        """Validate required inputs are provided and valid"""
+        if not self.config.command:
             raise ValidationError("Command is required")
-
-        # Validate source parameter
-        if not self.source:
+        if not self.config.source:
             raise ValidationError("Source is required")
-
-        # Validate format parameter
-        if not self.format:
+        if not self.config.format:
             raise ValidationError("Format is required")
-
-        # Validate compression format is supported
-        if self.format not in CompressionFormat.list():
+        if self.config.format not in CompressionFormat.list():
             raise ValidationError(
-                f"Invalid format: {self.format}. Supported formats: {', '.join(CompressionFormat.list())}"
+                f"Invalid format: {self.config.format}. "
+                f"Supported formats: {', '.join(CompressionFormat.list())}"
             )
 
     def print_configuration(self) -> None:
-        """
-        Print action configuration
-        
-        Displays all configuration parameters to provide visibility into
-        the current operation settings.
-        """
+        """Print action configuration"""
         UI.print_header("Compress/Decompress Action")
         UI.print_section("Environment Configuration")
-        
-        # Print required parameters
-        print(f"  • Command: {self.command}")
-        print(f"  • Source: {self.source}")
-        print(f"  • Format: {self.format}")
-        
-        # Print behavior settings
-        print(f"  • Include Root: {self.include_root}")
-        print(f"  • Preserve Glob Structure: {self.preserve_glob_structure}")
-        if self.strip_prefix:
-            print(f"  • Strip Prefix: {self.strip_prefix}")
-        print(f"  • Verbose: {self.verbose}")
-        print(f"  • Fail on Error: {self.fail_on_error}")
-        
-        # Print optional parameters if provided
-        if self.dest:
-            print(f"  • Destination: {self.dest}")
-        if self.destfilename:
-            print(f"  • Destination Filename: {self.destfilename}")
-        if self.exclude:
-            print(f"  • Exclude Pattern: {self.exclude}")
+
+        print(f"  \u2022 Command: {self.config.command}")
+        print(f"  \u2022 Source: {self.config.source}")
+        print(f"  \u2022 Format: {self.config.format}")
+        print(f"  \u2022 Include Root: {self.config.include_root}")
+        print(f"  \u2022 Preserve Glob Structure: {self.config.preserve_glob_structure}")
+        if self.config.strip_prefix:
+            print(f"  \u2022 Strip Prefix: {self.config.strip_prefix}")
+        print(f"  \u2022 Verbose: {self.config.verbose}")
+        print(f"  \u2022 Fail on Error: {self.config.fail_on_error}")
+
+        if self.config.dest:
+            print(f"  \u2022 Destination: {self.config.dest}")
+        if self.config.destfilename:
+            print(f"  \u2022 Destination Filename: {self.config.destfilename}")
+        if self.config.exclude:
+            print(f"  \u2022 Exclude Pattern: {self.config.exclude}")
 
     def execute_command(self) -> None:
-        """
-        Execute the appropriate compression or decompression command
-        
-        Dispatches to the correct handler based on the command parameter.
-        Raises an error for unsupported commands.
-        """
-        if self.command == "compress":
-            compress(self.source, self.format, self.include_root, self.preserve_glob_structure, self.strip_prefix)
-        elif self.command == "decompress":
-            decompress(self.source, self.format)
+        """Execute the appropriate compression or decompression command"""
+        if self.config.command == "compress":
+            compress(self.config)
+        elif self.config.command == "decompress":
+            decompress(self.config)
         else:
             raise ValidationError(
-                f"Invalid command: {self.command}. Supported commands: compress, decompress"
+                f"Invalid command: {self.config.command}. "
+                f"Supported commands: compress, decompress"
             )
 
     def run(self) -> None:
-        """
-        Run the appropriate action based on command
-        
-        Main execution flow that validates inputs, displays configuration,
-        sets up logging, and executes the requested command.
-        """
-        # Validate and prepare for execution
+        """Main execution flow: validate, configure, execute"""
         self.validate_inputs()
         self.print_configuration()
-
-        # Configure logging based on verbosity setting
-        logger.set_verbose(self.verbose)
-
-        # Execute the command
+        logger.set_verbose(self.config.verbose)
         self.execute_command()
 
 
 def main():
     """
-    Main entry point for the application
-
-    Creates and runs the ActionRunner to handle compression/decompression operations.
+    Main entry point for the application.
     sys.exit() is called only here to keep exception flow clean.
     """
     try:
-        runner = ActionRunner()
+        config = AppConfig.from_env()
+        runner = ActionRunner(config)
         runner.run()
     except CompressError as e:
         UI.print_error(str(e))

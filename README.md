@@ -62,6 +62,7 @@ its required inputs.
 - [Glob Pattern Guide](docs/GLOB_PATTERNS.md) - Match multiple files with patterns like `**/*.doc`
 - [Advanced Usage Guide](docs/ADVANCED_USAGE.md) - Custom paths, exclude patterns, matrix strategies, and more
 - [Troubleshooting Guide](docs/TROUBLESHOOTING.md) - Solutions for common issues and debugging tips
+- [Testing Guide](tests/README.md) - Test setup, structure, and running tests locally
 
 <br/>
 
@@ -117,7 +118,7 @@ Exclude specific files or directories from compression:
     exclude: '.git .github node_modules *.log'
 ```
 
-**Common exclusions:**
+#### Common exclusions:
 - Version control: `.git .svn`
 - Dependencies: `node_modules vendor`
 - Temporary files: `*.log *.tmp`
@@ -141,19 +142,19 @@ This action supports glob patterns for matching multiple files across your repos
     destfilename: 'all-docs'
 ```
 
-**Common Patterns:**
+#### Common Patterns:
 - `**/*.ext` - All files with extension in all subdirectories
 - `dir/**/*.ext` - All files with extension in specific directory
 - `**/*.{ext1,ext2}` - Multiple file types
 
-**Key Behaviors:**
+#### Key Behaviors:
 - Files are collected into a flattened archive structure by default
 - Use `preserveGlobStructure: true` to maintain directory structure
 - Use `stripPrefix` to remove path prefixes (e.g., `'src/'` removes src/ from all paths)
 - No matches will fail by default (use `fail_on_error: false` to override)
 - Enable `verbose: true` to see matched files
 
-**Example with preserved structure:**
+#### Example with preserved structure:
 ```yaml
 - name: Archive Logs with Directory Structure
   uses: somaz94/compress-decompress@v1
@@ -164,7 +165,7 @@ This action supports glob patterns for matching multiple files across your repos
     preserveGlobStructure: true  # Preserves dir/subdir1/file.log structure
 ```
 
-**Example with stripped prefix:**
+#### Example with stripped prefix:
 ```yaml
 - name: Archive Source Files Without Project Root
   uses: somaz94/compress-decompress@v1
@@ -182,7 +183,7 @@ This action supports glob patterns for matching multiple files across your repos
 
 ### Basic Compression and Decompression
 
-**Compress a directory:**
+#### Compress a directory:
 ```yaml
 - name: Compress Directory
   uses: somaz94/compress-decompress@v1
@@ -192,7 +193,7 @@ This action supports glob patterns for matching multiple files across your repos
     format: zip
 ```
 
-**Decompress an archive:**
+#### Decompress an archive:
 ```yaml
 - name: Decompress Archive
   uses: somaz94/compress-decompress@v1
@@ -274,7 +275,16 @@ Contributions welcome! Please:
 4. Commit: `git commit -am "feat: Add new feature"`
 5. Push and create a Pull Request
 
-[→ See development and testing guide](docs/ADVANCED_USAGE.md)
+### Running Tests
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pytest
+python -m pytest tests/ -v
+```
+
+[→ See full testing guide](tests/README.md) | [→ See development and testing guide](docs/ADVANCED_USAGE.md)
 
 <br/>
 
