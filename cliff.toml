@@ -24,6 +24,7 @@ tag_pattern = "v[0-9].*"
 commit_parsers = [
     { message = "^Merge", skip = true },
     { message = "^Update changelog", skip = true },
+    { message = "^Auto commit", skip = true },
     { message = "^feat", group = "Features" },
     { message = "^fix", group = "Bug Fixes" },
     { message = "^doc", group = "Documentation" },
