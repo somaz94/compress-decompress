@@ -20,6 +20,16 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT_TOKEN }}
 
+      - name: Get previous semver tag
+        id: prev_tag
+        run: |
+          CURRENT_TAG="${{ github.ref_name }}"
+          PREVIOUS_TAG=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | grep -B1 "^${CURRENT_TAG}$" | head -n1)
+          if [ "$PREVIOUS_TAG" = "$CURRENT_TAG" ]; then
+            PREVIOUS_TAG=""
+          fi
+          echo "tag=${PREVIOUS_TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Generate changelog with git-cliff
         uses: orhun/git-cliff-action@v4
         with:
@@ -29,13 +39,18 @@ jobs:
           OUTPUT: RELEASE.md
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Append full changelog link
+        if: steps.prev_tag.outputs.tag != ''
+        run: |
+          echo "" >> RELEASE.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.prev_tag.outputs.tag }}...${{ github.ref_name }}" >> RELEASE.md
+
       - name: "Create GitHub release"
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           body_path: RELEASE.md
-          generate_release_notes: true
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
