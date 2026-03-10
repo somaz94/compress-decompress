@@ -2,13 +2,30 @@
 
 Unit and integration tests for the Compress/Decompress Action.
 
-## Setup
+<br/>
+
+## Quick Start (Makefile)
+
+```bash
+cd /path/to/compress-decompress
+make venv          # Create virtualenv and install dev dependencies
+make test          # Run unit tests with coverage
+make coverage      # Generate HTML coverage report (+ terminal output)
+make clean         # Remove venv, cache, and build artifacts
+make help          # Show all available commands
+```
+
+<br/>
+
+## Manual Setup (without Makefile)
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install pytest pytest-cov
 ```
+
+<br/>
 
 ## Running Tests
 
@@ -26,6 +43,8 @@ python -m pytest tests/test_compress.py::TestCompressIntegration -v
 python -m pytest tests/ -v -s
 ```
 
+<br/>
+
 ## Coverage
 
 ```bash
@@ -39,6 +58,26 @@ open htmlcov/index.html
 # Exclude backwards-compat re-export file from coverage
 python -m pytest tests/ --cov=app --cov-report=term-missing --cov-config=.coveragerc
 ```
+
+<br/>
+
+### Coverage Report
+
+#### Terminal Output
+Running `make test` or `make coverage` displays per-file coverage and missing lines in the terminal.
+
+#### HTML Report
+After running `make coverage`, the `htmlcov/index.html` file is generated.
+
+```bash
+make coverage
+open htmlcov/index.html    # macOS
+# xdg-open htmlcov/index.html  # Linux
+```
+
+Click on individual files in the browser to visually inspect uncovered lines.
+
+<br/>
 
 ## Test Structure
 
@@ -54,7 +93,11 @@ python -m pytest tests/ --cov=app --cov-report=term-missing --cov-config=.covera
 | `test_ui.py` | `ui.py` | Output formatting (header, section, success, error) |
 | `test_exceptions.py` | `exceptions.py` | Exception hierarchy (`CompressError` > `ValidationError`, `CommandError`) |
 
+<br/>
+
 ## Test Categories
+
+<br/>
 
 ### Unit Tests
 - Config defaults and env var parsing
@@ -66,12 +109,16 @@ python -m pytest tests/ --cov=app --cov-report=term-missing --cov-config=.covera
 - Shell command generation (zip, tar, tgz, tbz2)
 - Exception hierarchy
 
+<br/>
+
 ### Integration Tests
 - End-to-end compression (zip, tar) with real files
 - End-to-end decompression (zip, tar) with real archives
 - Custom destination and filename
 - Include/exclude root directory
 - Glob pattern file matching
+
+<br/>
 
 ## Fixtures
 
