@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.9.1](https://github.com/somaz94/compress-decompress/tree/v1.9.1) (2026-03-10)
+
+[Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.9.1...v1.9.1)
+
+**Merged pull requests:**
+
+- build\(deps\): bump actions/setup-python from 5 to 6 [\#51](https://github.com/somaz94/compress-decompress/pull/51) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 ## [v1.9.1](https://github.com/somaz94/compress-decompress/tree/v1.9.1) (2026-03-09)
 
 [Full Changelog](https://github.com/somaz94/compress-decompress/compare/v1.9.0...v1.9.1)
