@@ -51,7 +51,7 @@ jobs:
       uses: somaz94/go-git-commit-action@v1
       with:
         branch: main
-        commit_message: "Update changelog"
+        commit_message: "docs: update changelog"
         user_email: "actions@github.com"
         user_name: "GitHub Actions"
         file_pattern: "CHANGELOG.md"
