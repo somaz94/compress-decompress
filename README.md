@@ -290,7 +290,7 @@ python -m pytest tests/ -v
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE) file for details.
+This project is licensed under the [Apache License 2.0](LICENSE).
 
 <br/>
 
