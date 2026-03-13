@@ -68,9 +68,15 @@ jobs:
           echo "Updating $MAJOR_VERSION to point to $CURRENT_TAG at commit $COMMIT_SHA"
           echo "MAJOR_VERSION=${MAJOR_VERSION}" >> "$GITHUB_ENV"
           echo "COMMIT_SHA=${COMMIT_SHA}" >> "$GITHUB_ENV"
+          if git tag -l | grep -q "^${MAJOR_VERSION}$"; then
+            echo "TAG_EXISTS=true" >> "$GITHUB_ENV"
+          else
+            echo "TAG_EXISTS=false" >> "$GITHUB_ENV"
+          fi
 
       # Delete old major version tag
       - name: Delete old major version tag
+        if: env.TAG_EXISTS == 'true'
         uses: somaz94/go-git-commit-action@v1
         with:
           user_email: 'action@github.com'
