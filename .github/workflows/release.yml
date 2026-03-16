@@ -56,42 +56,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Update major version tag"
-        env:
-          CURRENT_TAG: ${{ github.ref_name }}
-          MAJOR_VERSION: ${{ github.ref_name }}
-        run: |
-          git switch main
-          git fetch --tags
-          MAJOR_VERSION="${CURRENT_TAG%%.*}"
-          COMMIT_SHA=$(git rev-parse ${{ github.sha }})
-          echo "Current commit SHA: $COMMIT_SHA"
-          echo "Updating $MAJOR_VERSION to point to $CURRENT_TAG at commit $COMMIT_SHA"
-          echo "MAJOR_VERSION=${MAJOR_VERSION}" >> "$GITHUB_ENV"
-          echo "COMMIT_SHA=${COMMIT_SHA}" >> "$GITHUB_ENV"
-          if git tag -l | grep -q "^${MAJOR_VERSION}$"; then
-            echo "TAG_EXISTS=true" >> "$GITHUB_ENV"
-          else
-            echo "TAG_EXISTS=false" >> "$GITHUB_ENV"
-          fi
-
-      # Delete old major version tag
-      - name: Delete old major version tag
-        if: env.TAG_EXISTS == 'true'
-        uses: somaz94/go-git-commit-action@v1
+        uses: somaz94/major-tag-action@v1
         with:
-          user_email: 'action@github.com'
-          user_name: 'GitHub Action'
-          tag_name: ${{ env.MAJOR_VERSION }}
-          delete_tag: true
-          github_token: ${{ secrets.PAT_TOKEN }}
-
-      # Create new major version tag
-      - name: Create new major version tag
-        uses: somaz94/go-git-commit-action@v1
-        with:
-          user_email: 'action@github.com'
-          user_name: 'GitHub Action'
-          tag_name: ${{ env.MAJOR_VERSION }}
-          tag_reference: ${{ env.COMMIT_SHA }}
+          tag: ${{ github.ref_name }}
           github_token: ${{ secrets.PAT_TOKEN }}
     
