@@ -1,18 +1,17 @@
 name: Generate changelog
+
 on:
-  # release:
-  #   types: [created, edited, published]
   pull_request:
     types: [closed]
   issues:
     types: [closed]
   workflow_run:
-    workflows: ["Create release"]  # release.yml의 name과 일치해야 함
+    workflows: ["Create release"]
     types:
       - completed
-  workflow_dispatch:  
-  
-permissions: 
+  workflow_dispatch:
+
+permissions:
   contents: write
   pull-requests: write
 
@@ -24,36 +23,35 @@ jobs:
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     steps:
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-        
-    - name: Get first tag
-      id: get_first_tag
-      run: |
-        # 시맨틱 버전 태그 중 가장 최신 버전 찾기 (v1 제외)
-        latest_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n1)"
-        echo "LATEST_TAG=${latest_tag}" >> "$GITHUB_ENV"
-        # 첫 번째 태그는 v1.0.0으로 고정
-        echo "FIRST_TAG=v1.0.0" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-    - name: Generate changelog
-      uses: janheinrichmerker/action-github-changelog-generator@v2.4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        futureRelease: ${{ github.event.release.tag_name || env.LATEST_TAG }}
-        output: CHANGELOG.md
-        sinceTag: ${{ env.FIRST_TAG }}  # v1.0.0과 같은 구체적인 버전 태그
-        # excludeTags: "v1,v2"  # 명시적으로 제외할 태그
-        excludeTagsRegex: "^v[0-9]$"
+      - name: Get tags
+        id: get_tags
+        run: |
+          latest_tag="$(git tag -l --sort=version:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | tail -n1)"
+          first_tag="$(git tag -l --sort=version:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)"
+          echo "LATEST_TAG=${latest_tag}" >> "$GITHUB_ENV"
+          echo "FIRST_TAG=${first_tag}" >> "$GITHUB_ENV"
 
-    - name: Git Commit and Push
-      uses: somaz94/go-git-commit-action@v1
-      with:
-        branch: main
-        commit_message: "docs: update changelog"
-        user_email: "actions@github.com"
-        user_name: "GitHub Actions"
-        file_pattern: "CHANGELOG.md"
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate changelog
+        if: env.FIRST_TAG != ''
+        uses: janheinrichmerker/action-github-changelog-generator@v2.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          futureRelease: ${{ github.event.release.tag_name || env.LATEST_TAG }}
+          output: CHANGELOG.md
+          sinceTag: ${{ env.FIRST_TAG }}
+          excludeTagsRegex: "^v[0-9]$"
 
+      - name: Git Commit and Push
+        if: env.FIRST_TAG != ''
+        uses: somaz94/go-git-commit-action@v1
+        with:
+          branch: main
+          commit_message: "docs: update changelog"
+          user_email: "actions@github.com"
+          user_name: "GitHub Actions"
+          file_pattern: "CHANGELOG.md"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
