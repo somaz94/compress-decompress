@@ -1,4 +1,5 @@
-name: Generator Contributors
+name: Generate Contributors
+
 on:
   workflow_dispatch:
   workflow_run:
@@ -13,34 +14,25 @@ jobs:
   update_contributors:
     name: Update Contributors
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}  # ✅ 추가
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - uses: actions/checkout@v6
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          fetch-depth: 0  # ✅ 추가
+          fetch-depth: 0
 
-      - name: Pull latest changes  # ✅ 추가
+      - name: Pull latest changes
         run: git pull origin main
 
-      - name: Get contributors
-        run: |
-          {
-            echo "# Contributors"
-            echo ""
-            echo "Contributions are welcome! Please feel free to submit a Pull Request."
-            echo ""
-            echo "## Contributors List"
-            echo ""
-            echo "Thanks goes to these wonderful people:"
-            echo ""
-            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                 -H "Accept: application/vnd.github.v3+json" \
-                 "https://api.github.com/repos/${{ github.repository }}/contributors" | \
-            jq -r '.[] | select(.type != "Bot" and .login != "github-actions[bot]" and .login != "actions-user" and .login != "somaz94") | "- [@\(.login)](\(.html_url))"' | \
-            sort
-          } > CONTRIBUTORS.md
+      - name: Generate Contributors
+        uses: somaz94/contributors-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          output_file: CONTRIBUTORS.md
+          format: table
+          columns: 6
+          exclude: 'github-actions[bot],actions-user'
 
       - name: Commit changes
         uses: somaz94/go-git-commit-action@v1
@@ -50,4 +42,4 @@ jobs:
           commit_message: "docs: update CONTRIBUTORS.md"
           branch: main
           file_pattern: "CONTRIBUTORS.md"
-          github_token: ${{ secrets.PAT_TOKEN }}  # ✅ 추가
+          github_token: ${{ secrets.PAT_TOKEN }}
