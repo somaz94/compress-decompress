@@ -5,6 +5,7 @@ GitHub Action to compress or decompress files using various formats (zip, tar, t
 ## Commit Guidelines
 
 - Do not include `Co-Authored-By` lines in commit messages.
+- Do not push to remote. Only commit. The user will push manually.
 
 ## Project Structure
 
@@ -96,3 +97,4 @@ unit-tests → build-and-push-docker → integration tests → ci-result
 ## Language
 
 - Communicate with the user in Korean.
+- All documentation and code comments must be written in English.
