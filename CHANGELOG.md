@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased (2026-03-16)
+## [v1.9.2](https://github.com/somaz94/compress-decompress/compare/v1.9.1...v1.9.2) (2026-03-25)
 
 ### Features
 
@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
+- add subprocess timeout, compression_level validation, and shell injection protection ([433fbf8](https://github.com/somaz94/compress-decompress/commit/433fbf8ae254f9642005b60df4618f734855333d))
 - apache license -> mit license ([119cde6](https://github.com/somaz94/compress-decompress/commit/119cde6cda2780200a13e38f8e999f25e57e0cae))
 - skip major version tag deletion on first release ([5a8cccf](https://github.com/somaz94/compress-decompress/commit/5a8cccf65b595da4bff2c7e42aea0142cd770691))
 - delete linter.yml ([75ec6d5](https://github.com/somaz94/compress-decompress/commit/75ec6d517d973cfcfe637d258210bd5fcaf32e29))
@@ -18,6 +19,8 @@ All notable changes to this project will be documented in this file.
 
 ### Documentation
 
+- add no-push rule to CLAUDE.md ([dfac703](https://github.com/somaz94/compress-decompress/commit/dfac703808809c73fe896b366a59f38ce9d6c6ec))
+- update CLAUDE.md with commit guidelines and language ([49ebb5f](https://github.com/somaz94/compress-decompress/commit/49ebb5f39e0dc99408946716d3f6ef6bf636185f))
 - add Makefile quick start and coverage report guide to tests/README.md ([54f9c36](https://github.com/somaz94/compress-decompress/commit/54f9c36c9532cff4e5bf8123c04e9628e9b8deba))
 - CLAUDE.md ([b2773a3](https://github.com/somaz94/compress-decompress/commit/b2773a320b11fd8a8add81642695529f9abb4122))
 
@@ -27,6 +30,13 @@ All notable changes to this project will be documented in this file.
 
 ### Continuous Integration
 
+- skip auto-generated changelog and contributors commits in release notes ([fbac132](https://github.com/somaz94/compress-decompress/commit/fbac1322f7ac3f9e5d45df2ca5e28ed4bfcae9a7))
+- revert to body_path RELEASE.md in release workflow ([808fbeb](https://github.com/somaz94/compress-decompress/commit/808fbebf9e3a119c6d2d0fb895830b65f6c8b151))
+- use generate_release_notes instead of RELEASE.md ([734f158](https://github.com/somaz94/compress-decompress/commit/734f158e451cd2efd122aa7bb8ddd6ee6a8973e6))
+- migrate gitlab-mirror workflow to multi-git-mirror action ([ebca98e](https://github.com/somaz94/compress-decompress/commit/ebca98e2717b79962df1544591107191d09247fb))
+- use somaz94/contributors-action@v1 for contributors generation ([6c8d50b](https://github.com/somaz94/compress-decompress/commit/6c8d50b22a4ce2e69060b133a4518f4af8a91493))
+- use major-tag-action for version tag updates ([1178eb5](https://github.com/somaz94/compress-decompress/commit/1178eb516b99af2dcd44b07156aafac76124bcb2))
+- add dependabot auto-merge workflow ([2700c70](https://github.com/somaz94/compress-decompress/commit/2700c70ff0fdd60efd5c66c764b81b003baeef8c))
 - unify changelog-generator with flexible tag pattern ([47d2616](https://github.com/somaz94/compress-decompress/commit/47d261697c88741601cb26e0c55f05cbfd3a6b4b))
 - use conventional commit message in changelog-generator workflow ([9173af5](https://github.com/somaz94/compress-decompress/commit/9173af5f6af41bad42e432d8a9734890663a3a60))
 
@@ -39,10 +49,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Action
-- GitHub Actions
-- dependabot[bot]
 - somaz
+
+<br/>
 
 ## [v1.9.1](https://github.com/somaz94/compress-decompress/compare/v1.9.0...v1.9.1) (2026-03-09)
 
@@ -57,9 +66,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Action
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.9.0](https://github.com/somaz94/compress-decompress/compare/v1.8.4...v1.9.0) (2026-03-09)
 
@@ -95,9 +104,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
-- dependabot[bot]
 - somaz
+
+<br/>
 
 ## [v1.8.4](https://github.com/somaz94/compress-decompress/compare/v1.8.3...v1.8.4) (2025-10-22)
 
@@ -111,8 +120,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.8.3](https://github.com/somaz94/compress-decompress/compare/v1.8.2...v1.8.3) (2025-10-21)
 
@@ -122,8 +132,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.8.2](https://github.com/somaz94/compress-decompress/compare/v1.8.1...v1.8.2) (2025-10-21)
 
@@ -139,9 +150,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
-- dependabot[bot]
 - somaz
+
+<br/>
 
 ## [v1.8.1](https://github.com/somaz94/compress-decompress/compare/v1.8.0...v1.8.1) (2025-10-20)
 
@@ -158,8 +169,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.8.0](https://github.com/somaz94/compress-decompress/compare/v1.7.0...v1.8.0) (2025-10-20)
 
@@ -171,8 +183,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.7.0](https://github.com/somaz94/compress-decompress/compare/v1.6.0...v1.7.0) (2025-10-20)
 
@@ -191,8 +204,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.6.0](https://github.com/somaz94/compress-decompress/compare/v1.5.1...v1.6.0) (2025-10-20)
 
@@ -213,9 +227,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
-- dependabot[bot]
 - somaz
+
+<br/>
 
 ## [v1.5.1](https://github.com/somaz94/compress-decompress/compare/v1.5.0...v1.5.1) (2025-04-15)
 
@@ -239,13 +253,13 @@ All notable changes to this project will be documented in this file.
 
 ### Documentation
 
-- update CONTRIBUTORS.md ([007a600](https://github.com/somaz94/compress-decompress/commit/007a60035f7519caf49ef1a7143e11c32f39ec25))
 - README.md ([6f5191d](https://github.com/somaz94/compress-decompress/commit/6f5191d5f773db17a803debdae752354e4ca6684))
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.5.0](https://github.com/somaz94/compress-decompress/compare/v1.4.2...v1.5.0) (2025-04-11)
 
@@ -259,8 +273,9 @@ All notable changes to this project will be documented in this file.
 ### Contributors
 
 - Fabio Grande
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.4.2](https://github.com/somaz94/compress-decompress/compare/v1.4.1...v1.4.2) (2025-04-08)
 
@@ -274,6 +289,8 @@ All notable changes to this project will be documented in this file.
 ### Contributors
 
 - somaz
+
+<br/>
 
 ## [v1.4.1](https://github.com/somaz94/compress-decompress/compare/v1.4.0...v1.4.1) (2025-04-04)
 
@@ -296,8 +313,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.4.0](https://github.com/somaz94/compress-decompress/compare/v1.3.1...v1.4.0) (2025-04-03)
 
@@ -326,10 +344,6 @@ All notable changes to this project will be documented in this file.
 - ci.yml, add: contributors.yml ([070ef59](https://github.com/somaz94/compress-decompress/commit/070ef5961d996cc6c1b37065d0e2399a3fcf9b09))
 - ci.yml ([aa56281](https://github.com/somaz94/compress-decompress/commit/aa5628181027a6298d560508e02975678b5b9cd2))
 
-### Documentation
-
-- update CONTRIBUTORS.md ([5944aa4](https://github.com/somaz94/compress-decompress/commit/5944aa4ee7025f67911cff169a7747bdba026c63))
-
 ### Add
 
 - contributors.yml ([a3fed2b](https://github.com/somaz94/compress-decompress/commit/a3fed2bef3fc5eb44f479c54c325074b21a27ce4))
@@ -341,8 +355,9 @@ All notable changes to this project will be documented in this file.
 ### Contributors
 
 - Fabio Grande
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.3.1](https://github.com/somaz94/compress-decompress/compare/v1.3.0...v1.3.1) (2025-03-04)
 
@@ -362,9 +377,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
-- dependabot[bot]
 - somaz
+
+<br/>
 
 ## [v1.3.0](https://github.com/somaz94/compress-decompress/compare/v1.2.0...v1.3.0) (2025-02-17)
 
@@ -383,8 +398,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.2.0](https://github.com/somaz94/compress-decompress/compare/v1.1.0...v1.2.0) (2025-02-17)
 
@@ -400,8 +416,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.1.0](https://github.com/somaz94/compress-decompress/compare/v1.0.8...v1.1.0) (2025-02-14)
 
@@ -426,8 +443,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.0.8](https://github.com/somaz94/compress-decompress/compare/v1.0.7...v1.0.8) (2025-02-13)
 
@@ -437,8 +455,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.0.7](https://github.com/somaz94/compress-decompress/compare/v1.0.6...v1.0.7) (2025-02-12)
 
@@ -458,8 +477,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.0.6](https://github.com/somaz94/compress-decompress/compare/v1.0.5...v1.0.6) (2025-02-07)
 
@@ -471,8 +491,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Action
 - somaz
+
+<br/>
 
 ## [v1.0.5](https://github.com/somaz94/compress-decompress/compare/v1.0.4...v1.0.5) (2025-02-07)
 
@@ -483,8 +504,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Action
 - somaz
+
+<br/>
 
 ## [v1.0.4](https://github.com/somaz94/compress-decompress/compare/v1.0.3...v1.0.4) (2025-02-07)
 
@@ -528,9 +550,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Action
-- dependabot[bot]
 - somaz
+
+<br/>
 
 ## [v1.0.3](https://github.com/somaz94/compress-decompress/compare/v1.0.2...v1.0.3) (2024-10-28)
 
@@ -589,8 +611,9 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- dependabot[bot]
 - somaz
+
+<br/>
 
 ## [v1.0.2](https://github.com/somaz94/compress-decompress/compare/v1.0.1...v1.0.2) (2024-07-01)
 
@@ -598,9 +621,7 @@ All notable changes to this project will be documented in this file.
 
 - **deps:** bump python in the docker-minor group ([ae350fb](https://github.com/somaz94/compress-decompress/commit/ae350fb2de52218534daf5201bcc1fe30ae660ad))
 
-### Contributors
-
-- dependabot[bot]
+<br/>
 
 ## [v1.0.1](https://github.com/somaz94/compress-decompress/compare/v1.0.0...v1.0.1) (2024-06-28)
 
@@ -639,9 +660,13 @@ All notable changes to this project will be documented in this file.
 
 - somaz
 
-## v1.0.0 (2024-06-24)
+<br/>
+
+## [v1.0.0](https://github.com/somaz94/compress-decompress/releases/tag/v1.0.0) (2024-06-24)
 
 ### Contributors
 
 - somaz
+
+<br/>
 
