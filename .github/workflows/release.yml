@@ -50,7 +50,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          body_path: RELEASE.md
+          generate_release_notes: true
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
