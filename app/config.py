@@ -80,6 +80,11 @@ class AppConfig:
 
     @classmethod
     def from_env(cls) -> 'AppConfig':
+        compression_level = os.getenv("COMPRESSION_LEVEL", "")
+        if compression_level and not cls._is_valid_compression_level(compression_level):
+            raise ValidationError(
+                f"Invalid compression_level: '{compression_level}'. Must be a number between 0 and 9."
+            )
         return cls(
             command=os.getenv("COMMAND", ""),
             source=os.getenv("SOURCE", ""),
@@ -92,9 +97,14 @@ class AppConfig:
             dest=os.getenv("DEST", ""),
             destfilename=os.getenv("DESTFILENAME", ""),
             exclude=os.getenv("EXCLUDE", ""),
-            compression_level=os.getenv("COMPRESSION_LEVEL", ""),
+            compression_level=compression_level,
             password=os.getenv("PASSWORD", ""),
         )
+
+    @staticmethod
+    def _is_valid_compression_level(level: str) -> bool:
+        """Validate compression level is a single digit 0-9"""
+        return len(level) == 1 and level.isdigit()
 
     @property
     def effective_dest(self) -> str:

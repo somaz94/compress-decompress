@@ -76,10 +76,30 @@ class TestAppConfig:
         # Clear all relevant env vars
         for var in ["COMMAND", "SOURCE", "FORMAT", "INCLUDEROOT", "VERBOSE",
                      "FAIL_ON_ERROR", "DEST", "DESTFILENAME", "EXCLUDE",
-                     "PRESERVE_GLOB_STRUCTURE", "STRIP_PREFIX"]:
+                     "PRESERVE_GLOB_STRUCTURE", "STRIP_PREFIX",
+                     "COMPRESSION_LEVEL", "PASSWORD"]:
             monkeypatch.delenv(var, raising=False)
 
         config = AppConfig.from_env()
         assert config.command == ""
         assert config.verbose is False
         assert config.fail_on_error is True
+
+    def test_valid_compression_levels(self):
+        for level in "0123456789":
+            assert AppConfig._is_valid_compression_level(level) is True
+
+    def test_invalid_compression_levels(self):
+        for bad in ["", "10", "-1", "abc", "9;rm", " 5", "5 "]:
+            assert AppConfig._is_valid_compression_level(bad) is False
+
+    def test_from_env_invalid_compression_level(self, monkeypatch):
+        from exceptions import ValidationError
+        monkeypatch.setenv("COMPRESSION_LEVEL", "9;rm -rf /")
+        with pytest.raises(ValidationError, match="Invalid compression_level"):
+            AppConfig.from_env()
+
+    def test_from_env_valid_compression_level(self, monkeypatch):
+        monkeypatch.setenv("COMPRESSION_LEVEL", "5")
+        config = AppConfig.from_env()
+        assert config.compression_level == "5"

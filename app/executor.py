@@ -5,6 +5,8 @@ from functools import wraps
 from app_logger import logger
 from exceptions import CommandError
 
+DEFAULT_TIMEOUT = 3600  # 1 hour
+
 
 class ProcessResult:
     """Container for operation results"""
@@ -37,7 +39,8 @@ class CommandExecutor:
 
     @staticmethod
     @retry_on_failure()
-    def run(command: str, verbose: bool = False, fail_on_error: bool = True) -> ProcessResult:
+    def run(command: str, verbose: bool = False, fail_on_error: bool = True,
+            timeout: int = DEFAULT_TIMEOUT) -> ProcessResult:
         print(f"\u2699\ufe0f  Executing: {command}")
         try:
             result = subprocess.run(
@@ -45,13 +48,19 @@ class CommandExecutor:
                 shell=True,
                 text=True,
                 capture_output=True,
-                check=True
+                check=True,
+                timeout=timeout
             )
             if result.stdout and verbose:
                 logger.logger.debug(f"Command output:\n{result.stdout.strip()}")
             if result.stderr:
                 logger.logger.warning(f"Command stderr:\n{result.stderr.strip()}")
             return ProcessResult(True, "Command executed successfully")
+        except subprocess.TimeoutExpired as e:
+            error_msg = f"Command timed out after {timeout}s: {command}"
+            if fail_on_error:
+                raise CommandError(error_msg) from e
+            return ProcessResult(False, error_msg)
         except subprocess.CalledProcessError as e:
             error_msg = f"Command failed: {e}"
             if fail_on_error:

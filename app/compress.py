@@ -100,7 +100,7 @@ class Compressor(BaseProcessor):
         source_path = os.path.abspath(self.source)
         source_path = os.getcwd() if source_path == '/github/workspace' else source_path
         exclude_cmd = self._build_zip_exclude(source_path)
-        level_flag = f" -{self.compression_level}" if self.compression_level else ""
+        level_flag = f" -{shlex.quote(self.compression_level)}" if self.compression_level else ""
         password_flag = f" -P {shlex.quote(self.password)}" if self.password else ""
 
         if self.include_root:
@@ -146,10 +146,11 @@ class Compressor(BaseProcessor):
         """Get environment variable prefix for tar compression level"""
         if not self.compression_level:
             return ""
+        level = shlex.quote(self.compression_level)
         env_map = {
-            CompressionFormat.TGZ.value: f"GZIP=-{self.compression_level}",
-            CompressionFormat.TBZ2.value: f"BZIP2=-{self.compression_level}",
-            CompressionFormat.TXZ.value: f"XZ_OPT=-{self.compression_level}",
+            CompressionFormat.TGZ.value: f"GZIP=-{level}",
+            CompressionFormat.TBZ2.value: f"BZIP2=-{level}",
+            CompressionFormat.TXZ.value: f"XZ_OPT=-{level}",
         }
         env = env_map.get(self.format, "")
         return f"{env} " if env else ""

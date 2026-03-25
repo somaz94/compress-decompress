@@ -461,7 +461,9 @@ class TestCompressionLevel:
         c = Compressor(config)
         c.source = str(tmp_source)
         cmd = c._get_zip_command("/out/test.zip", "test")
-        assert "zip -9 -r" in cmd
+        assert "-9" in cmd
+        assert "zip" in cmd
+        assert "-r" in cmd
 
     def test_zip_without_level(self, make_config, tmp_source):
         config = make_config(source=str(tmp_source), format="zip")

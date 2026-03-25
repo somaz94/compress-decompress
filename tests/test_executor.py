@@ -46,3 +46,16 @@ class TestCommandExecutor:
         result = CommandExecutor.run("echo test_output", verbose=False)
         assert result.success is True
         assert result.message == "Command executed successfully"
+
+    def test_timeout_raises(self):
+        with pytest.raises(CommandError, match="timed out"):
+            CommandExecutor.run("sleep 10", timeout=1)
+
+    def test_timeout_no_raise(self):
+        result = CommandExecutor.run("sleep 10", fail_on_error=False, timeout=1)
+        assert result.success is False
+        assert "timed out" in result.message
+
+    def test_custom_timeout(self):
+        result = CommandExecutor.run("echo fast", timeout=5)
+        assert result.success is True
