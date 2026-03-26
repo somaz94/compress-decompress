@@ -2,10 +2,6 @@
 
 GitHub Action to compress or decompress files using various formats (zip, tar, tgz, tbz2, txz).
 
-- Do not include `Co-Authored-By` lines in commit messages.
-- Do not push to remote. Only commit. The user will push manually.
-- Do not modify git config.
-
 ## Project Structure
 
 ```
@@ -92,6 +88,3 @@ unit-tests → build-and-push-docker → integration tests → ci-result
 - **cliff.toml**: Skip `^Merge`, `^Update changelog`, `^Auto commit`
 - **paths-ignore**: `.github/workflows/**`, `**/*.md`, `backup/**`
 - Do NOT commit directly - recommend commit messages only
-
-- Communicate with the user in Korean.
-- All documentation and code comments must be written in English.
