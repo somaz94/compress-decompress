@@ -71,6 +71,15 @@ class TestGetPathSize:
         assert size == 7
 
 
+    def test_circular_symlink_no_hang(self, tmp_path):
+        sub = tmp_path / "dir"
+        sub.mkdir()
+        (sub / "file.txt").write_text("content")
+        (sub / "loop").symlink_to(str(sub))
+        size = FileUtils.get_directory_size(str(sub))
+        assert size > 0
+
+
 class TestAdjustPath:
     def test_absolute_path_unchanged(self):
         path = "/absolute/path/to/file"

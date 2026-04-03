@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import subprocess
 import time
-from typing import Optional, Dict
 from functools import wraps
 from app_logger import logger
 from exceptions import CommandError
@@ -11,7 +12,7 @@ DEFAULT_TIMEOUT = 3600  # 1 hour
 class ProcessResult:
     """Container for operation results"""
 
-    def __init__(self, success: bool, message: str, data: Optional[Dict] = None):
+    def __init__(self, success: bool, message: str, data: dict | None = None):
         self.success = success
         self.message = message
         self.data = data or {}

@@ -6,17 +6,19 @@ import os
 import shlex
 import shutil
 import tempfile
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from config import CompressionFormat
 from ui import UI
 from file_utils import FileUtils
 from executor import CommandExecutor, ProcessResult
 from base_processor import BaseProcessor
 from app_logger import logger
-from exceptions import ValidationError
+from exceptions import ValidationError, CompressError, CommandError
 
 if TYPE_CHECKING:
     from config import AppConfig
+
+_CHECKSUM_BUFFER_SIZE = 8192
 
 
 class Compressor(BaseProcessor):
@@ -35,7 +37,7 @@ class Compressor(BaseProcessor):
         self.preserve_glob_structure = FileUtils.str_to_bool(config.preserve_glob_structure)
         self.strip_prefix = config.strip_prefix
         self.is_glob_pattern = False
-        self.matched_files: List[str] = []
+        self.matched_files: list[str] = []
         self.compression_level = config.compression_level
         self.password = config.password
         self.temp_dir = None
@@ -47,8 +49,9 @@ class Compressor(BaseProcessor):
         self.source = self.source.strip()
 
         # Convert GitHub Actions runner path to Docker container path
-        if self.source.startswith('/home/runner/work/'):
-            self.source = '/github/workspace'
+        github_workspace = os.getenv('GITHUB_WORKSPACE')
+        if github_workspace and self.source.startswith('/home/runner/work/'):
+            self.source = github_workspace
 
         # Check if source is a glob pattern
         if FileUtils.is_glob_pattern(self.source):
@@ -95,10 +98,17 @@ class Compressor(BaseProcessor):
         output_dir = os.path.dirname(self.source) if self.include_root else self.source
         return os.path.join(output_dir, f"{base_name}{extension}")
 
+    def _resolve_source_path(self) -> str:
+        """Resolve source path, handling GitHub Actions workspace mapping."""
+        source_path = os.path.abspath(self.source)
+        github_workspace = os.getenv('GITHUB_WORKSPACE', '/github/workspace')
+        if source_path == github_workspace:
+            return os.getcwd()
+        return source_path
+
     def _get_zip_command(self, full_dest: str, base_name: str) -> str:
         """Generate zip compression command"""
-        source_path = os.path.abspath(self.source)
-        source_path = os.getcwd() if source_path == '/github/workspace' else source_path
+        source_path = self._resolve_source_path()
         exclude_cmd = self._build_zip_exclude(source_path)
         level_flag = f" -{shlex.quote(self.compression_level)}" if self.compression_level else ""
         password_flag = f" -P {shlex.quote(self.password)}" if self.password else ""
@@ -126,7 +136,7 @@ class Compressor(BaseProcessor):
 
         return " ".join([f'-x {shlex.quote(p)}' for p in processed])
 
-    def _format_pattern_with_root(self, pattern: str, source_path: str, dir_name: str) -> List[str]:
+    def _format_pattern_with_root(self, pattern: str, source_path: str, dir_name: str) -> list[str]:
         """Format exclusion pattern when includeRoot is true"""
         if pattern.startswith(f"{dir_name}/") or pattern == dir_name:
             return [pattern]
@@ -136,7 +146,7 @@ class Compressor(BaseProcessor):
             return [f"{dir_name}/{pattern}/*", f"{dir_name}/{pattern}/"]
         return [f"{dir_name}/{pattern}"]
 
-    def _format_pattern_without_root(self, pattern: str, source_path: str) -> List[str]:
+    def _format_pattern_without_root(self, pattern: str, source_path: str) -> list[str]:
         """Format exclusion pattern when includeRoot is false"""
         if os.path.isdir(os.path.join(source_path, pattern)) and not pattern.endswith('/*'):
             return [f"{pattern}/*", f"{pattern}/"]
@@ -157,8 +167,7 @@ class Compressor(BaseProcessor):
 
     def _get_tar_command(self, full_dest: str, base_name: str) -> str:
         """Generate tar compression command"""
-        source_path = os.path.abspath(self.source)
-        source_path = os.getcwd() if source_path == '/github/workspace' else source_path
+        source_path = self._resolve_source_path()
 
         tar_options = {
             CompressionFormat.TAR.value: "",
@@ -243,7 +252,7 @@ class Compressor(BaseProcessor):
 
             return result
 
-        except Exception as e:
+        except (OSError, ValueError, ValidationError, CompressError, CommandError) as e:
             return self.handle_error(e, "Compression")
         finally:
             self._cleanup_temp_directory()
@@ -263,8 +272,8 @@ class Compressor(BaseProcessor):
         """Print compression results"""
         duration = (datetime.now() - start_time).total_seconds()
 
-        if os.path.exists(self.dest):
-            compressed_size = os.path.getsize(self.dest)
+        if self.output_path and os.path.exists(self.output_path):
+            compressed_size = os.path.getsize(self.output_path)
             ratio = (1 - (compressed_size / source_size)) * 100 if source_size > 0 else 0
 
             UI.print_section("Compression Results")
@@ -316,7 +325,7 @@ class Compressor(BaseProcessor):
         if self.output_path and os.path.exists(self.output_path):
             sha256 = hashlib.sha256()
             with open(self.output_path, "rb") as f:
-                for chunk in iter(lambda: f.read(8192), b""):
+                for chunk in iter(lambda: f.read(_CHECKSUM_BUFFER_SIZE), b""):
                     sha256.update(chunk)
             self.checksum = sha256.hexdigest()
 
@@ -327,7 +336,7 @@ class Compressor(BaseProcessor):
                 shutil.rmtree(self.temp_dir)
                 if self.verbose:
                     logger.logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
-            except Exception as e:
+            except OSError as e:
                 logger.logger.warning(f"Failed to clean up temporary directory: {str(e)}")
 
 

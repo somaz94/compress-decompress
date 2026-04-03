@@ -46,11 +46,11 @@ class TestCompressorValidate:
         finally:
             os.chdir(original)
 
-    def test_github_runner_path_conversion(self, make_config):
+    def test_github_runner_path_conversion(self, make_config, monkeypatch):
+        monkeypatch.setenv("GITHUB_WORKSPACE", "/github/workspace")
         c = Compressor(make_config(source="/home/runner/work/repo/repo", fail_on_error=False))
         c.source = "/home/runner/work/repo/repo"
-        # After validate, source should be converted
-        # We can't fully test this without the actual path, just verify conversion
+        # After validate, source should be converted to GITHUB_WORKSPACE
         c.validate()  # will fail since path doesn't exist, but source is converted
         assert c.source == '/github/workspace'
 
@@ -447,7 +447,7 @@ class TestCompressErrorHandling:
             fail_on_error=False,
         )
         c = Compressor(config)
-        monkeypatch.setattr(c, 'get_compression_command', lambda: (_ for _ in ()).throw(RuntimeError("test error")))
+        monkeypatch.setattr(c, 'get_compression_command', lambda: (_ for _ in ()).throw(OSError("test error")))
         result = c.compress()
         assert result.success is False
 

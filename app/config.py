@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 import shlex
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import List, Optional, Callable
 from enum import Enum
 from exceptions import ValidationError
 from file_utils import FileUtils
@@ -16,7 +18,7 @@ class CompressionFormat(Enum):
     TXZ = 'txz'
 
     @classmethod
-    def list(cls) -> List[str]:
+    def list(cls) -> list[str]:
         return [fmt.value for fmt in cls]
 
     @classmethod
@@ -28,7 +30,7 @@ class CompressionFormat(Enum):
 class CommandConfig:
     """Configuration for format-specific decompression commands"""
     command: str
-    options: Callable[[Optional[str]], str]
+    options: Callable[[str | None], str]
     format: Callable[[str, str], str]
 
 

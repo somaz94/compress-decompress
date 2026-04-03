@@ -121,7 +121,7 @@ class TestDecompressEdgeCases:
             fail_on_error=False,
         )
         d = Decompressor(config)
-        monkeypatch.setattr(d, 'get_decompression_command', lambda: (_ for _ in ()).throw(RuntimeError("test")))
+        monkeypatch.setattr(d, 'get_decompression_command', lambda: (_ for _ in ()).throw(OSError("test")))
         result = d.decompress()
         assert result.success is False
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import os
+import shlex
 from typing import TYPE_CHECKING
 from ui import UI
 from file_utils import FileUtils
@@ -9,6 +10,7 @@ from executor import CommandExecutor, ProcessResult
 from config import DECOMPRESSION_COMMANDS, CommandConfig
 from app_logger import logger
 from base_processor import BaseProcessor
+from exceptions import ValidationError, CompressError, CommandError
 
 if TYPE_CHECKING:
     from config import AppConfig
@@ -34,15 +36,13 @@ class Decompressor(BaseProcessor):
 
     def get_decompression_command(self) -> str:
         """Generate appropriate decompression command based on format"""
-        import shlex
         self._validate_format()
         cmd_config = self._get_command_config()
         options = cmd_config.options(self.dest)
-        base_cmd = f"{cmd_config.command} {cmd_config.format(self.source, options)}"
+        password_flag = ""
         if self.password and self.format == "zip":
             password_flag = f"-P {shlex.quote(self.password)} "
-            base_cmd = f"unzip {password_flag}{cmd_config.format(self.source, options)}"
-        return base_cmd
+        return f"{cmd_config.command} {password_flag}{cmd_config.format(self.source, options)}"
 
     def _validate_format(self) -> None:
         if self.format not in DECOMPRESSION_COMMANDS:
@@ -63,7 +63,7 @@ class Decompressor(BaseProcessor):
                     print(f"  \u2022 {item}: {FileUtils.get_size(item_path)}")
                 elif os.path.isdir(item_path):
                     print(f"  \u2022 {item}/ (directory)")
-        except Exception as e:
+        except OSError as e:
             if self.verbose:
                 logger.logger.error(f"Failed to list contents: {str(e)}")
             UI.print_error(f"Failed to list contents: {str(e)}")
@@ -99,7 +99,7 @@ class Decompressor(BaseProcessor):
 
             return result
 
-        except Exception as e:
+        except (OSError, ValueError, ValidationError, CompressError, CommandError) as e:
             return self.handle_error(e, "Decompression")
 
 

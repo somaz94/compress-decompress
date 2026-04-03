@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from file_utils import FileUtils
 from ui import UI
 from app_logger import logger
@@ -51,7 +51,7 @@ class BaseProcessor:
         logger.logger.warning(f"{context} warning: {str(error)}")
         return ProcessResult(False, str(error))
 
-    def parse_exclude_patterns(self) -> List[str]:
+    def parse_exclude_patterns(self) -> list[str]:
         """Parse exclude string into a list of individual patterns"""
         if not self.exclude:
             return []
