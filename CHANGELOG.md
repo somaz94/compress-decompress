@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.10.0](https://github.com/somaz94/compress-decompress/compare/v1.9.2...v1.10.0) (2026-04-03)
+
+### Code Refactoring
+
+- modernize types, fix path handling, narrow exception catches, and remove code duplication ([ac9fd6c](https://github.com/somaz94/compress-decompress/commit/ac9fd6c50a2bb0ff07d220ffe28b063c1d2da5b8))
+
+### Documentation
+
+- remove duplicate rules covered by global CLAUDE.md ([206822b](https://github.com/somaz94/compress-decompress/commit/206822b90b861c18b7d58b7693237e3a7ef3f834))
+
+### Chores
+
+- remove duplicate rules from CLAUDE.md (moved to global) ([c49db66](https://github.com/somaz94/compress-decompress/commit/c49db661b43475562c9f63047389114f68b413ef))
+- add git config protection to CLAUDE.md ([c97233f](https://github.com/somaz94/compress-decompress/commit/c97233f58f01047ace2d8b8b723fc9e4b919f4f7))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.9.2](https://github.com/somaz94/compress-decompress/compare/v1.9.1...v1.9.2) (2026-03-25)
 
 ### Features
