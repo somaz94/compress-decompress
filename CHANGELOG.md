@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased (2026-04-13)
+
+### Builds
+
+- **deps:** bump actions/github-script from 8 to 9 ([d2e1cce](https://github.com/somaz94/compress-decompress/commit/d2e1ccefc27d60a6b0a8d4e3089c9789e53cca7a))
+
+<br/>
+
 ## [v1.10.0](https://github.com/somaz94/compress-decompress/compare/v1.9.2...v1.10.0) (2026-04-03)
 
 ### Code Refactoring
