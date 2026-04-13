@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Builds
 
+- **deps:** bump dependabot/fetch-metadata from 2 to 3 ([dad52ab](https://github.com/somaz94/compress-decompress/commit/dad52ab65ccaf02e6f76e21a9121981b2f120086))
 - **deps:** bump actions/github-script from 8 to 9 ([d2e1cce](https://github.com/somaz94/compress-decompress/commit/d2e1ccefc27d60a6b0a8d4e3089c9789e53cca7a))
 
 <br/>
