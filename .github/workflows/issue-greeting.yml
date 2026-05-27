@@ -4,6 +4,12 @@ on:
   issues:
     types: [opened]
 
+# One greeting per issue. cancel-in-progress: true is safe — if the user
+# closes+reopens quickly we just want the latest run to win.
+concurrency:
+  group: issue-greeting-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
 jobs:
   greeting:
     runs-on: ubuntu-latest

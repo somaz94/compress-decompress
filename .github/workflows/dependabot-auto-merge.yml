@@ -8,6 +8,13 @@ permissions:
   contents: write
   pull-requests: write
 
+# One auto-merge attempt per PR at a time. cancel-in-progress: true is
+# safe — if Dependabot pushes a new commit mid-run, the next run
+# re-fetches metadata and acts on the current head.
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   auto-merge:
     runs-on: ubuntu-latest

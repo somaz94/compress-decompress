@@ -6,6 +6,12 @@ on:
     - cron: '0 0 * * *'
   workflow_dispatch: # Allow manual trigger
 
+# Daily schedule + manual dispatch could overlap. Serialize so two stale
+# passes don't double-label or double-close.
+concurrency:
+  group: stale-issues
+  cancel-in-progress: false
+
 jobs:
   stale:
     runs-on: ubuntu-latest

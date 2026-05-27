@@ -10,6 +10,13 @@ on:
 permissions:
   contents: write
 
+# Serialize runs — CONTRIBUTORS.md is rewritten in full each time, so two
+# parallel runs would race and clobber each other. cancel-in-progress: true
+# is safe since the latest run always produces the up-to-date file.
+concurrency:
+  group: contributors
+  cancel-in-progress: true
+
 jobs:
   update_contributors:
     name: Update Contributors
