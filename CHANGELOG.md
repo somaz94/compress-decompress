@@ -2,13 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased (2026-04-13)
+## [v1.10.1](https://github.com/somaz94/compress-decompress/compare/v1.10.0...v1.10.1) (2026-05-28)
+
+### Code Refactoring
+
+- extract UI helpers, logger proxy, sha256 util, unify workspace remap ([84bf828](https://github.com/somaz94/compress-decompress/commit/84bf8283bcc00c2aa19dc8ed885e106b08353d1a))
 
 ### Builds
 
 - **deps:** bump softprops/action-gh-release from 2 to 3 ([72aa1f3](https://github.com/somaz94/compress-decompress/commit/72aa1f3f49501c038cafe0e4734270813c0f230e))
 - **deps:** bump dependabot/fetch-metadata from 2 to 3 ([dad52ab](https://github.com/somaz94/compress-decompress/commit/dad52ab65ccaf02e6f76e21a9121981b2f120086))
 - **deps:** bump actions/github-script from 8 to 9 ([d2e1cce](https://github.com/somaz94/compress-decompress/commit/d2e1ccefc27d60a6b0a8d4e3089c9789e53cca7a))
+
+### Continuous Integration
+
+- add concurrency guards to recurring workflows ([b177cde](https://github.com/somaz94/compress-decompress/commit/b177cde35352d5f79ada4ff2e0dcd80be2b17242))
+
+### Contributors
+
+- somaz
 
 <br/>
 
