@@ -60,12 +60,12 @@ class Decompressor(BaseProcessor):
             for item in os.listdir(self.dest):
                 item_path = os.path.join(self.dest, item)
                 if os.path.isfile(item_path):
-                    print(f"  \u2022 {item}: {FileUtils.get_size(item_path)}")
+                    UI.print_kv(item, FileUtils.get_size(item_path))
                 elif os.path.isdir(item_path):
-                    print(f"  \u2022 {item}/ (directory)")
+                    UI.print_bullet(f"{item}/ (directory)")
         except OSError as e:
             if self.verbose:
-                logger.logger.error(f"Failed to list contents: {str(e)}")
+                logger.error(f"Failed to list contents: {str(e)}")
             UI.print_error(f"Failed to list contents: {str(e)}")
 
     def decompress(self) -> ProcessResult:
@@ -81,9 +81,9 @@ class Decompressor(BaseProcessor):
             self.source = FileUtils.adjust_path(self.source)
 
             UI.print_section("Configuration")
-            print(f"  \u2022 Source: {self.source}")
-            print(f"  \u2022 Format: {self.format}")
-            print(f"  \u2022 Destination: {self.dest or 'current directory'}")
+            UI.print_kv("Source", self.source)
+            UI.print_kv("Format", self.format)
+            UI.print_kv("Destination", self.dest or "current directory")
 
             self.prepare_destination()
 
@@ -93,8 +93,8 @@ class Decompressor(BaseProcessor):
             if result.success:
                 duration = (datetime.now() - start_time).total_seconds()
                 UI.print_section("Decompression Results")
-                print(f"  \u2022 Original Archive Size: {FileUtils.get_size(source_size)}")
-                print(f"  \u2022 Duration: {duration:.2f} seconds")
+                UI.print_kv("Original Archive Size", FileUtils.get_size(source_size))
+                UI.print_kv("Duration", f"{duration:.2f} seconds")
                 self.list_contents()
 
             return result

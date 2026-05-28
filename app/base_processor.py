@@ -28,7 +28,7 @@ class BaseProcessor:
             error_msg = f"{error_prefix} '{path}' does not exist"
             if self.fail_on_error:
                 raise ValidationError(error_msg)
-            logger.logger.warning(error_msg)
+            logger.warning(error_msg)
             return False
         if os.path.islink(path):
             real_path = os.path.realpath(path)
@@ -36,7 +36,7 @@ class BaseProcessor:
                 error_msg = f"{error_prefix} '{path}' is a broken symbolic link (target: '{real_path}' does not exist)"
                 if self.fail_on_error:
                     raise ValidationError(error_msg)
-                logger.logger.warning(error_msg)
+                logger.warning(error_msg)
                 return False
         return True
 
@@ -48,7 +48,7 @@ class BaseProcessor:
         error_msg = f"{context} failed: {str(error)}"
         if self.fail_on_error:
             raise CompressError(error_msg) from error
-        logger.logger.warning(f"{context} warning: {str(error)}")
+        logger.warning(f"{context} warning: {str(error)}")
         return ProcessResult(False, str(error))
 
     def parse_exclude_patterns(self) -> list[str]:

@@ -5,6 +5,7 @@ import time
 from functools import wraps
 from app_logger import logger
 from exceptions import CommandError
+from ui import GEAR_ICON
 
 DEFAULT_TIMEOUT = 3600  # 1 hour
 
@@ -29,7 +30,7 @@ def retry_on_failure(max_retries: int = 3, delay: int = 1):
                 except Exception as e:
                     if attempt == max_retries - 1:
                         raise
-                    logger.logger.warning(f"Attempt {attempt + 1}/{max_retries} failed: {str(e)}")
+                    logger.warning(f"Attempt {attempt + 1}/{max_retries} failed: {str(e)}")
                     time.sleep(delay * (attempt + 1))
         return wrapper
     return decorator
@@ -42,7 +43,7 @@ class CommandExecutor:
     @retry_on_failure()
     def run(command: str, verbose: bool = False, fail_on_error: bool = True,
             timeout: int = DEFAULT_TIMEOUT) -> ProcessResult:
-        print(f"\u2699\ufe0f  Executing: {command}")
+        print(f"{GEAR_ICON}  Executing: {command}")
         try:
             result = subprocess.run(
                 command,
@@ -53,9 +54,9 @@ class CommandExecutor:
                 timeout=timeout
             )
             if result.stdout and verbose:
-                logger.logger.debug(f"Command output:\n{result.stdout.strip()}")
+                logger.debug(f"Command output:\n{result.stdout.strip()}")
             if result.stderr:
-                logger.logger.warning(f"Command stderr:\n{result.stderr.strip()}")
+                logger.warning(f"Command stderr:\n{result.stderr.strip()}")
             return ProcessResult(True, "Command executed successfully")
         except subprocess.TimeoutExpired as e:
             error_msg = f"Command timed out after {timeout}s: {command}"

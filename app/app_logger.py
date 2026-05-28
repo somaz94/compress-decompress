@@ -22,5 +22,20 @@ class Logger:
     def set_verbose(self, verbose: bool):
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
+    def debug(self, msg, *args, **kwargs):
+        return self.logger.debug(msg, *args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        return self.logger.info(msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        return self.logger.warning(msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        return self.logger.error(msg, *args, **kwargs)
+
+    def exception(self, msg, *args, **kwargs):
+        return self.logger.exception(msg, *args, **kwargs)
+
 
 logger = Logger()

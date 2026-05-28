@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-import hashlib
 import os
 import shlex
 import shutil
@@ -18,7 +17,27 @@ from exceptions import ValidationError, CompressError, CommandError
 if TYPE_CHECKING:
     from config import AppConfig
 
-_CHECKSUM_BUFFER_SIZE = 8192
+_RUNNER_WORK_PREFIX = "/home/runner/work/"
+_DEFAULT_CONTAINER_WORKSPACE = "/github/workspace"
+
+
+def _remap_runner_path(source: str) -> str:
+    """
+    Step 1 of the two-step GitHub Actions workspace remap.
+
+    If the input is a host-side runner path (mounted from the GitHub-hosted
+    runner into the action container), rewrite it to the in-container
+    workspace path. Idempotent — returns the input unchanged when it is
+    not a host-side path or when GITHUB_WORKSPACE is unset.
+
+    Step 2 (Compressor._resolve_source_path) maps an absolute path equal to
+    the workspace back to the current working directory.
+    """
+    if source.startswith(_RUNNER_WORK_PREFIX):
+        workspace = os.getenv("GITHUB_WORKSPACE")
+        if workspace:
+            return workspace
+    return source
 
 
 class Compressor(BaseProcessor):
@@ -46,18 +65,13 @@ class Compressor(BaseProcessor):
 
     def validate(self) -> bool:
         """Validate that source path exists or glob pattern matches files"""
-        self.source = self.source.strip()
-
-        # Convert GitHub Actions runner path to Docker container path
-        github_workspace = os.getenv('GITHUB_WORKSPACE')
-        if github_workspace and self.source.startswith('/home/runner/work/'):
-            self.source = github_workspace
+        self.source = _remap_runner_path(self.source.strip())
 
         # Check if source is a glob pattern
         if FileUtils.is_glob_pattern(self.source):
             self.is_glob_pattern = True
             UI.print_section("Glob Pattern Detected")
-            print(f"  \u2022 Pattern: {self.source}")
+            UI.print_kv("Pattern", self.source)
 
             self.matched_files = FileUtils.find_files_by_pattern(self.source)
 
@@ -65,10 +79,10 @@ class Compressor(BaseProcessor):
                 error_msg = f"No files matched the pattern: {self.source}"
                 if self.fail_on_error:
                     raise ValidationError(error_msg)
-                logger.logger.warning(error_msg)
+                logger.warning(error_msg)
                 return False
 
-            print(f"  \u2022 Matched {len(self.matched_files)} file(s)")
+            UI.print_bullet(f"Matched {len(self.matched_files)} file(s)")
             if self.verbose:
                 for i, file_path in enumerate(self.matched_files[:10], 1):
                     print(f"    {i}. {file_path}")
@@ -99,10 +113,14 @@ class Compressor(BaseProcessor):
         return os.path.join(output_dir, f"{base_name}{extension}")
 
     def _resolve_source_path(self) -> str:
-        """Resolve source path, handling GitHub Actions workspace mapping."""
+        """
+        Step 2 of the two-step workspace remap: when the absolute source path
+        equals the container workspace, use cwd as the operational source.
+        See module-level `_remap_runner_path` for step 1.
+        """
         source_path = os.path.abspath(self.source)
-        github_workspace = os.getenv('GITHUB_WORKSPACE', '/github/workspace')
-        if source_path == github_workspace:
+        workspace = os.getenv("GITHUB_WORKSPACE", _DEFAULT_CONTAINER_WORKSPACE)
+        if source_path == workspace:
             return os.getcwd()
         return source_path
 
@@ -209,7 +227,7 @@ class Compressor(BaseProcessor):
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
         """Generate special tar command for TGZ/TBZ2/TXZ formats without root"""
-        source_path = os.path.abspath(self.source)
+        source_path = self._resolve_source_path()
         temp_dir = os.path.join(os.path.dirname(source_path), f"temp_{base_name}_{self.format}")
 
         patterns = self.parse_exclude_patterns()
@@ -260,13 +278,13 @@ class Compressor(BaseProcessor):
     def _print_configuration(self, source_size: int) -> None:
         """Print compression configuration details"""
         UI.print_section("Configuration")
-        print(f"  \u2022 Source: {self.source}")
-        print(f"  \u2022 Format: {self.format}")
-        print(f"  \u2022 Include Root: {self.include_root}")
-        print(f"  \u2022 Source Size: {FileUtils.get_size(source_size)}")
-        print(f"  \u2022 Initial Directory: {os.getcwd()}")
+        UI.print_kv("Source", self.source)
+        UI.print_kv("Format", self.format)
+        UI.print_kv("Include Root", self.include_root)
+        UI.print_kv("Source Size", FileUtils.get_size(source_size))
+        UI.print_kv("Initial Directory", os.getcwd())
         if self.exclude:
-            print(f"  \u2022 Exclude Pattern: {self.exclude}")
+            UI.print_kv("Exclude Pattern", self.exclude)
 
     def _print_results(self, start_time: datetime, source_size: int) -> None:
         """Print compression results"""
@@ -277,10 +295,10 @@ class Compressor(BaseProcessor):
             ratio = (1 - (compressed_size / source_size)) * 100 if source_size > 0 else 0
 
             UI.print_section("Compression Results")
-            print(f"  \u2022 Original Size: {FileUtils.get_size(source_size)}")
-            print(f"  \u2022 Compressed Size: {FileUtils.get_size(compressed_size)}")
-            print(f"  \u2022 Compression Ratio: {ratio:.1f}%")
-            print(f"  \u2022 Duration: {duration:.2f} seconds")
+            UI.print_kv("Original Size", FileUtils.get_size(source_size))
+            UI.print_kv("Compressed Size", FileUtils.get_size(compressed_size))
+            UI.print_kv("Compression Ratio", f"{ratio:.1f}%")
+            UI.print_kv("Duration", f"{duration:.2f} seconds")
 
     def _compress_glob_pattern(self) -> ProcessResult:
         """Compress files matched by glob pattern"""
@@ -291,11 +309,11 @@ class Compressor(BaseProcessor):
         self.temp_dir = os.path.join(temp_base, f"compress_glob_{os.getpid()}")
 
         UI.print_section("Preparing Files")
-        print(f"  \u2022 Creating temporary directory: {self.temp_dir}")
-        print(f"  \u2022 Copying {len(self.matched_files)} matched file(s)")
-        print(f"  \u2022 Preserve structure: {self.preserve_glob_structure}")
+        UI.print_kv("Creating temporary directory", self.temp_dir)
+        UI.print_bullet(f"Copying {len(self.matched_files)} matched file(s)")
+        UI.print_kv("Preserve structure", self.preserve_glob_structure)
         if self.strip_prefix:
-            print(f"  \u2022 Strip prefix: {self.strip_prefix}")
+            UI.print_kv("Strip prefix", self.strip_prefix)
 
         FileUtils.copy_files_to_temp_directory(
             self.matched_files,
@@ -323,11 +341,7 @@ class Compressor(BaseProcessor):
     def _compute_checksum(self) -> None:
         """Compute SHA256 checksum of the output archive"""
         if self.output_path and os.path.exists(self.output_path):
-            sha256 = hashlib.sha256()
-            with open(self.output_path, "rb") as f:
-                for chunk in iter(lambda: f.read(_CHECKSUM_BUFFER_SIZE), b""):
-                    sha256.update(chunk)
-            self.checksum = sha256.hexdigest()
+            self.checksum = FileUtils.sha256_of_file(self.output_path)
 
     def _cleanup_temp_directory(self) -> None:
         """Clean up temporary directory created for glob pattern compression"""
@@ -335,9 +349,9 @@ class Compressor(BaseProcessor):
             try:
                 shutil.rmtree(self.temp_dir)
                 if self.verbose:
-                    logger.logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
+                    logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
             except OSError as e:
-                logger.logger.warning(f"Failed to clean up temporary directory: {str(e)}")
+                logger.warning(f"Failed to clean up temporary directory: {str(e)}")
 
 
 def compress(config: AppConfig) -> tuple[str, str]:

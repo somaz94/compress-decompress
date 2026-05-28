@@ -37,24 +37,24 @@ class ActionRunner:
         UI.print_header("Compress/Decompress Action")
         UI.print_section("Environment Configuration")
 
-        print(f"  \u2022 Command: {self.config.command}")
-        print(f"  \u2022 Source: {self.config.source}")
-        print(f"  \u2022 Format: {self.config.format}")
-        print(f"  \u2022 Include Root: {self.config.include_root}")
-        print(f"  \u2022 Preserve Glob Structure: {self.config.preserve_glob_structure}")
+        UI.print_kv("Command", self.config.command)
+        UI.print_kv("Source", self.config.source)
+        UI.print_kv("Format", self.config.format)
+        UI.print_kv("Include Root", self.config.include_root)
+        UI.print_kv("Preserve Glob Structure", self.config.preserve_glob_structure)
         if self.config.strip_prefix:
-            print(f"  \u2022 Strip Prefix: {self.config.strip_prefix}")
-        print(f"  \u2022 Verbose: {self.config.verbose}")
-        print(f"  \u2022 Fail on Error: {self.config.fail_on_error}")
+            UI.print_kv("Strip Prefix", self.config.strip_prefix)
+        UI.print_kv("Verbose", self.config.verbose)
+        UI.print_kv("Fail on Error", self.config.fail_on_error)
 
         if self.config.dest:
-            print(f"  \u2022 Destination: {self.config.dest}")
+            UI.print_kv("Destination", self.config.dest)
         if self.config.destfilename:
-            print(f"  \u2022 Destination Filename: {self.config.destfilename}")
+            UI.print_kv("Destination Filename", self.config.destfilename)
         if self.config.exclude:
-            print(f"  \u2022 Exclude Pattern: {self.config.exclude}")
+            UI.print_kv("Exclude Pattern", self.config.exclude)
         if self.config.password:
-            print(f"  \u2022 Password: ***")
+            UI.print_kv("Password", "***")
 
     def execute_command(self) -> None:
         """Execute the appropriate compression or decompression command"""

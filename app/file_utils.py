@@ -1,13 +1,25 @@
 from __future__ import annotations
 
-import os
 import glob
+import hashlib
+import os
 import shutil
 from app_logger import logger
+
+_CHECKSUM_BUFFER_SIZE = 8192
 
 
 class FileUtils:
     """File and directory utility methods"""
+
+    @staticmethod
+    def sha256_of_file(path: str) -> str:
+        """Compute SHA-256 hex digest of a file, streamed in 8 KiB chunks."""
+        sha256 = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(_CHECKSUM_BUFFER_SIZE), b""):
+                sha256.update(chunk)
+        return sha256.hexdigest()
 
     @staticmethod
     def str_to_bool(value: str, default: bool = False) -> bool:
@@ -28,7 +40,7 @@ class FileUtils:
                 size /= 1024
             return f"{size:.2f} {units[-1]}"
         except (OSError, TypeError, ValueError) as e:
-            logger.logger.error(f"Error calculating size: {e}")
+            logger.error(f"Error calculating size: {e}")
             return "Unknown size"
 
     @staticmethod
