@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased (2026-06-22)
+
+### Builds
+
+- **deps:** bump actions/checkout from 6 to 7 ([aef5ef7](https://github.com/somaz94/compress-decompress/commit/aef5ef7db1dc363230c8d5ab8d67fd7bb2ba02ce))
+
+### Continuous Integration
+
+- add DCO check via shared reusable workflow ([6540490](https://github.com/somaz94/compress-decompress/commit/65404906c3b624791572bb3d2075905abf1bd20c))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.10.1](https://github.com/somaz94/compress-decompress/compare/v1.10.0...v1.10.1) (2026-05-28)
 
 ### Code Refactoring
