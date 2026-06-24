@@ -7,18 +7,25 @@
 ![Top Language](https://img.shields.io/github/languages/top/somaz94/compress-decompress?color=green&logo=python&logoColor=blue)
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Compress/Decompress-blue?logo=github)](https://github.com/marketplace/actions/compress-decompress)
 
+<br/>
+
 ## Description
 
-This GitHub Action provides the functionality to compress or decompress files
-using various compression formats including `zip`, `tar`, `tgz`, and `tbz2`. It
-is designed to be easy to use within GitHub workflows for handling file
-compression and decompression tasks efficiently.
+A single GitHub Action to **compress and decompress** files in your CI/CD
+workflow — with **password-protected zip encryption**, **SHA256 checksums**, and
+**five archive formats** (`zip`, `tar`, `tgz`, `tbz2`, `txz`) in one step. Use it
+to package build artifacts, encrypt release bundles, or unpack downloaded
+archives without hand-writing `tar`/`zip` shell commands. Glob patterns,
+tunable compression levels, exclude filters, and path stripping are all built in.
 
 **Key Features:**
+- **Five Archive Formats** - `zip`, `tar`, `tgz`, `tbz2`, and `txz` from one action
+- **Password-Protected Zip** - Encrypt and decrypt `zip` archives with a secret (great for secure release bundles)
+- **SHA256 Checksum Output** - Emit a verifiable `checksum` for every compressed archive
+- **Compression Level Control** - Tune from `0` (store only) to `9` (maximum) for size vs. speed
 - **Glob Pattern Support** - Match multiple files with patterns like `**/*.doc`
 - **Symbolic Link Support** - Automatically follows symlinks (Bazel, Buck, and build tool integration)
 - **Path Stripping** - Remove path prefixes while preserving directory structure
-- **Multiple Formats** - Support for zip, tar, tgz, and tbz2
 - **Flexible Options** - Custom destinations, exclude patterns, and root control
 
 <br/>
@@ -32,20 +39,23 @@ compression and decompression tasks efficiently.
 | `dest`        | The destination directory for the output. If not provided, it defaults to the current working directory. | No       | -       |
 | `destfilename` | The destination filename for the output (extension is appended depending on the format). If not provided, it defaults to the current working directory's name. | No       | -       |
 | `exclude` | Filename (or pattern) to exclude from compression process. | No       | -       |
-| `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, and `tbz2`.                            | Yes      | -       |
+| `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, `tbz2`, and `txz`.                     | Yes      | -       |
 | `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | yes     |
 | `preserveGlobStructure` | When using glob patterns, preserve the directory structure in the archive. If false, all matched files are flattened to the root level. | No       | false   |
 | `stripPrefix` | Remove this prefix from file paths when preserving directory structure. Works only with glob patterns and `preserveGlobStructure: true`. Example: `'src/'` changes `src/app/main.py` to `app/main.py` in the archive. | No       | ""      |
 | `fail_on_error` | Whether to fail the action if compression/decompression fails.                                                 | No       | true    |
+| `compression_level` | Compression level from `0` (store only) to `9` (maximum). Applies to `zip`, `tgz`, `tbz2`, and `txz`.     | No       | -       |
+| `password`    | Password for `zip` encryption/decryption. Pass it via a secret. Only applies to the `zip` format.                | No       | ""      |
 | `verbose`     | Enable verbose logging for debugging purposes.                                                                   | No       | false   |
 
 <br/>
 
 ## Outputs
 
-| Output      | Description                                      |
-| ----------- | ------------------------------------------------ |
-| `file_path` | The path to the compressed or decompressed file. |
+| Output      | Description                                                          |
+| ----------- | ------------------------------------------------------------------- |
+| `file_path` | The path to the compressed or decompressed file.                    |
+| `checksum`  | SHA256 checksum of the compressed archive (compress operation only). |
 
 <br/>
 
@@ -311,6 +321,8 @@ Thanks to all contributors:
 </a>
 
 ---
+
+<br/>
 
 ## Star History
 <picture>

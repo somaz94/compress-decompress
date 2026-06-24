@@ -1,7 +1,7 @@
 name: "Compress/Decompress"
 description:
-  "GitHub Action to compress or decompress files using various formats like zip,
-  tar, tgz, tbz2, and txz."
+  "Compress and decompress files in CI/CD: password-protected zip, SHA256 checksum,
+  and 5 archive formats (zip, tar, tgz, tbz2, txz)."
 author: "somaz94"
 inputs:
   command:
