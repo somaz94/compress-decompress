@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased (2026-06-22)
+## [v1.10.2](https://github.com/somaz94/compress-decompress/compare/v1.10.1...v1.10.2) (2026-06-24)
+
+### Documentation
+
+- sync README with action.yml and tune marketplace discovery copy ([73a9d35](https://github.com/somaz94/compress-decompress/commit/73a9d35033ed0408b96f09aa7e99d8fc8837f45d))
 
 ### Builds
 
