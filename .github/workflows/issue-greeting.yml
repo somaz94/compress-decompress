@@ -4,26 +4,9 @@ on:
   issues:
     types: [opened]
 
-# One greeting per issue. cancel-in-progress: true is safe — if the user
-# closes+reopens quickly we just want the latest run to win.
-concurrency:
-  group: issue-greeting-${{ github.event.issue.number }}
-  cancel-in-progress: true
+permissions:
+  issues: write
 
 jobs:
   greeting:
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    
-    steps:
-      - name: Add greeting comment
-        uses: actions/github-script@v9
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '👋 Hello! Thank you for creating this issue.\n\nWe will review it and get back to you soon.'
-            })
+    uses: somaz94/.github/.github/workflows/issue-greeting-reusable.yml@main
