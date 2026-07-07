@@ -10,43 +10,7 @@ on:
 permissions:
   contents: write
 
-# Serialize runs — CONTRIBUTORS.md is rewritten in full each time, so two
-# parallel runs would race and clobber each other. cancel-in-progress: true
-# is safe since the latest run always produces the up-to-date file.
-concurrency:
-  group: contributors
-  cancel-in-progress: true
-
 jobs:
   update_contributors:
-    name: Update Contributors
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-          fetch-depth: 0
-
-      - name: Pull latest changes
-        run: git pull origin main
-
-      - name: Generate Contributors
-        uses: somaz94/contributors-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          output_file: CONTRIBUTORS.md
-          format: table
-          columns: 6
-          exclude: 'github-actions[bot],actions-user'
-
-      - name: Commit changes
-        uses: somaz94/go-git-commit-action@v1
-        with:
-          user_email: actions@github.com
-          user_name: GitHub Actions
-          commit_message: "docs: update CONTRIBUTORS.md"
-          branch: main
-          file_pattern: "CONTRIBUTORS.md"
-          github_token: ${{ secrets.PAT_TOKEN }}
+    uses: somaz94/.github/.github/workflows/contributors-reusable.yml@main
+    secrets: inherit
