@@ -1,0 +1,13 @@
+name: ok-to-test
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  ok-to-test:
+    uses: somaz94/.github/.github/workflows/ok-to-test-reusable.yml@main
