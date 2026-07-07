@@ -1,0 +1,12 @@
+name: PR Welcome
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  welcome:
+    uses: somaz94/.github/.github/workflows/pr-welcome-reusable.yml@main
