@@ -1,0 +1,14 @@
+name: Lock Threads
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  lock:
+    uses: somaz94/.github/.github/workflows/lock-threads-reusable.yml@main
