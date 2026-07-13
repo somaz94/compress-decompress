@@ -1,9 +1,0 @@
-name: DCO
-
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-
-jobs:
-  dco:
-    uses: somaz94/.github/.github/workflows/dco-reusable.yml@main
