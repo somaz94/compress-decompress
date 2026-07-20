@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased (2026-07-20)
+
+### Builds
+
+- **deps:** bump actions/setup-python from 6 to 7 ([01334ed](https://github.com/somaz94/compress-decompress/commit/01334ed6379e80648bafd491a2a37dc51ffc4d75))
+
+### Continuous Integration
+
+- remove DCO workflow ([1e3bec6](https://github.com/somaz94/compress-decompress/commit/1e3bec6ee933b5d51873041a4dae4e9a146e5634))
+- adopt semantic-pr, labels, lock-threads, PR size, and auto-assign reusables ([7d79e95](https://github.com/somaz94/compress-decompress/commit/7d79e950f058c430d2dbe4259814c17ef940be3a))
+- use reusable stale-issues workflow ([cff9a7d](https://github.com/somaz94/compress-decompress/commit/cff9a7d31a45c7e480f972bf71e5bd672ae02fe8))
+- use reusable issue-greeting workflow ([693e4bd](https://github.com/somaz94/compress-decompress/commit/693e4bd0e16dd144352dc75f0ba15988ef3ec174))
+- use reusable dependabot-auto-merge workflow ([cccdbf1](https://github.com/somaz94/compress-decompress/commit/cccdbf13087f52646eab913bce456535ec1ab47d))
+- use reusable contributors workflow ([49beb8d](https://github.com/somaz94/compress-decompress/commit/49beb8de9fdc2d40672450fdfe3e2cd752b7868a))
+- add ok-to-test workflow stub ([9c60503](https://github.com/somaz94/compress-decompress/commit/9c6050396966c59fe8a2d85c7611536d98e94b81))
+- add PR welcome workflow stub ([739ef0f](https://github.com/somaz94/compress-decompress/commit/739ef0f4c1f1a5ed3635d784839f314046af6bb1))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.10.2](https://github.com/somaz94/compress-decompress/compare/v1.10.1...v1.10.2) (2026-06-24)
 
 ### Documentation
