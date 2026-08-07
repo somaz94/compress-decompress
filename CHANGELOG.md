@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased (2026-08-07)
+## [v1.11.0](https://github.com/somaz94/compress-decompress/compare/v1.10.2...v1.11.0) (2026-08-07)
 
 ### Performance Improvements
 
