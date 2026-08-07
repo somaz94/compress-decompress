@@ -58,7 +58,21 @@ outputs:
     description: "SHA256 checksum of the compressed archive (compress only)."
 runs:
   using: "docker"
-  image: "Dockerfile"
+  # A prebuilt image rather than `Dockerfile`. With `Dockerfile`, every consumer
+  # workflow builds this image before the action can start — measured at 31s per
+  # run. Pulling costs a few seconds.
+  #
+  # The Dockerfile is still the source this image is built from, and ci.yml
+  # keeps building it on every pull request, so the build path cannot rot.
+  #
+  # Two things this trades away, both deliberate:
+  #   1. The tag must not be pushed before the image exists. release.yml
+  #      publishes the image in a job the release job depends on, and the very
+  #      first version is seeded by hand via its workflow_dispatch.
+  #   2. `Dockerfile` built for whatever architecture the runner was; a registry
+  #      reference resolves only to what was pushed. The image is published
+  #      linux/amd64 + linux/arm64 so arm64 runners keep working.
+  image: docker://ghcr.io/somaz94/compress-decompress:v1.11.0
   env:
     COMMAND: ${{ inputs.command }}
     SOURCE: ${{ inputs.source }}
