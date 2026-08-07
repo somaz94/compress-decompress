@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased (2026-07-20)
+## Unreleased (2026-08-07)
+
+### Performance Improvements
+
+- ship a prebuilt multi-arch image instead of building per run ([6ec5caa](https://github.com/somaz94/compress-decompress/commit/6ec5caa5a4ef2a072bb717493d687a6dcf5bb4e1))
 
 ### Builds
 
