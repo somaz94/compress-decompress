@@ -36,7 +36,9 @@ def list_entries(archive_path: str, archive_format: str) -> list[str] | None:
                 return zf.namelist()
         # Transparent mode auto-detects gzip/bzip2/xz, and zstd on Python 3.14+.
         with tarfile.open(archive_path, "r") as tf:
-            return tf.getnames()
+            # tar stores a directory member without a trailing slash, zip with
+            # one. Normalize to the zip form so `count_files` needs one rule.
+            return [f"{m.name}/" if m.isdir() else m.name for m in tf.getmembers()]
     except (OSError, ValueError, tarfile.TarError, zipfile.BadZipFile) as e:
         logger.debug(f"Could not inspect archive '{archive_path}': {e}")
         return None

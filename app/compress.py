@@ -86,6 +86,7 @@ class Compressor(BaseProcessor):
         self.output_path = ""
         self.checksum = ""
         self.stats = OperationStats(command="compress", format=self.format)
+        self._start_time = datetime.now()
 
     def validate(self) -> bool:
         """Validate that source path exists or glob pattern matches files"""
@@ -269,17 +270,23 @@ class Compressor(BaseProcessor):
 
     def compress(self) -> ProcessResult:
         """Execute the compression process"""
+        # Seeded so the `finally` below always has a result to record, including
+        # on the path where `handle_error` re-raises.
+        result = ProcessResult(False, "Compression did not run")
         try:
+            self._start_time = datetime.now()
             UI.print_header("Compression Process Started")
             if not self.validate():
-                return ProcessResult(False, "Validation failed")
+                return result
 
             if self.is_glob_pattern:
-                return self._compress_glob_pattern()
+                result = self._compress_glob_pattern()
+                return result
 
             source_size = FileUtils.get_path_size(self.source)
+            self.stats.original_size = source_size
             self.stats.file_count = FileUtils.count_files(self.source)
-            start_time = datetime.now()
+            start_time = self._start_time
             self.source = FileUtils.adjust_path(self.source)
 
             self._print_configuration(source_size)
@@ -292,12 +299,12 @@ class Compressor(BaseProcessor):
                 self._print_results(start_time, source_size)
                 self._compute_checksum()
 
-            self._record_stats(result.success, start_time, source_size)
             return result
 
         except (OSError, ValueError, ValidationError, CompressError, CommandError) as e:
             return self.handle_error(e, "Compression")
         finally:
+            self._record_stats(result.success)
             self._cleanup_temp_directory()
 
     def _print_configuration(self, source_size: int) -> None:
@@ -327,8 +334,9 @@ class Compressor(BaseProcessor):
 
     def _compress_glob_pattern(self) -> ProcessResult:
         """Compress files matched by glob pattern"""
-        start_time = datetime.now()
+        start_time = self._start_time
         source_size = sum(os.path.getsize(f) for f in self.matched_files if os.path.exists(f))
+        self.stats.original_size = source_size
         self.stats.file_count = len(self.matched_files)
 
         temp_base = tempfile.gettempdir()
@@ -362,14 +370,17 @@ class Compressor(BaseProcessor):
             self._compute_checksum()
             UI.print_success(f"Successfully compressed {len(self.matched_files)} file(s) matching pattern: {original_source}")
 
-        self._record_stats(result.success, start_time, source_size)
         return result
 
-    def _record_stats(self, success: bool, start_time: datetime, source_size: int) -> None:
-        """Collect the metrics exposed as action outputs and the job summary"""
+    def _record_stats(self, success: bool) -> None:
+        """
+        Collect the metrics exposed as action outputs and the job summary.
+
+        Runs from a `finally`, so a run that failed validation or raised still
+        reports the size it read and the time it spent rather than zeroes.
+        """
         self.stats.success = success
-        self.stats.duration = (datetime.now() - start_time).total_seconds()
-        self.stats.original_size = source_size
+        self.stats.duration = (datetime.now() - self._start_time).total_seconds()
         if success:
             self.stats.output_path = self.output_path
             self.stats.checksum = self.checksum

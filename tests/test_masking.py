@@ -31,6 +31,10 @@ class TestMasking:
         register_secret("a")
         assert mask("a banana") == "a banana"
 
+    def test_short_secret_refusal_is_logged(self, caplog):
+        register_secret("ab")
+        assert "cannot be masked" in caplog.text
+
     def test_clear_secrets(self):
         register_secret("topsecret")
         clear_secrets()

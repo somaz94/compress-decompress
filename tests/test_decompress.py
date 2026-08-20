@@ -402,3 +402,51 @@ class TestDecompressStats:
         ))
         assert not result
         assert result.output_path == ""
+
+
+class TestFileCountAcrossFormats:
+    """file_count must not depend on the archive format."""
+
+    @pytest.mark.parametrize("fmt", ["zip", "tar", "tgz", "tbz2", "txz"])
+    def test_same_tree_same_count(self, make_config, tmp_source, tmp_path, fmt,
+                                  monkeypatch):
+        from compress import compress
+        # macOS bsdtar stores extended attributes as extra `._name` members,
+        # which the Linux tar in the action image never emits. Suppress them so
+        # this asserts the tar/zip parity it is about, on either platform.
+        monkeypatch.setenv("COPYFILE_DISABLE", "1")
+        packed = tmp_path / f"packed-{fmt}"
+        packed.mkdir()
+        output_path = compress(make_config(
+            source=str(tmp_source), format=fmt, include_root="true", dest=str(packed),
+        )).output_path
+        assert output_path
+
+        extract_dest = tmp_path / f"out-{fmt}"
+        extract_dest.mkdir()
+        result = decompress(make_config(
+            command="decompress", source=output_path, format=fmt, dest=str(extract_dest),
+        ))
+        assert result
+        assert result.file_count == 3  # tmp_source holds three files, two directories
+
+
+class TestStatsOnRejectedArchive:
+    def test_checksum_mismatch_still_reports_what_it_read(self, make_config,
+                                                          tmp_archive_zip, tmp_path):
+        dest = tmp_path / "extracted"
+        result = decompress(make_config(
+            command="decompress", source=tmp_archive_zip, format="zip",
+            dest=str(dest), verify_checksum="b" * 64, fail_on_error=False,
+        ))
+        assert not result
+        assert result.original_size > 0   # the archive was read, not zero
+        assert result.output_path == ""
+
+    def test_missing_source_reports_zero_size(self, make_config, tmp_path):
+        result = decompress(make_config(
+            command="decompress", source=str(tmp_path / "absent.zip"),
+            format="zip", dest=str(tmp_path), fail_on_error=False,
+        ))
+        assert not result
+        assert result.original_size == 0

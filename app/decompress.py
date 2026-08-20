@@ -33,6 +33,7 @@ class Decompressor(BaseProcessor):
         self.verify_checksum = config.verify_checksum
         self.path_traversal_check = config.path_traversal_check
         self.stats = OperationStats(command="decompress", format=self.format)
+        self._start_time = datetime.now()
 
     def validate(self) -> bool:
         """Validate source archive file exists"""
@@ -126,29 +127,37 @@ class Decompressor(BaseProcessor):
                 logger.error(f"Failed to list contents: {str(e)}")
             UI.print_error(f"Failed to list contents: {str(e)}")
 
-    def _record_stats(self, success: bool, start_time: datetime, source_size: int,
-                      entries: list[str] | None) -> None:
-        """Collect the metrics exposed as action outputs and the job summary"""
+    def _record_stats(self, success: bool) -> None:
+        """
+        Collect the metrics exposed as action outputs and the job summary.
+
+        Runs from a `finally`, so a rejected archive still reports the size it
+        read and the time it spent rather than zeroes.
+        """
         self.stats.success = success
-        self.stats.duration = (datetime.now() - start_time).total_seconds()
-        self.stats.original_size = source_size
-        self.stats.file_count = archive.count_files(entries)
+        self.stats.duration = (datetime.now() - self._start_time).total_seconds()
         if success:
             self.stats.output_path = self.dest
 
     def decompress(self) -> ProcessResult:
         """Execute the decompression process"""
+        # Seeded so the `finally` below always has a result to record, including
+        # on the path where `handle_error` re-raises.
+        result = ProcessResult(False, "Decompression did not run")
         try:
+            self._start_time = datetime.now()
             UI.print_header("Decompression Process Started")
             if not self.validate():
-                return ProcessResult(False, "Validation failed")
+                return result
 
             source_size = os.path.getsize(self.source)
-            start_time = datetime.now()
+            self.stats.original_size = source_size
+            start_time = self._start_time
 
             self.source = FileUtils.adjust_path(self.source)
             self.verify_integrity()
             entries = self.inspect_entries()
+            self.stats.file_count = archive.count_files(entries)
 
             UI.print_section("Configuration")
             UI.print_kv("Source", self.source)
@@ -167,11 +176,12 @@ class Decompressor(BaseProcessor):
                 UI.print_kv("Duration", f"{duration:.2f} seconds")
                 self.list_contents()
 
-            self._record_stats(result.success, start_time, source_size, entries)
             return result
 
         except (OSError, ValueError, ValidationError, CompressError, CommandError) as e:
             return self.handle_error(e, "Decompression")
+        finally:
+            self._record_stats(result.success)
 
 
 def decompress(config: AppConfig) -> OperationStats:

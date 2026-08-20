@@ -33,6 +33,20 @@ class TestRender:
         rendered = summary.render(_compress_stats(success=False))
         assert rendered.startswith("### ❌ Compress")
 
+    def test_failed_compress_omits_the_empty_archive_row(self):
+        rendered = summary.render(_compress_stats(success=False, output_path=""))
+        assert "Archive" not in rendered
+        assert "``" not in rendered
+
+    def test_failed_decompress_omits_the_empty_destination_row(self):
+        stats = OperationStats(
+            command="decompress", format="zip", success=False,
+            output_path="", original_size=2048, duration=0.1,
+        )
+        rendered = summary.render(stats)
+        assert "Extracted to" not in rendered
+        assert "``" not in rendered
+
     def test_decompress_summary(self):
         stats = OperationStats(
             command="decompress", format="tgz", success=True,

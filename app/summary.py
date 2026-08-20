@@ -21,8 +21,10 @@ _SUMMARY_ENV = "GITHUB_STEP_SUMMARY"
 
 
 def _rows_for_compress(stats: OperationStats) -> list[tuple[str, str]]:
-    rows = [
-        ("Archive", f"`{stats.output_path}`"),
+    rows = []
+    if stats.output_path:
+        rows.append(("Archive", f"`{stats.output_path}`"))
+    rows += [
         ("Format", f"`{stats.format}`"),
         ("Original size", FileUtils.get_size(stats.original_size)),
         ("Compressed size", FileUtils.get_size(stats.compressed_size)),
@@ -40,8 +42,9 @@ def _rows_for_decompress(stats: OperationStats) -> list[tuple[str, str]]:
     rows = [
         ("Archive size", FileUtils.get_size(stats.original_size)),
         ("Format", f"`{stats.format}`"),
-        ("Extracted to", f"`{stats.output_path}`"),
     ]
+    if stats.output_path:
+        rows.append(("Extracted to", f"`{stats.output_path}`"))
     if stats.file_count:
         rows.append(("Files", str(stats.file_count)))
     rows.append(("Duration", f"{stats.duration:.2f}s"))

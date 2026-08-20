@@ -711,3 +711,30 @@ class TestCompressStats:
         )
         result = compress(config)
         assert result.file_count == 2  # file1.txt and file2.txt, not the nested one
+
+
+class TestStatsOnFailurePaths:
+    def test_validation_failure_still_records_a_duration(self, make_config):
+        result = compress(make_config(
+            source="/nonexistent", format="zip", fail_on_error=False,
+        ))
+        assert not result
+        assert result.duration >= 0
+        assert result.original_size == 0
+
+    def test_command_failure_reports_the_source_size(self, make_config, tmp_source,
+                                                     tmp_path):
+        """A failing command must not zero out what was already measured."""
+        from unittest.mock import patch
+        from executor import ProcessResult
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source), format="zip", dest=str(dest), fail_on_error=False,
+        )
+        with patch("compress.CommandExecutor.run",
+                   return_value=ProcessResult(False, "boom")):
+            result = compress(config)
+        assert not result
+        assert result.original_size > 0
+        assert result.file_count == 3

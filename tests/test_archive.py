@@ -35,6 +35,47 @@ class TestCountFiles:
         assert archive.count_files([]) == 0
 
 
+class TestDirectoryMembersAcrossFormats:
+    """tar reports a directory without a trailing slash, zip with one."""
+
+    def _build(self, tmp_path):
+        root = tmp_path / "d" / "sub"
+        root.mkdir(parents=True)
+        (tmp_path / "d" / "b.txt").write_text("x")
+        (root / "a.txt").write_text("y")
+        return tmp_path / "d"
+
+    def test_tar_directories_are_not_counted_as_files(self, tmp_path):
+        src = self._build(tmp_path)
+        tar_path = tmp_path / "t.tar"
+        with tarfile.open(tar_path, "w") as tf:
+            tf.add(src, arcname="d")
+        entries = archive.list_entries(str(tar_path), "tar")
+        assert archive.count_files(entries) == 2
+
+    def test_zip_and_tar_agree_on_the_same_tree(self, tmp_path):
+        src = self._build(tmp_path)
+        tar_path = tmp_path / "t.tar"
+        with tarfile.open(tar_path, "w") as tf:
+            tf.add(src, arcname="d")
+        zip_path = tmp_path / "t.zip"
+        with zipfile.ZipFile(zip_path, "w") as zf:
+            zf.writestr("d/sub/", "")
+            zf.write(src / "b.txt", "d/b.txt")
+            zf.write(src / "sub" / "a.txt", "d/sub/a.txt")
+        tar_count = archive.count_files(archive.list_entries(str(tar_path), "tar"))
+        zip_count = archive.count_files(archive.list_entries(str(zip_path), "zip"))
+        assert tar_count == zip_count == 2
+
+    def test_directory_members_still_pass_the_traversal_check(self, tmp_path):
+        src = self._build(tmp_path)
+        tar_path = tmp_path / "t.tar"
+        with tarfile.open(tar_path, "w") as tf:
+            tf.add(src, arcname="d")
+        entries = archive.list_entries(str(tar_path), "tar")
+        assert archive.find_unsafe_entries(entries) == ([], [])
+
+
 class TestPathSafety:
     def test_plain_entry_is_safe(self):
         assert archive.escapes_destination("dir/file.txt") is False
