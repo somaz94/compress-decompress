@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.12.1](https://github.com/somaz94/compress-decompress/compare/v1.12.0...v1.12.1) (2026-08-20)
+
+### Bug Fixes
+
+- report accurate file_count and metrics on failed runs ([f4e63ff](https://github.com/somaz94/compress-decompress/commit/f4e63ffef3c65d704d0a2500348f2a0775b7b796))
+
+### Code Refactoring
+
+- collapse the no-op builder stage and label the image ([2cfd3f1](https://github.com/somaz94/compress-decompress/commit/2cfd3f1513b59ac55e01271b7ecee99fedf115ca))
+
+### Documentation
+
+- correct the output table and fix stale references ([19abaaa](https://github.com/somaz94/compress-decompress/commit/19abaaa94a142a763695329b0c9bb5a2c6dc8267))
+
+### Continuous Integration
+
+- assert why the negative tests fail and cap job runtime ([176fc0b](https://github.com/somaz94/compress-decompress/commit/176fc0b4141e311d0512a4b2c1a3e34dad4e012c))
+- skip changelog generation on the image-seeding dispatch run ([959eb8b](https://github.com/somaz94/compress-decompress/commit/959eb8b6d77b5058687e858f8fbbefb76712f4e6))
+- skip the smoke test on the image-seeding dispatch run ([70e2861](https://github.com/somaz94/compress-decompress/commit/70e28610fe616f1db7ad2669f56da31bcb5e90da))
+
+### Chores
+
+- bump the action image to v1.12.1 ([5fe50ed](https://github.com/somaz94/compress-decompress/commit/5fe50ed1861676e1ea9c6cff48eff02d44a5471a))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.12.0](https://github.com/somaz94/compress-decompress/compare/v1.11.0...v1.12.0) (2026-08-20)
 
 ### Features
