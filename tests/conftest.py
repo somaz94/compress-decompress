@@ -56,6 +56,9 @@ def make_config():
         strip_prefix="",
         compression_level="",
         password="",
+        verify_checksum="",
+        path_traversal_check=True,
+        step_summary=True,
     ):
         return AppConfig(
             command=command,
@@ -71,6 +74,9 @@ def make_config():
             strip_prefix=strip_prefix,
             compression_level=compression_level,
             password=password,
+            verify_checksum=verify_checksum,
+            path_traversal_check=path_traversal_check,
+            step_summary=step_summary,
         )
 
     return _make

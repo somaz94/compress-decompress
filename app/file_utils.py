@@ -54,6 +54,16 @@ class FileUtils:
         return total
 
     @staticmethod
+    def count_files(path: str) -> int:
+        """Count files under a path: 1 for a regular file, 0 when missing."""
+        real_path = os.path.realpath(path)
+        if os.path.isfile(real_path):
+            return 1
+        if not os.path.isdir(real_path):
+            return 0
+        return sum(len(files) for _, _, files in os.walk(real_path, followlinks=False))
+
+    @staticmethod
     def get_path_size(path: str) -> int:
         real_path = os.path.realpath(path)
         if os.path.isdir(real_path):

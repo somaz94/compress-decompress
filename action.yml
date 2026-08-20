@@ -1,7 +1,7 @@
 name: "Compress/Decompress"
 description:
   "Compress and decompress files in CI/CD: password-protected zip, SHA256 checksum,
-  and 5 archive formats (zip, tar, tgz, tbz2, txz)."
+  job summary, and 6 archive formats (zip, tar, tgz, tbz2, txz, tzst)."
 author: "somaz94"
 inputs:
   command:
@@ -21,7 +21,7 @@ inputs:
     required: false
   format:
     description:
-      "Compression format to use. Supported formats: zip, tar, tgz, tbz2, txz."
+      "Compression format to use. Supported formats: zip, tar, tgz, tbz2, txz, tzst."
     required: true
   includeRoot:
     description: "Whether to include the root folder itself in the compressed file."
@@ -40,7 +40,7 @@ inputs:
     required: false
     default: "true"
   compression_level:
-    description: "Compression level (0-9). 0 is store only, 9 is maximum compression. Applies to zip, tgz, tbz2, and txz formats."
+    description: "Compression level (0-9). 0 is store only, 9 is maximum compression. Applies to zip, tgz, tbz2, txz, and tzst formats."
     required: false
     default: ""
   password:
@@ -51,11 +51,33 @@ inputs:
     description: "Enable verbose logging for debugging."
     required: false
     default: "false"
+  verify_checksum:
+    description: "Expected SHA256 of the archive. Decompression aborts before extracting anything when it does not match. Decompress only."
+    required: false
+    default: ""
+  path_traversal_check:
+    description: "Reject archives whose entries would extract outside the destination directory (zip slip). Decompress only."
+    required: false
+    default: "true"
+  step_summary:
+    description: "Write a result table to the workflow job summary ($GITHUB_STEP_SUMMARY)."
+    required: false
+    default: "true"
 outputs:
   file_path:
     description: "The path to the compressed or decompressed file."
   checksum:
     description: "SHA256 checksum of the compressed archive (compress only)."
+  original_size:
+    description: "Size in bytes of the source (compress) or of the archive (decompress)."
+  compressed_size:
+    description: "Size in bytes of the produced archive (compress only)."
+  compression_ratio:
+    description: "Percentage of the original size saved, e.g. \"75.0\" (compress only)."
+  file_count:
+    description: "Number of files compressed, or entries extracted."
+  duration:
+    description: "Seconds the operation took, e.g. \"1.42\"."
 runs:
   using: "docker"
   # A prebuilt image rather than `Dockerfile`. With `Dockerfile`, every consumer
@@ -87,6 +109,9 @@ runs:
     COMPRESSION_LEVEL: ${{ inputs.compression_level }}
     PASSWORD: ${{ inputs.password }}
     VERBOSE: ${{ inputs.verbose }}
+    VERIFY_CHECKSUM: ${{ inputs.verify_checksum }}
+    PATH_TRAVERSAL_CHECK: ${{ inputs.path_traversal_check }}
+    STEP_SUMMARY: ${{ inputs.step_summary }}
 branding:
   icon: "archive"
   color: "blue"

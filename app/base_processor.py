@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 from file_utils import FileUtils
-from ui import UI
 from app_logger import logger
 from exceptions import ValidationError, CompressError
 from executor import ProcessResult

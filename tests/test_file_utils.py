@@ -177,3 +177,14 @@ class TestCopyFilesToTempDirectory:
         # Should have file.txt and file_1.txt
         assert (dest / "file.txt").exists()
         assert (dest / "file_1.txt").exists()
+
+
+class TestCountFiles:
+    def test_counts_files_in_a_directory_tree(self, tmp_source):
+        assert FileUtils.count_files(str(tmp_source)) == 3
+
+    def test_single_file_counts_one(self, tmp_source):
+        assert FileUtils.count_files(str(tmp_source / "file1.txt")) == 1
+
+    def test_missing_path_counts_zero(self, tmp_path):
+        assert FileUtils.count_files(str(tmp_path / "absent")) == 0

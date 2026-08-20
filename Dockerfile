@@ -13,7 +13,7 @@ FROM python:3.14-slim
 # Install only necessary system utilities (avoid unnecessary dependencies)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    zip unzip tar gzip bzip2 xz-utils && \
+    zip unzip tar gzip bzip2 xz-utils zstd && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory

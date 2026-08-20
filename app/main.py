@@ -1,7 +1,9 @@
 import os
 import sys
+import summary
 from config import CompressionFormat, AppConfig
 from masking import register_secret
+from stats import OperationStats
 from ui import UI
 from app_logger import logger
 from exceptions import CompressError, ValidationError
@@ -56,22 +58,36 @@ class ActionRunner:
             UI.print_kv("Exclude Pattern", self.config.exclude)
         if self.config.password:
             UI.print_kv("Password", "***")
+        if self.config.verify_checksum:
+            UI.print_kv("Verify Checksum", self.config.verify_checksum)
+        if self.config.command == "decompress":
+            UI.print_kv("Path Traversal Check", self.config.path_traversal_check)
 
     def execute_command(self) -> None:
         """Execute the appropriate compression or decompression command"""
         if self.config.command == "compress":
-            output_path, checksum = compress(self.config)
-            if checksum:
-                self._set_output("checksum", checksum)
+            result = compress(self.config)
         elif self.config.command == "decompress":
-            output_path = decompress(self.config)
+            result = decompress(self.config)
         else:
             raise ValidationError(
                 f"Invalid command: {self.config.command}. "
                 f"Supported commands: compress, decompress"
             )
-        if output_path:
-            self._set_output("file_path", output_path)
+        self._publish_results(result)
+
+    def _publish_results(self, result: OperationStats) -> None:
+        """Expose the run as action outputs and as a job summary"""
+        if result.checksum:
+            self._set_output("checksum", result.checksum)
+        if result.output_path:
+            self._set_output("file_path", result.output_path)
+        self._set_output("original_size", str(result.original_size))
+        self._set_output("compressed_size", str(result.compressed_size))
+        self._set_output("compression_ratio", f"{result.compression_ratio:.1f}")
+        self._set_output("file_count", str(result.file_count))
+        self._set_output("duration", f"{result.duration:.2f}")
+        summary.write(result, self.config.step_summary)
 
     @staticmethod
     def _set_output(name: str, value: str) -> None:

@@ -501,7 +501,8 @@ class TestCompressionLevel:
             source=str(tmp_source), format="zip",
             dest=str(dest), compression_level="1",
         )
-        result, checksum = compress(config)
+        result = compress(config)
+        checksum = result.checksum
         assert result
         assert checksum  # SHA256 hash
 
@@ -514,7 +515,8 @@ class TestChecksum:
             source=str(tmp_source), format="zip",
             dest=str(dest),
         )
-        output_path, checksum = compress(config)
+        result = compress(config)
+        output_path, checksum = result.output_path, result.checksum
         assert output_path
         assert len(checksum) == 64  # SHA256 hex length
 
@@ -526,7 +528,8 @@ class TestChecksum:
             source=str(tmp_source), format="zip",
             dest=str(dest),
         )
-        output_path, checksum = compress(config)
+        result = compress(config)
+        output_path, checksum = result.output_path, result.checksum
         # Verify checksum manually
         sha256 = hashlib.sha256()
         with open(output_path, "rb") as f:
@@ -539,7 +542,8 @@ class TestChecksum:
             source="/nonexistent", format="zip",
             fail_on_error=False,
         )
-        output_path, checksum = compress(config)
+        result = compress(config)
+        output_path, checksum = result.output_path, result.checksum
         assert output_path == ""
         assert checksum == ""
 
@@ -575,7 +579,8 @@ class TestTxzFormat:
             source=str(tmp_source), format="txz",
             include_root="true", dest=str(dest),
         )
-        output_path, checksum = compress(config)
+        result = compress(config)
+        output_path, checksum = result.output_path, result.checksum
         assert output_path
         assert checksum
         archives = list(dest.glob("*.txz"))
@@ -588,7 +593,8 @@ class TestTxzFormat:
             source=str(tmp_source), format="txz",
             include_root="false", dest=str(dest),
         )
-        output_path, checksum = compress(config)
+        result = compress(config)
+        output_path, checksum = result.output_path, result.checksum
         assert output_path
         assert checksum
 
@@ -619,8 +625,89 @@ class TestPasswordEncryption:
             source=str(tmp_source), format="zip",
             dest=str(dest), password="testpass",
         )
-        output_path, checksum = compress(config)
+        result = compress(config)
+        output_path, checksum = result.output_path, result.checksum
         assert output_path
         assert checksum
         archives = list(dest.glob("*.zip"))
         assert len(archives) == 1
+
+
+class TestZstdFormat:
+    def test_tzst_uses_long_flag(self, make_config, tmp_source):
+        config = make_config(source=str(tmp_source), format="tzst", include_root="true")
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        cmd = c._get_tar_command("/out/test.tzst", "test")
+        assert "--zstd" in cmd
+        assert "-cf" in cmd
+
+    def test_tzst_without_root(self, make_config, tmp_source):
+        config = make_config(source=str(tmp_source), format="tzst", include_root="false")
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        cmd = c._get_tar_command("/out/test.tzst", "test")
+        assert "mkdir -p" in cmd
+        assert "--zstd" in cmd
+
+    def test_tzst_level_env(self, make_config, tmp_source):
+        config = make_config(
+            source=str(tmp_source), format="tzst", compression_level="9",
+        )
+        c = Compressor(config)
+        assert "ZSTD_CLEVEL=9" in c._get_tar_level_env()
+
+    def test_compress_tzst_integration(self, make_config, tmp_source, tmp_path):
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source), format="tzst",
+            include_root="true", dest=str(dest),
+        )
+        result = compress(config)
+        assert result
+        assert result.checksum
+        assert len(list(dest.glob("*.tzst"))) == 1
+
+    def test_compress_tzst_without_root_integration(self, make_config, tmp_source, tmp_path):
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source), format="tzst",
+            include_root="false", dest=str(dest),
+        )
+        result = compress(config)
+        assert result
+        assert result.output_path
+
+
+class TestCompressStats:
+    def test_stats_populated_on_success(self, make_config, tmp_source, tmp_path):
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(source=str(tmp_source), format="zip", dest=str(dest))
+        result = compress(config)
+        assert result.command == "compress"
+        assert result.format == "zip"
+        assert result.success is True
+        assert result.original_size > 0
+        assert result.compressed_size > 0
+        assert result.file_count == 3  # tmp_source holds three files
+        assert result.duration >= 0
+
+    def test_stats_empty_on_failure(self, make_config):
+        config = make_config(source="/nonexistent", format="zip", fail_on_error=False)
+        result = compress(config)
+        assert not result
+        assert result.output_path == ""
+        assert result.checksum == ""
+        assert result.file_count == 0
+
+    def test_stats_file_count_for_glob(self, make_config, tmp_source, tmp_path):
+        dest = tmp_path / "output"
+        dest.mkdir()
+        config = make_config(
+            source=str(tmp_source / "*.txt"), format="zip", dest=str(dest),
+        )
+        result = compress(config)
+        assert result.file_count == 2  # file1.txt and file2.txt, not the nested one

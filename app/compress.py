@@ -13,12 +13,35 @@ from executor import CommandExecutor, ProcessResult
 from base_processor import BaseProcessor
 from app_logger import logger
 from exceptions import ValidationError, CompressError, CommandError
+from stats import OperationStats
 
 if TYPE_CHECKING:
     from config import AppConfig
 
 _RUNNER_WORK_PREFIX = "/home/runner/work/"
 _DEFAULT_CONTAINER_WORKSPACE = "/github/workspace"
+
+# Single-letter tar codec flags, folded into `-c<opt>f`.
+_TAR_COMPRESSION_FLAGS = {
+    CompressionFormat.TAR.value: "",
+    CompressionFormat.TGZ.value: "z",
+    CompressionFormat.TBZ2.value: "j",
+    CompressionFormat.TXZ.value: "J",
+    CompressionFormat.TZST.value: "",
+}
+
+# Codecs tar only exposes as a long option.
+_TAR_LONG_FLAGS = {
+    CompressionFormat.TZST.value: "--zstd",
+}
+
+# Compressed tar formats take the temp-directory path when includeRoot is false.
+_COMPRESSED_TAR_FORMATS = (
+    CompressionFormat.TGZ.value,
+    CompressionFormat.TBZ2.value,
+    CompressionFormat.TXZ.value,
+    CompressionFormat.TZST.value,
+)
 
 
 def _remap_runner_path(source: str) -> str:
@@ -44,7 +67,7 @@ class Compressor(BaseProcessor):
     """
     Handles file/directory compression operations
 
-    Supports compression using zip, tar, tgz, tbz2, txz formats with options
+    Supports compression using zip, tar, tgz, tbz2, txz, tzst formats with options
     like preserving root directory structure, excluding files, and
     glob patterns for matching multiple files.
     """
@@ -62,6 +85,7 @@ class Compressor(BaseProcessor):
         self.temp_dir = None
         self.output_path = ""
         self.checksum = ""
+        self.stats = OperationStats(command="compress", format=self.format)
 
     def validate(self) -> bool:
         """Validate that source path exists or glob pattern matches files"""
@@ -179,6 +203,8 @@ class Compressor(BaseProcessor):
             CompressionFormat.TGZ.value: f"GZIP=-{level}",
             CompressionFormat.TBZ2.value: f"BZIP2=-{level}",
             CompressionFormat.TXZ.value: f"XZ_OPT=-{level}",
+            # zstd reads a bare integer, not a dash-prefixed flag.
+            CompressionFormat.TZST.value: f"ZSTD_CLEVEL={level}",
         }
         env = env_map.get(self.format, "")
         return f"{env} " if env else ""
@@ -187,17 +213,13 @@ class Compressor(BaseProcessor):
         """Generate tar compression command"""
         source_path = self._resolve_source_path()
 
-        tar_options = {
-            CompressionFormat.TAR.value: "",
-            CompressionFormat.TGZ.value: "z",
-            CompressionFormat.TBZ2.value: "j",
-            CompressionFormat.TXZ.value: "J"
-        }
-        opt = tar_options.get(self.format, "")
+        opt = _TAR_COMPRESSION_FLAGS.get(self.format, "")
+        # zstd has no single-letter tar flag; it is selected with --zstd.
+        extra = f"{_TAR_LONG_FLAGS[self.format]} " if self.format in _TAR_LONG_FLAGS else ""
         level_env = self._get_tar_level_env()
 
-        # Special case for TGZ/TBZ2/TXZ without root
-        if self.format in [CompressionFormat.TGZ.value, CompressionFormat.TBZ2.value, CompressionFormat.TXZ.value] and not self.include_root:
+        # Special case for the compressed tar formats without root
+        if self.format in _COMPRESSED_TAR_FORMATS and not self.include_root:
             return self._get_special_tar_command(full_dest, base_name, opt)
 
         exclude_cmd = self._build_tar_exclude(source_path)
@@ -205,9 +227,9 @@ class Compressor(BaseProcessor):
         if self.include_root:
             parent_dir = os.path.dirname(source_path)
             dir_name = os.path.basename(source_path)
-            return f"{level_env}tar {exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(parent_dir)} {shlex.quote(dir_name)}"
+            return f"{level_env}tar {extra}{exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(parent_dir)} {shlex.quote(dir_name)}"
 
-        return f"{level_env}tar {exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(source_path)} ."
+        return f"{level_env}tar {extra}{exclude_cmd} -c{opt}f {shlex.quote(full_dest)} -C {shlex.quote(source_path)} ."
 
     def _build_tar_exclude(self, source_path: str) -> str:
         """Build tar exclusion flags from parsed patterns"""
@@ -237,10 +259,11 @@ class Compressor(BaseProcessor):
         q_src = shlex.quote(source_path)
         q_dest = shlex.quote(full_dest)
         level_env = self._get_tar_level_env()
+        extra = f"{_TAR_LONG_FLAGS[self.format]} " if self.format in _TAR_LONG_FLAGS else ""
         return f"""
             mkdir -p {q_temp} &&
             cp -r {q_src}/* {q_temp}/ &&
-            {level_env}tar {exclude_cmd} -c{opt}f {q_dest} -C {q_temp} . &&
+            {level_env}tar {extra}{exclude_cmd} -c{opt}f {q_dest} -C {q_temp} . &&
             rm -rf {q_temp}
         """
 
@@ -255,6 +278,7 @@ class Compressor(BaseProcessor):
                 return self._compress_glob_pattern()
 
             source_size = FileUtils.get_path_size(self.source)
+            self.stats.file_count = FileUtils.count_files(self.source)
             start_time = datetime.now()
             self.source = FileUtils.adjust_path(self.source)
 
@@ -268,6 +292,7 @@ class Compressor(BaseProcessor):
                 self._print_results(start_time, source_size)
                 self._compute_checksum()
 
+            self._record_stats(result.success, start_time, source_size)
             return result
 
         except (OSError, ValueError, ValidationError, CompressError, CommandError) as e:
@@ -304,6 +329,7 @@ class Compressor(BaseProcessor):
         """Compress files matched by glob pattern"""
         start_time = datetime.now()
         source_size = sum(os.path.getsize(f) for f in self.matched_files if os.path.exists(f))
+        self.stats.file_count = len(self.matched_files)
 
         temp_base = tempfile.gettempdir()
         self.temp_dir = os.path.join(temp_base, f"compress_glob_{os.getpid()}")
@@ -336,7 +362,19 @@ class Compressor(BaseProcessor):
             self._compute_checksum()
             UI.print_success(f"Successfully compressed {len(self.matched_files)} file(s) matching pattern: {original_source}")
 
+        self._record_stats(result.success, start_time, source_size)
         return result
+
+    def _record_stats(self, success: bool, start_time: datetime, source_size: int) -> None:
+        """Collect the metrics exposed as action outputs and the job summary"""
+        self.stats.success = success
+        self.stats.duration = (datetime.now() - start_time).total_seconds()
+        self.stats.original_size = source_size
+        if success:
+            self.stats.output_path = self.output_path
+            self.stats.checksum = self.checksum
+            if self.output_path and os.path.exists(self.output_path):
+                self.stats.compressed_size = os.path.getsize(self.output_path)
 
     def _compute_checksum(self) -> None:
         """Compute SHA256 checksum of the output archive"""
@@ -354,7 +392,7 @@ class Compressor(BaseProcessor):
                 logger.warning(f"Failed to clean up temporary directory: {str(e)}")
 
 
-def compress(config: AppConfig) -> tuple[str, str]:
+def compress(config: AppConfig) -> OperationStats:
     """
     Main compression function called from the action.
 
@@ -362,10 +400,8 @@ def compress(config: AppConfig) -> tuple[str, str]:
         config: Application configuration
 
     Returns:
-        Tuple of (output_path, checksum). Empty strings if failed.
+        Operation metrics. Falsy, with an empty `output_path`, on failure.
     """
     compressor = Compressor(config)
-    result = compressor.compress()
-    if result.success:
-        return compressor.output_path, compressor.checksum
-    return "", ""
+    compressor.compress()
+    return compressor.stats
