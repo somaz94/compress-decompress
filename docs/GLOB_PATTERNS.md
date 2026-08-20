@@ -12,6 +12,7 @@ This guide provides comprehensive documentation for using glob patterns with the
 - [Advanced Examples](#advanced-examples)
 - [How It Works](#how-it-works)
 - [Important Notes](#important-notes)
+- [Strip Prefix Notes](#strip-prefix-notes)
 - [Real-World Use Cases](#real-world-use-cases)
 
 <br/>
@@ -275,7 +276,7 @@ The `stripPrefix` option allows you to remove a common path prefix from all matc
 
 <br/>
 
-### Important Notes
+### Strip Prefix Notes
 
 - ✅ `stripPrefix` **only works** with `preserveGlobStructure: true`
 - ✅ `stripPrefix` **only works** with glob patterns (e.g., `**/*.doc`)

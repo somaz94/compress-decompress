@@ -70,9 +70,24 @@ make help          # Show all available commands
 |----------|------|---------|
 | `ci.yml` | `Continuous Integration` | push(main), PR, dispatch |
 | `release.yml` | `Create release` | tag push `v*`, dispatch (image seeding) |
-| `changelog-generator.yml` | `Generate changelog` | after release, PR merge |
-| `use-action.yml` | `Smoke Test (Released Action)` | after release, dispatch |
+| `changelog-generator.yml` | `Generate changelog` | after release, PR merge, dispatch |
+| `use-action.yml` | `Smoke Test (Released Action)` | after release (tag push only), dispatch |
 | `contributors.yml` | `Generate Contributors` | after changelog, dispatch |
+| `gitlab-mirror.yml` | `Backup GitHub to GitLab` | push, dispatch |
+| `semantic-pr.yml` | `Semantic PR` | PR target |
+| `pr-size.yml` | `PR Size Labeler` | PR |
+| `pr-welcome.yml` | `PR Welcome` | PR target |
+| `auto-assign.yml` | `Auto Assign` | PR target |
+| `dependabot-auto-merge.yml` | `Dependabot auto-merge` | PR |
+| `ok-to-test.yml` | `ok-to-test` | issue comment |
+| `issue-greeting.yml` | `Issue Greeting Bot` | issue |
+| `labels.yml` | `Sync Labels` | schedule, dispatch |
+| `lock-threads.yml` | `Lock Threads` | schedule, dispatch |
+| `stale-issues.yml` | `Close Stale Issues` | schedule, dispatch |
+
+All but `ci.yml`, `release.yml`, `changelog-generator.yml`, and `use-action.yml`
+delegate to `somaz94/.github/.github/workflows/*-reusable.yml@main`. The `@main`
+float is deliberate — see the note in that repo before "fixing" it to a tag.
 
 ### Workflow Chain
 ```
@@ -83,7 +98,7 @@ tag push v* → Create release
 
 ### CI Structure
 ```
-unit-tests ─┐
+unit-tests (py3.13 + py3.14) ─┐
             ├→ ci-result
 integration jobs (uses: ./, runs the PUBLISHED image) ─┤
 test-image-from-source (builds the Dockerfile, runs the BRANCH code) ─┘
