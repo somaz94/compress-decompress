@@ -3,8 +3,6 @@ name: Generate changelog
 on:
   pull_request:
     types: [closed]
-  issues:
-    types: [closed]
   workflow_run:
     workflows: ["Create release"]
     types:
