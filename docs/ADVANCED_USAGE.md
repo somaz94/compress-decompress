@@ -10,6 +10,9 @@ This guide covers advanced features and usage patterns for the Compress-Decompre
 - [Using Exclude Patterns](#using-exclude-patterns)
 - [Matrix Strategies](#matrix-strategies)
 - [includeRoot Option](#includeroot-option)
+- [Choosing a Format](#choosing-a-format)
+- [Outputs and Job Summary](#outputs-and-job-summary)
+- [Integrity and Safety Checks](#integrity-and-safety-checks)
 - [Error Handling](#error-handling)
 - [Verbose Logging](#verbose-logging)
 
@@ -613,6 +616,184 @@ jobs:
           format: tgz
           dest: './restored'
 ```
+
+<br/>
+
+## Choosing a Format
+
+<br/>
+
+All six formats round-trip through the same two steps; they differ in how much
+CPU they spend to save how many bytes.
+
+| Format | Codec   | Speed      | Size      | Notes                                          |
+| ------ | ------- | ---------- | --------- | ---------------------------------------------- |
+| `zip`  | deflate | Fast       | Medium    | The only format that supports `password`        |
+| `tar`  | none    | Fastest    | Largest   | Bundling only — use for already-compressed data |
+| `tgz`  | gzip    | Fast       | Medium    | The safe default; readable everywhere           |
+| `tbz2` | bzip2   | Slow       | Small     | Rarely worth it over `txz`                      |
+| `txz`  | xz      | Slowest    | Smallest  | Best for release artifacts downloaded many times |
+| `tzst` | zstd    | Very fast  | Small     | Best speed/size trade-off for caches and CI artifacts |
+
+<br/>
+
+### Compressing with zstd
+
+`tzst` is `tar` piped through zstd. Levels map onto `compression_level` the same
+way as the other formats, `1` being fastest and `9` densest:
+
+```yaml
+- name: Pack The Build Cache
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./cache
+    format: tzst
+    compression_level: '3'
+    dest: ./artifacts
+```
+
+Decompression needs no extra flags:
+
+```yaml
+- name: Restore The Build Cache
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: decompress
+    source: ./artifacts/cache.tzst
+    format: tzst
+    dest: ./cache
+```
+
+<br/>
+
+## Outputs and Job Summary
+
+<br/>
+
+### Every Output
+
+| Output              | compress | decompress | Example                  |
+| ------------------- | -------- | ---------- | ------------------------ |
+| `file_path`         | ✅       | ✅         | `/out/dist.tgz`          |
+| `checksum`          | ✅       | —          | `9f2c…` (64 hex chars)   |
+| `original_size`     | ✅       | ✅         | `44695142`               |
+| `compressed_size`   | ✅       | —          | `8493022`                |
+| `compression_ratio` | ✅       | —          | `81.0`                   |
+| `file_count`        | ✅       | ✅         | `1204`                   |
+| `duration`          | ✅       | ✅         | `2.13`                   |
+
+On `decompress`, `original_size` is the size of the archive that was read and
+`file_count` is the number of entries it held.
+
+<br/>
+
+### Gating a Workflow on the Result
+
+```yaml
+- name: Compress
+  id: pack
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./dist
+    format: tzst
+    dest: ./artifacts
+
+- name: Refuse An Archive Over 100 MB
+  if: ${{ fromJSON(steps.pack.outputs.compressed_size) > 104857600 }}
+  run: |
+    echo "::error::artifact is ${{ steps.pack.outputs.compressed_size }} bytes"
+    exit 1
+
+- name: Publish The Digest
+  run: |
+    echo "${{ steps.pack.outputs.checksum }}  $(basename '${{ steps.pack.outputs.file_path }}')" \
+      > artifacts/SHA256SUMS
+```
+
+<br/>
+
+### Job Summary
+
+The same numbers are appended to `$GITHUB_STEP_SUMMARY` as a Markdown table, so
+they render on the run page with no extra step. It is on by default; turn it off
+per step with:
+
+```yaml
+    step_summary: 'false'
+```
+
+Outside GitHub Actions — running the container locally, for instance — the
+variable is unset and nothing is written.
+
+<br/>
+
+## Integrity and Safety Checks
+
+<br/>
+
+### Verifying an Archive Before Extracting
+
+`verify_checksum` takes the SHA256 you expect. The digest is computed and
+compared **before** the archive is unpacked, so a corrupt or swapped file never
+reaches the filesystem:
+
+```yaml
+- name: Unpack A Downloaded Bundle
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: decompress
+    source: ./bundle.tgz
+    format: tgz
+    dest: ./unpacked
+    verify_checksum: ${{ secrets.BUNDLE_SHA256 }}
+```
+
+A mismatch fails the step with both digests in the message. With
+`fail_on_error: 'false'` it degrades to a warning and still extracts nothing.
+
+The value must be a 64-character hex digest — anything else is rejected as a
+configuration error before the action does any work.
+
+<br/>
+
+### Path Traversal (Zip Slip) Protection
+
+Before extracting, the archive's entry list is read and any member that would be
+written outside `dest` — `../../etc/cron.d/payload` and friends — fails the step:
+
+```
+❌ Decompression failed: Unsafe archive: 1 entry/entries would extract outside
+   the destination directory (e.g. '../escaped.txt').
+```
+
+This is on by default and costs one pass over the archive index, not over its
+contents. Two things it deliberately does **not** do:
+
+- An **absolute** member (`/etc/passwd`) is only a warning — `tar` and `unzip`
+  both strip the leading separator, so it cannot escape.
+- An archive the action cannot open with the Python standard library (an exotic
+  codec, say) skips the check with a warning rather than failing — `tar` and
+  `unzip` still get their chance.
+
+Opt out with `path_traversal_check: 'false'` when an archive legitimately uses
+relative paths outside its root.
+
+<br/>
+
+### Passwords in Logs
+
+When `password` is set, the action registers it with GitHub's `add-mask` and
+masks it in every command line and error message it prints itself, so the
+`zip -P …` invocation shows up as:
+
+```
+⚙️  Executing: cd /github/workspace && zip -P *** -r /out/secret.zip data
+```
+
+Always pass the value from a secret (`password: ${{ secrets.ZIP_PASSWORD }}`)
+rather than a literal.
 
 <br/>
 

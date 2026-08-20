@@ -12,16 +12,20 @@
 ## Description
 
 A single GitHub Action to **compress and decompress** files in your CI/CD
-workflow — with **password-protected zip encryption**, **SHA256 checksums**, and
-**five archive formats** (`zip`, `tar`, `tgz`, `tbz2`, `txz`) in one step. Use it
-to package build artifacts, encrypt release bundles, or unpack downloaded
-archives without hand-writing `tar`/`zip` shell commands. Glob patterns,
-tunable compression levels, exclude filters, and path stripping are all built in.
+workflow — with **password-protected zip encryption**, **verified SHA256
+checksums**, a **job summary**, and **six archive formats** (`zip`, `tar`,
+`tgz`, `tbz2`, `txz`, `tzst`) in one step. Use it to package build artifacts,
+encrypt release bundles, or unpack downloaded archives without hand-writing
+`tar`/`zip` shell commands. Glob patterns, tunable compression levels, exclude
+filters, and path stripping are all built in.
 
 **Key Features:**
-- **Five Archive Formats** - `zip`, `tar`, `tgz`, `tbz2`, and `txz` from one action
-- **Password-Protected Zip** - Encrypt and decrypt `zip` archives with a secret (great for secure release bundles)
-- **SHA256 Checksum Output** - Emit a verifiable `checksum` for every compressed archive
+- **Six Archive Formats** - `zip`, `tar`, `tgz`, `tbz2`, `txz`, and `tzst` (zstd) from one action
+- **Job Summary** - Sizes, ratio, file count, duration, and checksum rendered on the run page, no extra step
+- **Rich Outputs** - `checksum`, `original_size`, `compressed_size`, `compression_ratio`, `file_count`, `duration`
+- **Verified Decompression** - Pass `verify_checksum` and a tampered or truncated archive is rejected before anything is written to disk
+- **Zip-Slip Protection** - Archives whose entries would escape the destination directory are refused
+- **Password-Protected Zip** - Encrypt and decrypt `zip` archives with a secret, kept masked in the log
 - **Compression Level Control** - Tune from `0` (store only) to `9` (maximum) for size vs. speed
 - **Glob Pattern Support** - Match multiple files with patterns like `**/*.doc`
 - **Symbolic Link Support** - Automatically follows symlinks (Bazel, Buck, and build tool integration)
@@ -39,23 +43,31 @@ tunable compression levels, exclude filters, and path stripping are all built in
 | `dest`        | The destination directory for the output. If not provided, it defaults to the current working directory. | No       | -       |
 | `destfilename` | The destination filename for the output (extension is appended depending on the format). If not provided, it defaults to the current working directory's name. | No       | -       |
 | `exclude` | Filename (or pattern) to exclude from compression process. | No       | -       |
-| `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, `tbz2`, and `txz`.                     | Yes      | -       |
+| `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, `tbz2`, `txz`, and `tzst`.              | Yes      | -       |
 | `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | yes     |
 | `preserveGlobStructure` | When using glob patterns, preserve the directory structure in the archive. If false, all matched files are flattened to the root level. | No       | false   |
 | `stripPrefix` | Remove this prefix from file paths when preserving directory structure. Works only with glob patterns and `preserveGlobStructure: true`. Example: `'src/'` changes `src/app/main.py` to `app/main.py` in the archive. | No       | ""      |
 | `fail_on_error` | Whether to fail the action if compression/decompression fails.                                                 | No       | true    |
-| `compression_level` | Compression level from `0` (store only) to `9` (maximum). Applies to `zip`, `tgz`, `tbz2`, and `txz`.     | No       | -       |
+| `compression_level` | Compression level from `0` (store only) to `9` (maximum). Applies to `zip`, `tgz`, `tbz2`, `txz`, and `tzst`. | No   | -       |
 | `password`    | Password for `zip` encryption/decryption. Pass it via a secret. Only applies to the `zip` format.                | No       | ""      |
 | `verbose`     | Enable verbose logging for debugging purposes.                                                                   | No       | false   |
+| `verify_checksum` | Expected SHA256 of the archive. Decompression aborts **before extracting anything** when it does not match. Decompress only. | No | ""      |
+| `path_traversal_check` | Reject archives whose entries would extract outside the destination directory (zip slip). Decompress only. | No  | true    |
+| `step_summary` | Write the result table to the workflow job summary (`$GITHUB_STEP_SUMMARY`).                                    | No       | true    |
 
 <br/>
 
 ## Outputs
 
-| Output      | Description                                                          |
-| ----------- | ------------------------------------------------------------------- |
-| `file_path` | The path to the compressed or decompressed file.                    |
-| `checksum`  | SHA256 checksum of the compressed archive (compress operation only). |
+| Output              | Description                                                                  |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `file_path`         | The path to the compressed archive, or the directory files were extracted to. |
+| `checksum`          | SHA256 checksum of the compressed archive (compress operation only).          |
+| `original_size`     | Size in bytes of the source (compress) or of the archive (decompress).        |
+| `compressed_size`   | Size in bytes of the produced archive (compress operation only).              |
+| `compression_ratio` | Percentage of the original size saved, e.g. `75.0` (compress operation only). |
+| `file_count`        | Number of files compressed, or entries extracted.                             |
+| `duration`          | Seconds the operation took, e.g. `1.42`.                                      |
 
 <br/>
 
@@ -77,6 +89,134 @@ its required inputs.
 <br/>
 
 ## Example Workflows
+
+### Job Summary at a Glance
+
+Every run writes its result to the workflow **job summary**, so the archive
+size, ratio, and checksum are on the run page without opening the step log —
+nothing to configure:
+
+> ### ✅ Compress — `tgz`
+>
+> | | |
+> | --- | --- |
+> | **Archive** | `dist/release.tgz` |
+> | **Format** | `tgz` |
+> | **Original size** | 42.60 MB |
+> | **Compressed size** | 8.10 MB |
+> | **Compression ratio** | 81.0% |
+> | **Files** | 1204 |
+> | **Duration** | 2.13s |
+> | **SHA256** | `9f2c…` |
+
+Set `step_summary: 'false'` to turn it off.
+
+<br/>
+
+### Using the Outputs
+
+Sizes, ratio, file count, and duration are exposed as step outputs, so a later
+step can gate on them or report them:
+
+```yaml
+- name: Compress Build Output
+  id: pack
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./dist
+    format: tgz
+    dest: ./artifacts
+
+- name: Report
+  run: |
+    echo "archive:  ${{ steps.pack.outputs.file_path }}"
+    echo "files:    ${{ steps.pack.outputs.file_count }}"
+    echo "size:     ${{ steps.pack.outputs.compressed_size }} bytes"
+    echo "ratio:    ${{ steps.pack.outputs.compression_ratio }}%"
+    echo "took:     ${{ steps.pack.outputs.duration }}s"
+    echo "sha256:   ${{ steps.pack.outputs.checksum }}"
+
+- name: Fail On A Suspiciously Small Archive
+  if: ${{ fromJSON(steps.pack.outputs.file_count) < 10 }}
+  run: exit 1
+```
+
+<br/>
+
+### Verified Decompression
+
+Pass the SHA256 you expect and the archive is checked **before a single file is
+written**. A mismatch fails the step with the expected and actual digests:
+
+```yaml
+- name: Download Release Bundle
+  run: curl -sSLo bundle.tgz "$BUNDLE_URL"
+
+- name: Unpack Only If It Matches
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: decompress
+    source: ./bundle.tgz
+    format: tgz
+    dest: ./unpacked
+    verify_checksum: ${{ secrets.BUNDLE_SHA256 }}
+```
+
+The pair of steps below is the round trip — the `checksum` output of a compress
+step feeds the `verify_checksum` input of the decompress step:
+
+```yaml
+- name: Compress
+  id: pack
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./dist
+    format: zip
+
+- name: Decompress With Verification
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: decompress
+    source: ${{ steps.pack.outputs.file_path }}
+    format: zip
+    dest: ./unpacked
+    verify_checksum: ${{ steps.pack.outputs.checksum }}
+```
+
+Independently of `verify_checksum`, decompression refuses archives whose entries
+would extract **outside** the destination directory (`../../etc/cron.d/evil`, the
+"zip slip" pattern). Set `path_traversal_check: 'false'` to opt out.
+
+<br/>
+
+### Faster Compression With zstd
+
+`tzst` (`tar` + zstd) compresses close to `tgz` ratios at a fraction of the
+time, which is what you want for a cache or a large build artifact:
+
+```yaml
+- name: Compress Build Cache
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./build-cache
+    format: tzst
+    compression_level: '3'
+    dest: ./artifacts
+```
+
+| Format | Codec  | Typical use                                   |
+| ------ | ------ | --------------------------------------------- |
+| `zip`  | deflate | Cross-platform sharing, optional password     |
+| `tar`  | none   | Fast bundling when the payload is already compressed |
+| `tgz`  | gzip   | The safe default, readable everywhere         |
+| `tbz2` | bzip2  | Smaller than gzip, noticeably slower          |
+| `txz`  | xz     | Smallest output, slowest to produce           |
+| `tzst` | zstd   | Near-gzip size at much higher speed           |
+
+<br/>
 
 ### Custom Destination and Filename
 
@@ -266,6 +406,44 @@ exclude: 'node_modules,.git,*.log'  # Wrong!
 ```
 
 See [Advanced Usage - Exclude Patterns](docs/ADVANCED_USAGE.md#using-exclude-patterns)
+
+</details>
+
+<details>
+<summary>Decompression fails with "Checksum mismatch"?</summary>
+
+The archive on disk is not the one the digest was taken from — it was re-created,
+truncated mid-download, or tampered with.
+
+1. Recompute the digest of what you actually have: `sha256sum ./bundle.tgz`
+2. Make sure the digest was taken from the **compressed archive**, not from its contents
+3. When chaining two steps, pass `${{ steps.<compress-step>.outputs.checksum }}` directly
+4. Nothing was extracted — the check runs before any file is written
+
+</details>
+
+<details>
+<summary>Decompression fails with "Unsafe archive"?</summary>
+
+The archive contains an entry that would be written outside `dest`
+(`../../something`), which is the "zip slip" pattern. Inspect it before trusting it:
+
+```bash
+unzip -l archive.zip     # or: tar -tf archive.tgz
+```
+
+If the layout is intentional and the source is trusted, opt out with
+`path_traversal_check: 'false'`.
+
+</details>
+
+<details>
+<summary>Nothing appears in the job summary?</summary>
+
+1. The summary is written on `compress` and `decompress` alike — check the step actually ran
+2. `step_summary: 'false'` disables it
+3. Job summaries are a GitHub-hosted/self-hosted runner feature; on a runner without
+   `$GITHUB_STEP_SUMMARY` the action skips it silently and the step still succeeds
 
 </details>
 

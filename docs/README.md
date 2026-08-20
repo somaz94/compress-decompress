@@ -24,12 +24,16 @@ Complete documentation for the Compress-Decompress Action.
    - Exclude patterns
    - Matrix strategies
    - includeRoot option
+   - Choosing a format (including zstd)
+   - Outputs and job summary
+   - Integrity and safety checks
    - Error handling
    - Verbose logging
 
 4. **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
    - Compression issues
    - Decompression issues
+   - Integrity and safety failures
    - Glob pattern problems
    - Permission problems
    - Performance issues
@@ -51,6 +55,9 @@ Complete documentation for the Compress-Decompress Action.
 - **Customize output** → [Advanced Usage - Custom Paths](ADVANCED_USAGE.md#custom-paths-and-filenames)
 - **Fix an issue** → [Troubleshooting Guide](TROUBLESHOOTING.md)
 - **Test multiple formats** → [Advanced Usage - Matrix Strategies](ADVANCED_USAGE.md#matrix-strategies)
+- **Pick a format** → [Advanced Usage - Choosing a Format](ADVANCED_USAGE.md#choosing-a-format)
+- **Use the result in a later step** → [Advanced Usage - Outputs and Job Summary](ADVANCED_USAGE.md#outputs-and-job-summary)
+- **Verify an archive before extracting** → [Advanced Usage - Integrity and Safety Checks](ADVANCED_USAGE.md#integrity-and-safety-checks)
 
 <br/>
 
@@ -67,12 +74,16 @@ Complete documentation for the Compress-Decompress Action.
 - [Custom destinations](ADVANCED_USAGE.md#custom-paths-and-filenames)
 - [Exclude patterns](ADVANCED_USAGE.md#using-exclude-patterns)
 - [Matrix strategies](ADVANCED_USAGE.md#matrix-strategies)
+- [Choosing a format](ADVANCED_USAGE.md#choosing-a-format)
+- [Outputs and job summary](ADVANCED_USAGE.md#outputs-and-job-summary)
+- [Integrity and safety checks](ADVANCED_USAGE.md#integrity-and-safety-checks)
 - [Error handling](ADVANCED_USAGE.md#error-handling)
 - [Verbose logging](ADVANCED_USAGE.md#verbose-logging)
 
 **Troubleshooting:**
 - [Compression issues](TROUBLESHOOTING.md#compression-issues)
 - [Decompression issues](TROUBLESHOOTING.md#decompression-issues)
+- [Integrity and safety failures](TROUBLESHOOTING.md#integrity-and-safety-failures)
 - [Glob pattern problems](TROUBLESHOOTING.md#glob-pattern-problems)
 - [Permission problems](TROUBLESHOOTING.md#permission-problems)
 - [Debugging tips](TROUBLESHOOTING.md#debugging-tips)
@@ -133,6 +144,8 @@ Advanced features and usage patterns for power users.
 - Exclude patterns for filtering files
 - Matrix strategies for testing multiple configurations
 - includeRoot option for archive structure control
+- Format selection, including zstd (`tzst`)
+- Outputs, the job summary, checksum verification, and zip-slip protection
 - Error handling and verbose logging
 
 <br/>

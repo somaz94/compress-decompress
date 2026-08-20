@@ -8,6 +8,7 @@ This guide helps you diagnose and resolve common issues with the Compress-Decomp
 
 - [Compression Issues](#compression-issues)
 - [Decompression Issues](#decompression-issues)
+- [Integrity and Safety Failures](#integrity-and-safety-failures)
 - [Glob Pattern Problems](#glob-pattern-problems)
 - [Exclude Pattern Issues](#exclude-pattern-issues)
 - [Permission Problems](#permission-problems)
@@ -309,6 +310,101 @@ Error: Destination directory already exists: ./unpacked
 
 <br/>
 
+## Integrity and Safety Failures
+
+<br/>
+
+### Issue: "Checksum mismatch"
+
+**Symptoms:**
+```
+❌ Decompression failed: Checksum mismatch: archive does not match the expected
+   SHA256 (expected 9f2c…, got 41ab…)
+```
+
+**Cause:**
+The bytes on disk are not the bytes the expected digest was taken from — the
+archive was re-created, the download was truncated, or the wrong digest was
+supplied.
+
+**Solutions:**
+
+1. **Recompute the digest of what you actually have:**
+   ```bash
+   sha256sum ./bundle.tgz
+   ```
+
+2. **Digest the archive, not its contents.** A digest taken over the extracted
+   files never matches the archive.
+
+3. **When chaining steps, wire the output through:**
+   ```yaml
+   verify_checksum: ${{ steps.pack.outputs.checksum }}
+   ```
+
+4. **Re-download before blaming the digest.** A truncated transfer is the most
+   common cause; compare `original_size` with what the server reports.
+
+Nothing was extracted — the comparison runs before the archive is opened.
+
+<br/>
+
+### Issue: "Unsafe archive: … would extract outside the destination directory"
+
+**Symptoms:**
+```
+❌ Decompression failed: Unsafe archive: 2 entry/entries would extract outside
+   the destination directory (e.g. '../escaped.txt').
+```
+
+**Cause:**
+The archive contains members with `..` segments that resolve above `dest` — the
+"zip slip" pattern. It is refused by default.
+
+**Solutions:**
+
+1. **Look at what is actually inside before trusting it:**
+   ```bash
+   unzip -l archive.zip
+   tar -tf archive.tgz
+   ```
+
+2. **If the layout is intentional and the source is trusted, opt out:**
+   ```yaml
+   path_traversal_check: 'false'
+   ```
+
+3. **Prefer re-packing over opting out.** An archive produced by this action
+   never contains traversal entries, so re-compressing from a clean directory
+   removes the problem instead of suppressing the check.
+
+Absolute members (`/etc/passwd`) are only warned about, not blocked — both `tar`
+and `unzip` strip the leading separator.
+
+<br/>
+
+### Issue: `tzst` archive will not decompress elsewhere
+
+**Symptoms:**
+```
+tar: unrecognized option '--zstd'
+```
+
+**Cause:**
+The consuming environment has an older `tar` or no `zstd` binary. The action's
+own container ships both, so this only shows up on the *other* side.
+
+**Solutions:**
+
+1. **Install zstd on the consumer** (`apt-get install zstd`, `brew install zstd`)
+2. **Or decompress by hand:**
+   ```bash
+   zstd -d -c archive.tzst | tar -xf -
+   ```
+3. **Or fall back to `tgz`** when the consumer is outside your control.
+
+<br/>
+
 ## Glob Pattern Problems
 
 <br/>
@@ -588,7 +684,10 @@ Error: Permission denied: cannot read/write files
 
 1. **Use faster format:**
    ```yaml
-   # zip is fastest (but larger)
+   # tzst (zstd) is the best speed/size trade-off
+   format: tzst
+
+   # zip is fast (but larger)
    format: zip
 
    # tgz is balanced
@@ -596,6 +695,12 @@ Error: Permission denied: cannot read/write files
 
    # tbz2 is slowest (but smallest)
    format: tbz2
+   ```
+
+   Lowering `compression_level` helps every format:
+   ```yaml
+   format: tzst
+   compression_level: '1'   # fastest
    ```
 
 2. **Reduce scope:**
@@ -839,11 +944,16 @@ For manual testing:
 tar -czf test.tgz ./data-folder
 zip -r test.zip ./data-folder
 tar -cjf test.tbz2 ./data-folder
+tar --zstd -cf test.tzst ./data-folder
 
 # Test decompression
 tar -xzf test.tgz
 unzip test.zip
 tar -xjf test.tbz2
+tar --zstd -xf test.tzst
+
+# Compute the digest for verify_checksum
+sha256sum test.tgz
 
 # Test with exclusions
 tar -czf test.tgz --exclude='*.log' --exclude='node_modules' ./data-folder

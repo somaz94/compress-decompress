@@ -92,6 +92,10 @@ Click on individual files in the browser to visually inspect uncovered lines.
 | `test_main.py` | `main.py` | `ActionRunner` input validation, configuration display |
 | `test_ui.py` | `ui.py` | Output formatting (header, section, success, error) |
 | `test_exceptions.py` | `exceptions.py` | Exception hierarchy (`CompressError` > `ValidationError`, `CommandError`) |
+| `test_archive.py` | `archive.py` | Entry listing, file counting, path-traversal and absolute-path detection |
+| `test_stats.py` | `stats.py` | `OperationStats` truthiness and compression ratio |
+| `test_summary.py` | `summary.py` | Job summary rendering and `$GITHUB_STEP_SUMMARY` writing |
+| `test_masking.py` | `masking.py` | Secret registration and masking |
 
 <br/>
 
