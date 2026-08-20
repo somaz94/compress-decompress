@@ -18,9 +18,14 @@ permissions:
 jobs:
   generate-changelog:
     runs-on: ubuntu-latest
+    # The workflow_run guard also filters on the upstream event: `Create release`
+    # runs twice per release — once as a workflow_dispatch that only seeds the
+    # container image, and once on the tag push that publishes the release.
+    # Only the second one has a release to write a changelog for.
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push') ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     steps:
       - uses: actions/checkout@v7
