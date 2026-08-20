@@ -156,6 +156,7 @@ Solutions to common problems and debugging strategies.
 
 **Key Sections:**
 - Compression and decompression issues
+- Integrity and safety failures (checksum mismatch, zip slip)
 - Glob pattern troubleshooting
 - Permission and performance problems
 - Step-by-step debugging process

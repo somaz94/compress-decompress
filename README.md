@@ -44,7 +44,7 @@ filters, and path stripping are all built in.
 | `destfilename` | The destination filename for the output (extension is appended depending on the format). If not provided, it defaults to the current working directory's name. | No       | -       |
 | `exclude` | Filename (or pattern) to exclude from compression process. | No       | -       |
 | `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, `tbz2`, `txz`, and `tzst`.              | Yes      | -       |
-| `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | yes     |
+| `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | true    |
 | `preserveGlobStructure` | When using glob patterns, preserve the directory structure in the archive. If false, all matched files are flattened to the root level. | No       | false   |
 | `stripPrefix` | Remove this prefix from file paths when preserving directory structure. Works only with glob patterns and `preserveGlobStructure: true`. Example: `'src/'` changes `src/app/main.py` to `app/main.py` in the archive. | No       | ""      |
 | `fail_on_error` | Whether to fail the action if compression/decompression fails.                                                 | No       | true    |
@@ -64,8 +64,8 @@ filters, and path stripping are all built in.
 | `file_path`         | The path to the compressed archive, or the directory files were extracted to. |
 | `checksum`          | SHA256 checksum of the compressed archive (compress operation only).          |
 | `original_size`     | Size in bytes of the source (compress) or of the archive (decompress).        |
-| `compressed_size`   | Size in bytes of the produced archive (compress operation only).              |
-| `compression_ratio` | Percentage of the original size saved, e.g. `75.0` (compress operation only). |
+| `compressed_size`   | Size in bytes of the produced archive. `0` on decompress.                     |
+| `compression_ratio` | Percentage of the original size saved, e.g. `75.0`. `0.0` on decompress.      |
 | `file_count`        | Number of files compressed, or entries extracted.                             |
 | `duration`          | Seconds the operation took, e.g. `1.42`.                                      |
 
@@ -388,7 +388,7 @@ This action supports glob patterns for matching multiple files across your repos
 1. Use exclude patterns: `exclude: 'node_modules .git *.log'`
 2. Use better compression: `format: tbz2` instead of `zip`
 3. Split into multiple archives
-4. See [Troubleshooting Guide](docs/TROUBLESHOOTING.md#archive-size-is-too-large)
+4. See [Troubleshooting Guide](docs/TROUBLESHOOTING.md#issue-archive-size-is-too-large)
 
 </details>
 
@@ -420,6 +420,8 @@ truncated mid-download, or tampered with.
 3. When chaining two steps, pass `${{ steps.<compress-step>.outputs.checksum }}` directly
 4. Nothing was extracted — the check runs before any file is written
 
+See [Troubleshooting - Integrity and Safety Failures](docs/TROUBLESHOOTING.md#integrity-and-safety-failures)
+
 </details>
 
 <details>
@@ -434,6 +436,8 @@ unzip -l archive.zip     # or: tar -tf archive.tgz
 
 If the layout is intentional and the source is trusted, opt out with
 `path_traversal_check: 'false'`.
+
+See [Troubleshooting - Integrity and Safety Failures](docs/TROUBLESHOOTING.md#integrity-and-safety-failures)
 
 </details>
 

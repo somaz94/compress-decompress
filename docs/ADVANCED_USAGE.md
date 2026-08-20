@@ -678,13 +678,15 @@ Decompression needs no extra flags:
 | `file_path`         | ✅       | ✅         | `/out/dist.tgz`          |
 | `checksum`          | ✅       | —          | `9f2c…` (64 hex chars)   |
 | `original_size`     | ✅       | ✅         | `44695142`               |
-| `compressed_size`   | ✅       | —          | `8493022`                |
-| `compression_ratio` | ✅       | —          | `81.0`                   |
+| `compressed_size`   | ✅       | `0`        | `8493022`                |
+| `compression_ratio` | ✅       | `0.0`      | `81.0`                   |
 | `file_count`        | ✅       | ✅         | `1204`                   |
 | `duration`          | ✅       | ✅         | `2.13`                   |
 
 On `decompress`, `original_size` is the size of the archive that was read and
-`file_count` is the number of entries it held.
+`file_count` is the number of files it held. Every output is always written —
+the two that only mean something for compression are emitted as `0` rather than
+left unset, so branch on the value, not on emptiness.
 
 <br/>
 

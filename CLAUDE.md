@@ -56,7 +56,8 @@ make help          # Show all available commands
 - **Required**: `command` (compress/decompress), `source`, `format` (zip/tar/tgz/tbz2/txz/tzst)
 - **Options**: `dest`, `destfilename`, `exclude`, `includeRoot`, `preserveGlobStructure`, `stripPrefix`
 - **Advanced**: `fail_on_error`, `compression_level`, `password`, `verbose`
-- **Integrity**: `verify_checksum`, `path_traversal_check`, `step_summary`
+- **Integrity**: `verify_checksum`, `path_traversal_check`
+- **Reporting**: `step_summary`
 
 ## Outputs
 
@@ -68,16 +69,16 @@ make help          # Show all available commands
 | Workflow | Name | Trigger |
 |----------|------|---------|
 | `ci.yml` | `Continuous Integration` | push(main), PR, dispatch |
-| `release.yml` | `Create release` | tag push `v*` |
+| `release.yml` | `Create release` | tag push `v*`, dispatch (image seeding) |
 | `changelog-generator.yml` | `Generate changelog` | after release, PR merge, issue close |
 | `use-action.yml` | `Smoke Test (Released Action)` | after release, dispatch |
-| `contributors.yml` | `Generator Contributors` | after changelog, dispatch |
+| `contributors.yml` | `Generate Contributors` | after changelog, dispatch |
 
 ### Workflow Chain
 ```
 tag push v* → Create release
                 ├→ Smoke Test (Released Action)
-                └→ Generate changelog → Generator Contributors
+                └→ Generate changelog → Generate Contributors
 ```
 
 ### CI Structure
