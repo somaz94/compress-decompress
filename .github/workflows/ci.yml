@@ -1770,6 +1770,132 @@ jobs:
 
           echo -e "\n${GREEN}${BOLD}✓ All password encryption tests passed${NC}"
 
+  test-image-from-source:
+    name: Test Image Built From Source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # `uses: ./` resolves action.yml, which pins a published image — it does not
+      # exercise this branch. Building the Dockerfile here is what keeps the build
+      # path honest and what tests the code in the pull request.
+      - name: Build Image From Dockerfile
+        run: docker build -t compress-decompress:ci .
+
+      - name: Verify Archive Tooling Is Installed
+        run: |
+          docker run --rm --entrypoint sh compress-decompress:ci -c '
+            for bin in zip unzip tar gzip bzip2 xz zstd; do
+              command -v "$bin" >/dev/null || { echo "❌ missing binary: $bin"; exit 1; }
+            done
+            echo "✅ every archive binary is present"
+          '
+
+      - name: Create Test Files
+        run: |
+          mkdir -p work/data/sub
+          echo "top level" > work/data/a.txt
+          echo "nested" > work/data/sub/b.txt
+
+      - name: Round-trip Every Format
+        run: |
+          set -euo pipefail
+          run_action() {
+            docker run --rm \
+              -v "$PWD/work:/github/workspace" \
+              -w /github/workspace \
+              -e GITHUB_WORKSPACE=/github/workspace \
+              "$@" compress-decompress:ci
+          }
+
+          for fmt in zip tar tgz tbz2 txz tzst; do
+            echo "::group::format $fmt"
+            : > "work/out-$fmt.txt"
+            run_action \
+              -e GITHUB_OUTPUT="/github/workspace/out-$fmt.txt" \
+              -e GITHUB_STEP_SUMMARY="/github/workspace/summary-$fmt.md" \
+              -e COMMAND=compress -e SOURCE=./data -e FORMAT="$fmt" \
+              -e DEST=./archives -e DESTFILENAME="data-$fmt"
+
+            # Every documented output must be present and non-empty.
+            for key in file_path checksum original_size compressed_size \
+                       compression_ratio file_count duration; do
+              grep -qE "^$key=.+" "work/out-$fmt.txt" \
+                || { echo "❌ missing output: $key"; cat "work/out-$fmt.txt"; exit 1; }
+            done
+            grep -q "Compression ratio" "work/summary-$fmt.md" \
+              || { echo "❌ job summary was not written"; exit 1; }
+            [ "$(grep '^file_count=' "work/out-$fmt.txt" | cut -d= -f2)" = "2" ] \
+              || { echo "❌ unexpected file_count"; exit 1; }
+
+            checksum=$(grep '^checksum=' "work/out-$fmt.txt" | cut -d= -f2)
+
+            # Decompress the archive back, gated on the checksum just produced.
+            run_action \
+              -e COMMAND=decompress -e SOURCE="./archives/data-$fmt.$fmt" \
+              -e FORMAT="$fmt" -e DEST="./unpacked-$fmt" \
+              -e VERIFY_CHECKSUM="$checksum"
+
+            [ -f "work/unpacked-$fmt/data/a.txt" ] \
+              || { echo "❌ round-trip lost a.txt"; find "work/unpacked-$fmt"; exit 1; }
+            echo "✅ $fmt round-tripped"
+            echo "::endgroup::"
+          done
+
+      - name: Reject A Tampered Archive
+        run: |
+          set -euo pipefail
+          if docker run --rm \
+              -v "$PWD/work:/github/workspace" -w /github/workspace \
+              -e GITHUB_WORKSPACE=/github/workspace \
+              -e COMMAND=decompress -e SOURCE=./archives/data-zip.zip \
+              -e FORMAT=zip -e DEST=./tampered \
+              -e VERIFY_CHECKSUM=0000000000000000000000000000000000000000000000000000000000000000 \
+              compress-decompress:ci; then
+            echo "❌ a checksum mismatch was accepted"
+            exit 1
+          fi
+          [ ! -e work/tampered/data ] || { echo "❌ extracted despite the mismatch"; exit 1; }
+          echo "✅ checksum mismatch aborted before extraction"
+
+      - name: Reject A Path Traversal Archive
+        run: |
+          set -euo pipefail
+          python3 -c "
+          import zipfile
+          with zipfile.ZipFile('work/slip.zip', 'w') as zf:
+              zf.writestr('safe.txt', 'fine')
+              zf.writestr('../escaped.txt', 'owned')
+          "
+          if docker run --rm \
+              -v "$PWD/work:/github/workspace" -w /github/workspace \
+              -e GITHUB_WORKSPACE=/github/workspace \
+              -e COMMAND=decompress -e SOURCE=./slip.zip \
+              -e FORMAT=zip -e DEST=./slipped \
+              compress-decompress:ci; then
+            echo "❌ a zip-slip archive was accepted"
+            exit 1
+          fi
+          echo "✅ zip slip rejected"
+
+      - name: Keep The Password Out Of The Log
+        run: |
+          set -euo pipefail
+          log=$(docker run --rm \
+            -v "$PWD/work:/github/workspace" -w /github/workspace \
+            -e GITHUB_WORKSPACE=/github/workspace \
+            -e COMMAND=compress -e SOURCE=./data -e FORMAT=zip \
+            -e DEST=./secure -e DESTFILENAME=secret -e VERBOSE=true \
+            -e PASSWORD=example-not-in-the-log \
+            compress-decompress:ci 2>&1)
+          echo "$log"
+          if echo "$log" | grep -v '^::add-mask::' | grep -q 'example-not-in-the-log'; then
+            echo "❌ the password leaked into the log"
+            exit 1
+          fi
+          echo "✅ password stayed masked"
+
   ci-result:
     name: CI Result
     if: always()
@@ -1783,6 +1909,7 @@ jobs:
       - test-glob-patterns
       - test-symlink-support
       - test-password-encryption
+      - test-image-from-source
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs

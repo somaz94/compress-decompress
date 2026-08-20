@@ -24,7 +24,7 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     strategy:
       matrix:
-        format: [zip, tar, tgz, tbz2, txz]
+        format: [zip, tar, tgz, tbz2, txz, tzst]
         include_root: [true, false]
       fail-fast: false
 
@@ -65,6 +65,24 @@ jobs:
           fi
           echo "✅ Archive created: ${{ steps.archive.outputs.path }}"
 
+      - name: Verify Outputs
+        run: |
+          for value in \
+            "file_path=${{ steps.compress.outputs.file_path }}" \
+            "checksum=${{ steps.compress.outputs.checksum }}" \
+            "original_size=${{ steps.compress.outputs.original_size }}" \
+            "compressed_size=${{ steps.compress.outputs.compressed_size }}" \
+            "compression_ratio=${{ steps.compress.outputs.compression_ratio }}" \
+            "file_count=${{ steps.compress.outputs.file_count }}" \
+            "duration=${{ steps.compress.outputs.duration }}"; do
+            case "$value" in
+              *=) echo "❌ empty output: ${value%=}"; exit 1 ;;
+              *) echo "✅ $value" ;;
+            esac
+          done
+          [ "${{ steps.compress.outputs.file_count }}" = "2" ] \
+            || { echo "❌ unexpected file_count"; exit 1; }
+
       - name: Decompress
         uses: somaz94/compress-decompress@v1
         with:
@@ -72,6 +90,7 @@ jobs:
           source: ${{ steps.archive.outputs.path }}
           format: ${{ matrix.format }}
           dest: './extracted'
+          verify_checksum: ${{ steps.compress.outputs.checksum }}
 
       - name: Verify Extraction
         run: |
