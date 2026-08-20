@@ -1773,6 +1773,7 @@ jobs:
   test-image-from-source:
     name: Test Image Built From Source
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -1846,16 +1847,18 @@ jobs:
       - name: Reject A Tampered Archive
         run: |
           set -euo pipefail
-          if docker run --rm \
+          out=$(docker run --rm \
               -v "$PWD/work:/github/workspace" -w /github/workspace \
               -e GITHUB_WORKSPACE=/github/workspace \
               -e COMMAND=decompress -e SOURCE=./archives/data-zip.zip \
               -e FORMAT=zip -e DEST=./tampered \
               -e VERIFY_CHECKSUM=0000000000000000000000000000000000000000000000000000000000000000 \
-              compress-decompress:ci; then
-            echo "❌ a checksum mismatch was accepted"
-            exit 1
-          fi
+              compress-decompress:ci 2>&1) && rc=0 || rc=$?
+          echo "$out"
+          [ "$rc" -ne 0 ] || { echo "❌ a checksum mismatch was accepted"; exit 1; }
+          # A nonzero exit alone would also pass for a traceback or a bad flag.
+          echo "$out" | grep -qi 'checksum mismatch' \
+            || { echo "❌ it failed, but not for the checksum reason"; exit 1; }
           [ ! -e work/tampered/data ] || { echo "❌ extracted despite the mismatch"; exit 1; }
           echo "✅ checksum mismatch aborted before extraction"
 
@@ -1868,28 +1871,33 @@ jobs:
               zf.writestr('safe.txt', 'fine')
               zf.writestr('../escaped.txt', 'owned')
           "
-          if docker run --rm \
+          out=$(docker run --rm \
               -v "$PWD/work:/github/workspace" -w /github/workspace \
               -e GITHUB_WORKSPACE=/github/workspace \
               -e COMMAND=decompress -e SOURCE=./slip.zip \
               -e FORMAT=zip -e DEST=./slipped \
-              compress-decompress:ci; then
-            echo "❌ a zip-slip archive was accepted"
-            exit 1
-          fi
+              compress-decompress:ci 2>&1) && rc=0 || rc=$?
+          echo "$out"
+          [ "$rc" -ne 0 ] || { echo "❌ a zip-slip archive was accepted"; exit 1; }
+          echo "$out" | grep -qi 'unsafe archive' \
+            || { echo "❌ it failed, but not for the traversal reason"; exit 1; }
+          [ ! -e work/escaped.txt ] || { echo "❌ the traversal entry was written"; exit 1; }
           echo "✅ zip slip rejected"
 
       - name: Keep The Password Out Of The Log
         run: |
           set -euo pipefail
+          # Plain assignment under `set -e` would abort here and print nothing,
+          # leaving no diagnosis when the password path itself breaks.
           log=$(docker run --rm \
             -v "$PWD/work:/github/workspace" -w /github/workspace \
             -e GITHUB_WORKSPACE=/github/workspace \
             -e COMMAND=compress -e SOURCE=./data -e FORMAT=zip \
             -e DEST=./secure -e DESTFILENAME=secret -e VERBOSE=true \
             -e PASSWORD=example-not-in-the-log \
-            compress-decompress:ci 2>&1)
+            compress-decompress:ci 2>&1) && rc=0 || rc=$?
           echo "$log"
+          [ "${rc:-0}" -eq 0 ] || { echo "❌ password compression failed"; exit "$rc"; }
           if echo "$log" | grep -v '^::add-mask::' | grep -q 'example-not-in-the-log'; then
             echo "❌ the password leaked into the log"
             exit 1

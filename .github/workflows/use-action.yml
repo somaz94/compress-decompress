@@ -19,6 +19,7 @@ jobs:
   smoke-test:
     name: Smoke Test (${{ matrix.format }}, root=${{ matrix.include_root }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # `Create release` fires twice per release: once as workflow_dispatch, which
     # only seeds the container image while the tag does not exist yet, and once
     # on the tag push that actually publishes the release. Smoke-testing the
@@ -72,22 +73,24 @@ jobs:
           echo "✅ Archive created: ${{ steps.archive.outputs.path }}"
 
       - name: Verify Outputs
+        # Read through env rather than interpolating into the script: a value
+        # carrying a quote or a newline would otherwise break the shell parse.
+        env:
+          FILE_PATH: ${{ steps.compress.outputs.file_path }}
+          CHECKSUM: ${{ steps.compress.outputs.checksum }}
+          ORIGINAL_SIZE: ${{ steps.compress.outputs.original_size }}
+          COMPRESSED_SIZE: ${{ steps.compress.outputs.compressed_size }}
+          COMPRESSION_RATIO: ${{ steps.compress.outputs.compression_ratio }}
+          FILE_COUNT: ${{ steps.compress.outputs.file_count }}
+          DURATION: ${{ steps.compress.outputs.duration }}
         run: |
-          for value in \
-            "file_path=${{ steps.compress.outputs.file_path }}" \
-            "checksum=${{ steps.compress.outputs.checksum }}" \
-            "original_size=${{ steps.compress.outputs.original_size }}" \
-            "compressed_size=${{ steps.compress.outputs.compressed_size }}" \
-            "compression_ratio=${{ steps.compress.outputs.compression_ratio }}" \
-            "file_count=${{ steps.compress.outputs.file_count }}" \
-            "duration=${{ steps.compress.outputs.duration }}"; do
-            case "$value" in
-              *=) echo "❌ empty output: ${value%=}"; exit 1 ;;
-              *) echo "✅ $value" ;;
-            esac
+          set -euo pipefail
+          for key in FILE_PATH CHECKSUM ORIGINAL_SIZE COMPRESSED_SIZE \
+                     COMPRESSION_RATIO FILE_COUNT DURATION; do
+            [ -n "${!key}" ] || { echo "❌ empty output: $key"; exit 1; }
+            echo "✅ $key=${!key}"
           done
-          [ "${{ steps.compress.outputs.file_count }}" = "2" ] \
-            || { echo "❌ unexpected file_count"; exit 1; }
+          [ "$FILE_COUNT" = "2" ] || { echo "❌ unexpected file_count: $FILE_COUNT"; exit 1; }
 
       - name: Decompress
         uses: somaz94/compress-decompress@v1
