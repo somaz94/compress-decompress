@@ -59,3 +59,28 @@ class TestCommandExecutor:
     def test_custom_timeout(self):
         result = CommandExecutor.run("echo fast", timeout=5)
         assert result.success is True
+
+
+class TestSecretMasking:
+    @pytest.fixture(autouse=True)
+    def _registered_secret(self):
+        from masking import clear_secrets, register_secret
+        clear_secrets()
+        register_secret("s3cr3t-pass")
+        yield
+        clear_secrets()
+
+    def test_password_is_masked_in_the_echoed_command(self, capsys):
+        CommandExecutor.run("echo 'zip -P s3cr3t-pass'", verbose=False)
+        out = capsys.readouterr().out
+        assert "s3cr3t-pass" not in out
+        assert "***" in out
+
+    def test_password_is_masked_in_the_failure_message(self):
+        with pytest.raises(CommandError) as exc_info:
+            CommandExecutor.run("false s3cr3t-pass", fail_on_error=True)
+        assert "s3cr3t-pass" not in str(exc_info.value)
+
+    def test_password_is_masked_in_the_returned_result(self):
+        result = CommandExecutor.run("false s3cr3t-pass", fail_on_error=False)
+        assert "s3cr3t-pass" not in result.message

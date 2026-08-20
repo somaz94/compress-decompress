@@ -1,6 +1,7 @@
 import os
 import sys
 from config import CompressionFormat, AppConfig
+from masking import register_secret
 from ui import UI
 from app_logger import logger
 from exceptions import CompressError, ValidationError
@@ -80,8 +81,22 @@ class ActionRunner:
             with open(github_output, "a") as f:
                 f.write(f"{name}={value}\n")
 
+    def register_secrets(self) -> None:
+        """
+        Keep the password out of the log.
+
+        `::add-mask::` covers everything GitHub renders afterwards; the local
+        registry covers the command strings this action prints itself, which
+        the workflow-level masking never sees on a `fail_on_error: false` run
+        that keeps going.
+        """
+        if self.config.password:
+            register_secret(self.config.password)
+            print(f"::add-mask::{self.config.password}")
+
     def run(self) -> None:
         """Main execution flow: validate, configure, execute"""
+        self.register_secrets()
         self.validate_inputs()
         self.print_configuration()
         logger.set_verbose(self.config.verbose)

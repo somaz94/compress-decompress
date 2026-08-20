@@ -124,3 +124,25 @@ class TestMainFunction:
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
+
+
+class TestSecretRegistration:
+    def test_password_is_registered_and_masked(self, make_config, capsys):
+        from masking import clear_secrets, mask
+        clear_secrets()
+        try:
+            runner = ActionRunner(make_config(
+                command="compress", source="./src", format="zip", password="example-password-1",
+            ))
+            runner.register_secrets()
+            assert "::add-mask::example-password-1" in capsys.readouterr().out
+            assert mask("zip -P example-password-1") == "zip -P ***"
+        finally:
+            clear_secrets()
+
+    def test_no_password_registers_nothing(self, make_config, capsys):
+        runner = ActionRunner(make_config(
+            command="compress", source="./src", format="zip",
+        ))
+        runner.register_secrets()
+        assert "::add-mask::" not in capsys.readouterr().out
