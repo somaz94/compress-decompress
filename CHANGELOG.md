@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased (2026-08-20)
+
+### Features
+
+- add zstd format, archive integrity checks, and result metrics ([d46af9e](https://github.com/somaz94/compress-decompress/commit/d46af9ef296bea9920cc16a948e71baea2a17b1e))
+
+### Bug Fixes
+
+- mask the zip password in command logs and error output ([35c03a9](https://github.com/somaz94/compress-decompress/commit/35c03a9c380199e031e179d35b399db0b3561f43))
+
+### Documentation
+
+- document zstd, outputs, job summary, and integrity checks ([054d185](https://github.com/somaz94/compress-decompress/commit/054d1857175cac74cfe5ee8e6ffcbda6079fdd5a))
+
+### Continuous Integration
+
+- build the image from source so CI exercises the branch code ([2676c11](https://github.com/somaz94/compress-decompress/commit/2676c11a273991b2216e116645fc0c6e00e50787))
+
+### Chores
+
+- bump the action image to v1.12.0 ([0bef10c](https://github.com/somaz94/compress-decompress/commit/0bef10c189d3cdf9cd876f3b10cc48f9141c27ed))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.11.0](https://github.com/somaz94/compress-decompress/compare/v1.10.2...v1.11.0) (2026-08-07)
 
 ### Performance Improvements
