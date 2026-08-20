@@ -6,6 +6,18 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app'))
 
 
+@pytest.fixture(autouse=True)
+def _clean_secret_registry():
+    """
+    `masking._secrets` is process-global, so a secret left registered by one
+    test would mask substrings in another test's captured output.
+    """
+    from masking import clear_secrets
+    clear_secrets()
+    yield
+    clear_secrets()
+
+
 @pytest.fixture
 def tmp_source(tmp_path):
     """Create a temporary source directory with test files"""

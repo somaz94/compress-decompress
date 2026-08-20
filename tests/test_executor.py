@@ -64,11 +64,8 @@ class TestCommandExecutor:
 class TestSecretMasking:
     @pytest.fixture(autouse=True)
     def _registered_secret(self):
-        from masking import clear_secrets, register_secret
-        clear_secrets()
+        from masking import register_secret
         register_secret("s3cr3t-pass")
-        yield
-        clear_secrets()
 
     def test_password_is_masked_in_the_echoed_command(self, capsys):
         CommandExecutor.run("echo 'zip -P s3cr3t-pass'", verbose=False)

@@ -1,6 +1,8 @@
 import tarfile
 import zipfile
 
+import pytest
+
 import archive
 
 
@@ -22,6 +24,36 @@ class TestListEntries:
 
     def test_missing_archive_returns_none(self, tmp_path):
         assert archive.list_entries(str(tmp_path / "absent.tar"), "tar") is None
+
+
+class TestZstdInspection:
+    """
+    tarfile grew zstd support in Python 3.14, which is what the action image
+    ships. Older interpreters must degrade to "cannot inspect", never to an
+    error, so the traversal guard simply steps aside.
+    """
+
+    def _make_tzst(self, tmp_path):
+        import subprocess
+        src = tmp_path / "d"
+        src.mkdir()
+        (src / "a.txt").write_text("x")
+        out = tmp_path / "d.tzst"
+        subprocess.run(["tar", "--zstd", "-cf", str(out), "-C", str(tmp_path), "d"],
+                       check=True)
+        return out
+
+    @pytest.mark.skipif("zst" not in tarfile.TarFile.OPEN_METH,
+                        reason="tarfile has no zstd support before Python 3.14")
+    def test_tzst_is_inspectable_on_supported_runtimes(self, tmp_path):
+        entries = archive.list_entries(str(self._make_tzst(tmp_path)), "tzst")
+        assert entries is not None
+        assert archive.count_files(entries) == 1
+
+    @pytest.mark.skipif("zst" in tarfile.TarFile.OPEN_METH,
+                        reason="this runtime can read zstd")
+    def test_tzst_degrades_without_zstd_support(self, tmp_path):
+        assert archive.list_entries(str(self._make_tzst(tmp_path)), "tzst") is None
 
 
 class TestCountFiles:

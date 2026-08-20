@@ -319,17 +319,22 @@ class Compressor(BaseProcessor):
             UI.print_kv("Exclude Pattern", self.exclude)
 
     def _print_results(self, start_time: datetime, source_size: int) -> None:
-        """Print compression results"""
+        """
+        Print compression results.
+
+        Reads the ratio off `OperationStats` rather than recomputing it, so the
+        number on screen and the `compression_ratio` output cannot disagree.
+        """
         duration = (datetime.now() - start_time).total_seconds()
 
         if self.output_path and os.path.exists(self.output_path):
             compressed_size = os.path.getsize(self.output_path)
-            ratio = (1 - (compressed_size / source_size)) * 100 if source_size > 0 else 0
+            self.stats.compressed_size = compressed_size
 
             UI.print_section("Compression Results")
             UI.print_kv("Original Size", FileUtils.get_size(source_size))
             UI.print_kv("Compressed Size", FileUtils.get_size(compressed_size))
-            UI.print_kv("Compression Ratio", f"{ratio:.1f}%")
+            UI.print_kv("Compression Ratio", f"{self.stats.compression_ratio:.1f}%")
             UI.print_kv("Duration", f"{duration:.2f} seconds")
 
     def _compress_glob_pattern(self) -> ProcessResult:

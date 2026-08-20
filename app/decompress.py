@@ -8,7 +8,7 @@ from ui import UI
 import archive
 from file_utils import FileUtils
 from executor import CommandExecutor, ProcessResult
-from config import DECOMPRESSION_COMMANDS, CommandConfig
+from config import DECOMPRESSION_COMMANDS, CommandConfig, CompressionFormat
 from app_logger import logger
 from base_processor import BaseProcessor
 from exceptions import ValidationError, CompressError, CommandError
@@ -46,7 +46,7 @@ class Decompressor(BaseProcessor):
         cmd_config = self._get_command_config()
         options = cmd_config.options(self.dest)
         password_flag = ""
-        if self.password and self.format == "zip":
+        if self.password and self.format == CompressionFormat.ZIP.value:
             password_flag = f"-P {shlex.quote(self.password)} "
         return f"{cmd_config.command} {password_flag}{cmd_config.format(self.source, options)}"
 

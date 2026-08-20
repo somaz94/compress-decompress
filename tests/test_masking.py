@@ -1,12 +1,4 @@
-import pytest
 from masking import MASK, clear_secrets, mask, register_secret
-
-
-@pytest.fixture(autouse=True)
-def _isolated_registry():
-    clear_secrets()
-    yield
-    clear_secrets()
 
 
 class TestMasking:
