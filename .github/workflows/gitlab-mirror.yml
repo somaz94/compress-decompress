@@ -40,3 +40,7 @@ jobs:
           mirror_branches: 'all'
           mirror_tags: 'true'
           force_push: 'true'
+          # GitLab.com occasionally declines a mirror push with an empty
+          # pre-receive message (an internal API timeout, not a real rule
+          # violation). Retry instead of failing the backup outright.
+          retry_count: '2'
