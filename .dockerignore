@@ -50,11 +50,12 @@ Thumbs.db
 tests/
 test_*
 *_test.py
-pytest_cache/
+.pytest_cache/
 .coverage
 htmlcov/
 
 # Virtual environments
 venv/
+.venv/
 env/
 ENV/
