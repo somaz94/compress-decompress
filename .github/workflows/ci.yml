@@ -14,10 +14,24 @@ on:
 permissions:
   contents: read
 
+# A pull request pushed to repeatedly would otherwise keep every superseded run
+# alive, image build included.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit-tests:
-    name: Unit Tests
+    name: Unit Tests (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        # 3.14 is what the action image runs, and the only version whose
+        # tarfile can open a .tzst — the archive-inspection path for zstd is
+        # a no-op anywhere older.
+        python-version: ['3.13', '3.14']
+      fail-fast: false
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -25,7 +39,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.13'
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: pip install pytest pytest-cov
@@ -1786,6 +1800,7 @@ jobs:
 
       - name: Verify Archive Tooling Is Installed
         run: |
+          set -euo pipefail
           docker run --rm --entrypoint sh compress-decompress:ci -c '
             for bin in zip unzip tar gzip bzip2 xz zstd; do
               command -v "$bin" >/dev/null || { echo "❌ missing binary: $bin"; exit 1; }
@@ -1795,6 +1810,7 @@ jobs:
 
       - name: Create Test Files
         run: |
+          set -euo pipefail
           mkdir -p work/data/sub
           echo "top level" > work/data/a.txt
           echo "nested" > work/data/sub/b.txt
