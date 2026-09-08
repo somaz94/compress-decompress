@@ -130,12 +130,15 @@ class Compressor(BaseProcessor):
         return self._get_tar_command(full_dest, base_name)
 
     def _determine_destination_path(self, base_name: str, extension: str) -> str:
-        """Determine the full destination path for the compressed file"""
-        if self.dest and self.dest != os.getcwd():
-            return os.path.abspath(os.path.join(self.dest, f"{base_name}{extension}"))
+        """
+        Determine the full destination path for the compressed file.
 
-        output_dir = os.path.dirname(self.source) if self.include_root else self.source
-        return os.path.join(output_dir, f"{base_name}{extension}")
+        `self.dest` already carries the fallback chain (dest -> GITHUB_WORKSPACE
+        -> cwd), so this is the only rule there is. It deliberately does not
+        consult include_root: that input decides what goes INSIDE the archive,
+        not where the archive lands.
+        """
+        return os.path.abspath(os.path.join(self.dest, f"{base_name}{extension}"))
 
     def _resolve_source_path(self) -> str:
         """

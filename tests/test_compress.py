@@ -308,7 +308,7 @@ class TestDestinationPath:
         c.source = str(tmp_source)
         c.dest = os.getcwd()
         path = c._determine_destination_path("source", ".zip")
-        assert path.endswith("source.zip")
+        assert path == os.path.join(os.getcwd(), "source.zip")
 
     def test_default_destination_without_root(self, make_config, tmp_source):
         config = make_config(
@@ -319,7 +319,35 @@ class TestDestinationPath:
         c.source = str(tmp_source)
         c.dest = os.getcwd()
         path = c._determine_destination_path("source", ".zip")
-        assert path.endswith("source.zip")
+        assert path == os.path.join(os.getcwd(), "source.zip")
+
+    @pytest.mark.parametrize("depth", ["direct-child", "nested"])
+    def test_include_root_does_not_move_the_output(self, make_config, tmp_path, monkeypatch, depth):
+        """
+        Regression for #58: includeRoot decides what goes INSIDE the archive,
+        never where the archive lands. With no `dest`, both values must land
+        in the workspace root -- the reported bug put the includeRoot=false
+        archive inside the source directory instead.
+
+        cwd is moved onto the workspace on purpose: that is the action
+        container's layout, and it is the only shape in which the bug fired.
+        """
+        monkeypatch.setenv("GITHUB_WORKSPACE", str(tmp_path))
+        monkeypatch.chdir(tmp_path)
+        source = tmp_path / "build" / "dist" if depth == "nested" else tmp_path / "output"
+        source.mkdir(parents=True)
+
+        paths = []
+        for include_root in ("true", "false"):
+            config = make_config(
+                source=str(source), format="zip",
+                include_root=include_root, dest="",
+            )
+            c = Compressor(config)
+            c.source = str(source)
+            paths.append(c._determine_destination_path("archive", ".zip"))
+
+        assert paths[0] == paths[1] == str(tmp_path / "archive.zip")
 
 
 class TestExcludePatternFormatting:
