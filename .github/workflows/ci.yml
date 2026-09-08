@@ -1895,6 +1895,42 @@ jobs:
             echo "✅ includeRoot=$include_root -> ./data.zip containing $expected"
           done
 
+      - name: Verify A Host Runner Sub-path Survives The Workspace Remap
+        # `${{ github.workspace }}/dist` expands on the host to
+        # /home/runner/work/<repo>/<repo>/dist, which used to collapse to the
+        # workspace root -- so the README's own recommended form silently
+        # archived the whole repository. Only the from-source job can catch it.
+        run: |
+          set -euo pipefail
+          run_remap() {
+            docker run --rm \
+              -v "$PWD/work:/github/workspace" \
+              -w /github/workspace \
+              -e GITHUB_WORKSPACE=/github/workspace \
+              -e GITHUB_OUTPUT=/github/workspace/out-remap.txt \
+              -e COMMAND=compress -e FORMAT=zip -e INCLUDEROOT=false \
+              -e SOURCE="$1" compress-decompress:ci
+          }
+
+          rm -f work/data.zip
+          run_remap /home/runner/work/compress-decompress/compress-decompress/data
+
+          [ -f work/data.zip ] || {
+            echo "❌ archive missing"; find work -name '*.zip'; exit 1; }
+          entries=$(unzip -Z1 work/data.zip | sort | paste -sd, -)
+          [ "$entries" = "a.txt,sub/,sub/b.txt" ] || {
+            echo "❌ sub-path lost; archived: $entries"; exit 1; }
+          echo "✅ host runner sub-path preserved -> ./data.zip"
+
+          # ${{ runner.temp }} and _actions are never mounted into the
+          # container, so the action must fail honestly rather than fall back
+          # to archiving the workspace.
+          if run_remap /home/runner/work/_temp/build; then
+            echo "❌ an unmounted runner path should not have succeeded"
+            exit 1
+          fi
+          echo "✅ an unmounted runner path fails instead of archiving the workspace"
+
       - name: Reject A Tampered Archive
         run: |
           set -euo pipefail

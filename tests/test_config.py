@@ -89,6 +89,19 @@ class TestAppConfig:
         assert config.fail_on_error is True
         assert config.dedupe_extension == "true"
 
+    @pytest.mark.parametrize("var, attr, expected", [
+        # An input wired to an unset expression arrives as "", not as absent.
+        # Reading that as "off" would silently invert the action.yml default
+        # and let a failed compression report a green job.
+        ("FAIL_ON_ERROR", "fail_on_error", True),
+        ("INCLUDEROOT", "include_root", "true"),
+    ])
+    def test_empty_env_falls_back_to_the_documented_default(
+        self, monkeypatch, var, attr, expected
+    ):
+        monkeypatch.setenv(var, "")
+        assert getattr(AppConfig.from_env(), attr) == expected
+
     def test_valid_compression_levels(self):
         for level in "0123456789":
             assert AppConfig._is_valid_compression_level(level) is True

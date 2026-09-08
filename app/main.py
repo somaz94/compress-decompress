@@ -94,8 +94,11 @@ class ActionRunner:
         """Write output to GITHUB_OUTPUT for use in subsequent steps"""
         github_output = os.getenv("GITHUB_OUTPUT")
         if github_output:
-            with open(github_output, "a") as f:
-                f.write(f"{name}={value}\n")
+            # A newline in the value would forge additional output entries, and
+            # the file is UTF-8 regardless of the container locale.
+            safe = value.replace("\n", " ").replace("\r", " ")
+            with open(github_output, "a", encoding="utf-8") as f:
+                f.write(f"{name}={safe}\n")
 
     def register_secrets(self) -> None:
         """

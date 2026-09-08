@@ -53,13 +53,26 @@ def _remap_runner_path(source: str) -> str:
     workspace path. Idempotent — returns the input unchanged when it is
     not a host-side path or when GITHUB_WORKSPACE is unset.
 
+    The host layout is /home/runner/work/<repo>/<repo>[/sub/path], and only
+    the trailing sub-path is meaningful inside the container, so it is carried
+    over rather than discarded -- `${{ github.workspace }}/dist` must not
+    collapse to the workspace root and archive the whole repository.
+
     Step 2 (Compressor._resolve_source_path) maps an absolute path equal to
     the workspace back to the current working directory.
     """
-    if source.startswith(_RUNNER_WORK_PREFIX):
-        workspace = os.getenv("GITHUB_WORKSPACE")
-        if workspace:
-            return workspace
+    if not source.startswith(_RUNNER_WORK_PREFIX):
+        return source
+    workspace = os.getenv("GITHUB_WORKSPACE")
+    if not workspace:
+        return source
+    # Only the <repo>/<repo> checkout is mounted at GITHUB_WORKSPACE. Anything
+    # else under /home/runner/work -- ${{ runner.temp }}, _actions -- is not
+    # mounted at all, so remapping it would silently archive the workspace
+    # instead of failing honestly in validate_path.
+    parts = source[len(_RUNNER_WORK_PREFIX):].split("/")
+    if len(parts) >= 2 and parts[0] == parts[1]:
+        return os.path.join(workspace, *parts[2:])
     return source
 
 
@@ -121,7 +134,9 @@ class Compressor(BaseProcessor):
 
     def get_compression_command(self) -> str:
         """Generate the appropriate compression command based on format"""
-        base_name = self.destfilename or os.path.basename(self.source)
+        # normpath first: a trailing slash would otherwise make basename empty
+        # and name the archive ".zip".
+        base_name = self.destfilename or os.path.basename(os.path.normpath(self.source))
         extension = f".{self.format}"
         # A destfilename that already carries the format extension is taken as
         # the finished name: `archive.zip` yields archive.zip, not
@@ -276,7 +291,7 @@ class Compressor(BaseProcessor):
         extra = f"{_TAR_LONG_FLAGS[self.format]} " if self.format in _TAR_LONG_FLAGS else ""
         return f"""
             mkdir -p {q_temp} &&
-            cp -r {q_src}/* {q_temp}/ &&
+            cp -a {q_src}/. {q_temp}/ &&
             {level_env}tar {extra}{exclude_cmd} -c{opt}f {q_dest} -C {q_temp} . &&
             rm -rf {q_temp}
         """

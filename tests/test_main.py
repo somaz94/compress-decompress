@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 from config import AppConfig
 from main import ActionRunner, main
 from exceptions import ValidationError, CompressError
@@ -180,6 +180,30 @@ class TestActionOutputs:
         assert outputs["file_path"] == str(dest)
         assert "checksum" not in outputs
         assert outputs["file_count"] == "3"
+
+    def test_a_newline_in_a_value_cannot_forge_an_output(self, tmp_path, monkeypatch):
+        """`file_path` derives from workflow-controlled destfilename."""
+        output_file = tmp_path / "outputs.txt"
+        monkeypatch.setenv("GITHUB_OUTPUT", str(output_file))
+        ActionRunner._set_output("file_path", "a.zip\nfile_count=999")
+
+        lines = output_file.read_text().splitlines()
+        assert lines == ["file_path=a.zip file_count=999"]
+
+    def test_output_is_written_as_utf8(self, tmp_path, monkeypatch):
+        """
+        Asserts the explicit `encoding=` argument, not the round-trip: the
+        round-trip passes without it on any UTF-8 host, so it pins nothing.
+        The container locale is what this guards against.
+        """
+        output_file = tmp_path / "outputs.txt"
+        monkeypatch.setenv("GITHUB_OUTPUT", str(output_file))
+        with patch("builtins.open", mock_open()) as opened:
+            ActionRunner._set_output("file_path", "아카이브.zip")
+        assert opened.call_args.kwargs.get("encoding") == "utf-8"
+
+        ActionRunner._set_output("file_path", "아카이브.zip")
+        assert output_file.read_text(encoding="utf-8") == "file_path=아카이브.zip\n"
 
     def test_no_outputs_without_github_output(self, make_config, tmp_source, tmp_path,
                                               monkeypatch):

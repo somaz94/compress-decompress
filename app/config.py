@@ -107,14 +107,18 @@ class AppConfig:
             command=os.getenv("COMMAND", ""),
             source=os.getenv("SOURCE", ""),
             format=os.getenv("FORMAT", ""),
-            include_root=os.getenv("INCLUDEROOT", "true"),
+            # `or` rather than a getenv default: an input wired to an unset
+            # expression arrives as "", which must still read as the documented default.
+            include_root=os.getenv("INCLUDEROOT") or "true",
             preserve_glob_structure=os.getenv("PRESERVE_GLOB_STRUCTURE", "false"),
             strip_prefix=os.getenv("STRIP_PREFIX", ""),
             verbose=FileUtils.str_to_bool(os.getenv("VERBOSE", "false")),
-            fail_on_error=FileUtils.str_to_bool(os.getenv("FAIL_ON_ERROR", "true")),
+            fail_on_error=FileUtils.str_to_bool(
+                os.getenv("FAIL_ON_ERROR", "true"), default=True
+            ),
             dest=os.getenv("DEST", ""),
             destfilename=os.getenv("DESTFILENAME", ""),
-            dedupe_extension=os.getenv("DEDUPE_EXTENSION", "true"),
+            dedupe_extension=os.getenv("DEDUPE_EXTENSION") or "true",
             exclude=os.getenv("EXCLUDE", ""),
             compression_level=compression_level,
             password=os.getenv("PASSWORD", ""),

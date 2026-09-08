@@ -1,7 +1,8 @@
 import os
+import subprocess
 import shlex
 import pytest
-from compress import Compressor, compress
+from compress import Compressor, compress, _remap_runner_path
 from config import AppConfig
 
 
@@ -53,6 +54,30 @@ class TestCompressorValidate:
         # After validate, source should be converted to GITHUB_WORKSPACE
         c.validate()  # will fail since path doesn't exist, but source is converted
         assert c.source == '/github/workspace'
+
+    @pytest.mark.parametrize("host_path, expected", [
+        # The repo root maps to the workspace root.
+        ("/home/runner/work/repo/repo", "/github/workspace"),
+        # A sub-path must survive the remap. Collapsing it to the workspace
+        # root makes the action archive the whole repository instead.
+        ("/home/runner/work/repo/repo/dist", "/github/workspace/dist"),
+        ("/home/runner/work/repo/repo/build/out", "/github/workspace/build/out"),
+        # Not the <repo>/<repo> layout: ${{ runner.temp }} and _actions are
+        # not mounted into the container, so the path is left alone and
+        # validate_path reports it honestly instead of silently archiving
+        # the whole workspace.
+        ("/home/runner/work/_temp/build", "/home/runner/work/_temp/build"),
+        ("/home/runner/work/a/b/c", "/home/runner/work/a/b/c"),
+        ("/some/other/path", "/some/other/path"),
+    ])
+    def test_runner_path_keeps_the_sub_path(self, monkeypatch, host_path, expected):
+        monkeypatch.setenv("GITHUB_WORKSPACE", "/github/workspace")
+        assert _remap_runner_path(host_path) == expected
+
+    def test_runner_path_unchanged_without_a_workspace(self, monkeypatch):
+        monkeypatch.delenv("GITHUB_WORKSPACE", raising=False)
+        assert _remap_runner_path("/home/runner/work/repo/repo/dist") == \
+            "/home/runner/work/repo/repo/dist"
 
 
 class TestZipCommand:
@@ -388,6 +413,22 @@ class TestDestinationFilename:
     ):
         assert self._output_name(make_config, tmp_path, monkeypatch, destfilename, fmt) == expected
 
+    @pytest.mark.parametrize("suffix", ["", "/"])
+    def test_a_trailing_slash_does_not_empty_the_name(
+        self, make_config, tmp_path, monkeypatch, suffix
+    ):
+        """A trailing slash used to make basename empty, naming the archive ".zip"."""
+        monkeypatch.setenv("GITHUB_WORKSPACE", str(tmp_path))
+        source = tmp_path / "output"
+        source.mkdir(exist_ok=True)
+        config = make_config(
+            source=str(source), format="zip", include_root="false", dest="",
+        )
+        c = Compressor(config)
+        c.source = f"{source}{suffix}"
+        c.get_compression_command()
+        assert os.path.basename(c.output_path) == "output.zip"
+
     def test_default_name_comes_from_the_source(self, make_config, tmp_path, monkeypatch):
         """Not from the working directory, which is what the README used to claim."""
         monkeypatch.chdir(tmp_path)
@@ -466,8 +507,44 @@ class TestSpecialTarCommand:
         c.source = str(tmp_source)
         cmd = c._get_tar_command("/out/test.tgz", "test")
         assert "mkdir -p" in cmd
-        assert "cp -r" in cmd
+        # `cp -a src/.` rather than `cp -r src/*`: the glob skips dotfiles and
+        # exits non-zero on an empty source directory.
+        assert "cp -a" in cmd
+        assert "/*" not in cmd
         assert "-czf" in cmd
+
+    @pytest.mark.parametrize("fmt, flag", [("tgz", "z"), ("tbz2", "j")])
+    def test_the_generated_command_keeps_dotfiles(self, make_config, tmp_path, fmt, flag):
+        """Executed for real: `cp -r src/*` silently dropped every dotfile."""
+        source = tmp_path / "src"
+        (source / "sub").mkdir(parents=True)
+        (source / "visible.txt").write_text("v")
+        (source / ".hidden").write_text("h")
+        dest = tmp_path / f"out.{fmt}"
+
+        config = make_config(source=str(source), format=fmt, include_root="false")
+        c = Compressor(config)
+        c.source = str(source)
+        cmd = c._get_tar_command(str(dest), "out")
+        assert subprocess.run(cmd, shell=True, capture_output=True).returncode == 0
+
+        listed = subprocess.run(["tar", f"-t{flag}f", str(dest)],
+                                capture_output=True, text=True).stdout
+        assert "./.hidden" in listed.split()
+        assert "./visible.txt" in listed.split()
+
+    def test_the_generated_command_survives_an_empty_source(self, make_config, tmp_path):
+        """`cp -r empty/*` exits 1, which aborted the && chain."""
+        source = tmp_path / "empty"
+        source.mkdir()
+        dest = tmp_path / "out.tgz"
+
+        config = make_config(source=str(source), format="tgz", include_root="false")
+        c = Compressor(config)
+        c.source = str(source)
+        cmd = c._get_tar_command(str(dest), "out")
+        assert subprocess.run(cmd, shell=True, capture_output=True).returncode == 0
+        assert dest.exists()
 
     def test_special_tar_command_tbz2(self, make_config, tmp_source):
         config = make_config(
