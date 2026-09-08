@@ -104,11 +104,9 @@ jobs:
           if [ "${{ matrix.dest_config.type }}" = "custom" ]; then
             echo "source_path=${{ matrix.dest_config.dest }}/${{ matrix.dest_config.destfilename }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
           else
-            if [ "${{ matrix.include_root }}" = "true" ]; then
-              echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
-            else
-              echo "source_path=./${{ matrix.source }}/${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
-            fi
+            # includeRoot decides what goes INSIDE the archive, never where it
+            # lands, so both values write to the workspace root (#58).
+            echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload Compressed Artifact
@@ -1858,6 +1856,43 @@ jobs:
               || { echo "❌ round-trip lost a.txt"; find "work/unpacked-$fmt"; exit 1; }
             echo "✅ $fmt round-tripped"
             echo "::endgroup::"
+          done
+
+      - name: Verify includeRoot Does Not Move The Output
+        # Regression guard for #58. Every check above passes an explicit DEST,
+        # which is exactly the branch the bug never reached -- so the archive
+        # location has to be pinned with DEST unset, for both includeRoot
+        # values, against the image built from this branch.
+        run: |
+          set -euo pipefail
+          for include_root in true false; do
+            rm -f work/data.zip work/data/data.zip
+            docker run --rm \
+              -v "$PWD/work:/github/workspace" \
+              -w /github/workspace \
+              -e GITHUB_WORKSPACE=/github/workspace \
+              -e GITHUB_OUTPUT=/github/workspace/out-root.txt \
+              -e COMMAND=compress -e SOURCE=./data -e FORMAT=zip \
+              -e INCLUDEROOT="$include_root" \
+              compress-decompress:ci
+
+            [ -f work/data.zip ] || {
+              echo "❌ includeRoot=$include_root: archive is not at the workspace root"
+              find work -name '*.zip'; exit 1; }
+            [ ! -e work/data/data.zip ] || {
+              echo "❌ includeRoot=$include_root: archive leaked into the source directory"
+              exit 1; }
+
+            # The location is shared; the contents are what includeRoot changes.
+            if [ "$include_root" = true ]; then
+              expected='data/a.txt'
+            else
+              expected='a.txt'
+            fi
+            unzip -Z1 work/data.zip | grep -qx "$expected" || {
+              echo "❌ includeRoot=$include_root: expected entry $expected"
+              unzip -Z1 work/data.zip; exit 1; }
+            echo "✅ includeRoot=$include_root -> ./data.zip containing $expected"
           done
 
       - name: Reject A Tampered Archive

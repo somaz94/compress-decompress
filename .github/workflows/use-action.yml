@@ -57,17 +57,21 @@ jobs:
 
       - name: Set Archive Path
         id: archive
-        run: |
-          if [ "${{ matrix.include_root }}" = "true" ]; then
-            echo "path=./testdir.${{ matrix.format }}" >> $GITHUB_OUTPUT
-          else
-            echo "path=./testdir/testdir.${{ matrix.format }}" >> $GITHUB_OUTPUT
-          fi
+        # includeRoot decides what goes INSIDE the archive, never where it
+        # lands, so both values write to the workspace root. This step used to
+        # branch on includeRoot and encoded the #58 bug as the expectation.
+        run: echo "path=./testdir.${{ matrix.format }}" >> $GITHUB_OUTPUT
 
       - name: Verify Archive Created
         run: |
           if [ ! -f "${{ steps.archive.outputs.path }}" ]; then
             echo "❌ Archive not found: ${{ steps.archive.outputs.path }}"
+            exit 1
+          fi
+          # Regression guard for #58: the archive must never be written inside
+          # the directory being compressed.
+          if [ -e "./testdir/testdir.${{ matrix.format }}" ]; then
+            echo "❌ Archive leaked into the source directory (#58)"
             exit 1
           fi
           echo "✅ Archive created: ${{ steps.archive.outputs.path }}"
