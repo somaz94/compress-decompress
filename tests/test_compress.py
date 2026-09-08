@@ -1,6 +1,7 @@
 import os
 import shlex
 import subprocess
+import tempfile
 import pytest
 from compress import Compressor, compress, _remap_runner_path
 from exceptions import ValidationError
@@ -492,52 +493,20 @@ class TestOutputDirectoryHandling:
 
 
 class TestTempDirectories:
-    def test_the_staging_directory_lives_outside_the_source(
+    def test_the_glob_staging_directory_is_unique_and_cleaned_up(
         self, make_config, tmp_source
     ):
-        """
-        It used to be a sibling of the source, so a failed tar left a full copy
-        inside the user's checkout.
-        """
-        config = make_config(source=str(tmp_source), format="tgz", include_root="false")
-        c = Compressor(config)
-        c.source = str(tmp_source)
-        try:
-            c._get_tar_command("/out/a.tgz", "a")
-            staged = c._archive_temp_dir
-            assert staged is not None
-            assert not staged.startswith(str(tmp_source.parent))
-            assert os.path.isdir(staged)
-        finally:
+        """A pid-derived name collided between jobs on one self-hosted runner."""
+        config = make_config(source=str(tmp_source), format="zip")
+        first = Compressor(config)
+        second = Compressor(config)
+        first.temp_dir = tempfile.mkdtemp(prefix="compress_glob_")
+        second.temp_dir = tempfile.mkdtemp(prefix="compress_glob_")
+        assert first.temp_dir != second.temp_dir
+
+        for c in (first, second):
             c._cleanup_temp_directory()
-        assert not os.path.exists(staged)
-
-    def test_a_destfilename_with_a_slash_does_not_nest_the_staging_directory(
-        self, make_config, tmp_source
-    ):
-        config = make_config(source=str(tmp_source), format="tgz", include_root="false")
-        c = Compressor(config)
-        c.source = str(tmp_source)
-        try:
-            c._get_tar_command("/out/a.tgz", "sub/a")
-            assert "sub" not in os.path.basename(c._archive_temp_dir)
-        finally:
-            c._cleanup_temp_directory()
-
-    def test_cleanup_removes_both_temp_directories(self, make_config, tmp_source, tmp_path):
-        config = make_config(source=str(tmp_source), format="tgz")
-        c = Compressor(config)
-        glob_dir = tmp_path / "glob"
-        glob_dir.mkdir()
-        archive_dir = tmp_path / "archive"
-        archive_dir.mkdir()
-        c.temp_dir = str(glob_dir)
-        c._archive_temp_dir = str(archive_dir)
-
-        c._cleanup_temp_directory()
-        assert not glob_dir.exists()
-        assert not archive_dir.exists()
-
+            assert not os.path.exists(c.temp_dir)
 
 class TestIncludeHidden:
     """`includeHidden` must behave identically across every format."""
@@ -637,25 +606,38 @@ class TestExcludePatternFormatting:
         assert f"{dir_name}/" not in result
 
 
-class TestSpecialTarCommand:
-    def test_special_tar_command_tgz(self, make_config, tmp_source):
-        config = make_config(
-            source=str(tmp_source), format="tgz",
-            include_root="false",
-        )
+class TestCompressedTarCommand:
+    """
+    tgz/tbz2/txz/tzst with includeRoot=false used to stage a full copy of the
+    source in a temp directory before archiving, because the archive landed
+    INSIDE the source directory. #58 moved it out, so these formats now take
+    the same single-command path as plain tar.
+    """
+
+    @staticmethod
+    def _cmd(make_config, source, fmt):
+        config = make_config(source=str(source), format=fmt, include_root="false")
         c = Compressor(config)
-        c.source = str(tmp_source)
-        cmd = c._get_tar_command("/out/test.tgz", "test")
-        assert "mkdir -p" in cmd
-        # `cp -a src/.` rather than `cp -r src/*`: the glob skips dotfiles and
-        # exits non-zero on an empty source directory.
-        assert "cp -a" in cmd
-        assert "/*" not in cmd
-        assert "-czf" in cmd
+        c.source = str(source)
+        return c, c._get_tar_command(f"/out/test.{fmt}", "test")
+
+    @pytest.mark.parametrize("fmt, flag", [
+        ("tgz", "-czf"), ("tbz2", "-cjf"), ("txz", "-cJf"), ("tzst", "-cf"),
+    ])
+    def test_no_staging_copy_is_made(self, make_config, tmp_source, fmt, flag):
+        c, cmd = self._cmd(make_config, tmp_source, fmt)
+        for staging in ("mkdir -p", "cp -a", "cp -r", "rm -rf"):
+            assert staging not in cmd
+        assert flag in cmd
+        assert f"-C {shlex.quote(str(tmp_source))} ." in cmd
+
+    def test_zstd_still_uses_its_long_option(self, make_config, tmp_source):
+        _, cmd = self._cmd(make_config, tmp_source, "tzst")
+        assert "--zstd" in cmd
 
     @pytest.mark.parametrize("fmt, flag", [("tgz", "z"), ("tbz2", "j")])
-    def test_the_generated_command_keeps_dotfiles(self, make_config, tmp_path, fmt, flag):
-        """Executed for real: `cp -r src/*` silently dropped every dotfile."""
+    def test_dotfiles_are_archived(self, make_config, tmp_path, fmt, flag):
+        """The staging copy used to drop them; the direct path never did."""
         source = tmp_path / "src"
         (source / "sub").mkdir(parents=True)
         (source / "visible.txt").write_text("v")
@@ -669,12 +651,11 @@ class TestSpecialTarCommand:
         assert subprocess.run(cmd, shell=True, capture_output=True).returncode == 0
 
         listed = subprocess.run(["tar", f"-t{flag}f", str(dest)],
-                                capture_output=True, text=True).stdout
-        assert "./.hidden" in listed.split()
-        assert "./visible.txt" in listed.split()
+                                capture_output=True, text=True).stdout.split()
+        assert "./.hidden" in listed
+        assert "./visible.txt" in listed
 
-    def test_the_generated_command_survives_an_empty_source(self, make_config, tmp_path):
-        """`cp -r empty/*` exits 1, which aborted the && chain."""
+    def test_an_empty_source_still_produces_an_archive(self, make_config, tmp_path):
         source = tmp_path / "empty"
         source.mkdir()
         dest = tmp_path / "out.tgz"
@@ -686,27 +667,18 @@ class TestSpecialTarCommand:
         assert subprocess.run(cmd, shell=True, capture_output=True).returncode == 0
         assert dest.exists()
 
-    def test_special_tar_command_tbz2(self, make_config, tmp_source):
-        config = make_config(
-            source=str(tmp_source), format="tbz2",
-            include_root="false",
-        )
-        c = Compressor(config)
-        c.source = str(tmp_source)
-        cmd = c._get_tar_command("/out/test.tbz2", "test")
-        assert "mkdir -p" in cmd
-        assert "-cjf" in cmd
+    def test_nothing_is_written_beside_the_source(self, make_config, tmp_path):
+        """The staging directory used to be created next to the source."""
+        source = tmp_path / "src"
+        source.mkdir()
+        (source / "a.txt").write_text("a")
+        dest = tmp_path / "out.tgz"
 
-    def test_special_tar_with_exclude(self, make_config, tmp_source):
-        config = make_config(
-            source=str(tmp_source), format="tgz",
-            include_root="false", exclude="*.log",
-        )
+        config = make_config(source=str(source), format="tgz", include_root="false")
         c = Compressor(config)
-        c.source = str(tmp_source)
-        cmd = c._get_special_tar_command("/out/test.tgz", "test", "z")
-        assert "--exclude=" in cmd
-
+        c.source = str(source)
+        subprocess.run(c._get_tar_command(str(dest), "out"), shell=True, capture_output=True)
+        assert sorted(q.name for q in tmp_path.iterdir()) == ["out.tgz", "src"]
 
 class TestCleanup:
     def test_cleanup_temp_directory(self, make_config, tmp_path):
@@ -870,7 +842,8 @@ class TestTxzFormat:
         c = Compressor(config)
         c.source = str(tmp_source)
         cmd = c._get_tar_command("/out/test.txz", "test")
-        assert "mkdir -p" in cmd
+        # No staging copy: this format archives the source directly.
+        assert "mkdir -p" not in cmd
         assert "-cJf" in cmd
 
     def test_txz_level_env(self, make_config, tmp_source):
@@ -956,7 +929,8 @@ class TestZstdFormat:
         c = Compressor(config)
         c.source = str(tmp_source)
         cmd = c._get_tar_command("/out/test.tzst", "test")
-        assert "mkdir -p" in cmd
+        # No staging copy: this format archives the source directly.
+        assert "mkdir -p" not in cmd
         assert "--zstd" in cmd
 
     def test_tzst_level_env(self, make_config, tmp_source):

@@ -35,15 +35,6 @@ _TAR_LONG_FLAGS = {
     CompressionFormat.TZST.value: "--zstd",
 }
 
-# Compressed tar formats take the temp-directory path when includeRoot is false.
-_COMPRESSED_TAR_FORMATS = (
-    CompressionFormat.TGZ.value,
-    CompressionFormat.TBZ2.value,
-    CompressionFormat.TXZ.value,
-    CompressionFormat.TZST.value,
-)
-
-
 def _remap_runner_path(source: str) -> str:
     """
     Step 1 of the two-step GitHub Actions workspace remap.
@@ -98,7 +89,6 @@ class Compressor(BaseProcessor):
         self.include_hidden = FileUtils.str_to_bool(config.include_hidden, default=True)
         self.password = config.password
         self.temp_dir: str | None = None
-        self._archive_temp_dir: str | None = None
         self.output_path = ""
         self.checksum = ""
         self.stats = OperationStats(command="compress", format=self.format)
@@ -263,12 +253,6 @@ class Compressor(BaseProcessor):
         source_path = self._resolve_source_path()
 
         opt = _TAR_COMPRESSION_FLAGS.get(self.format, "")
-
-        # Special case for the compressed tar formats without root
-        if self.format in _COMPRESSED_TAR_FORMATS and not self.include_root:
-            return self._get_special_tar_command(full_dest, base_name, opt)
-
-        # Below the branch on purpose: the special path builds its own.
         # zstd has no single-letter tar flag; it is selected with --zstd.
         extra = f"{_TAR_LONG_FLAGS[self.format]} " if self.format in _TAR_LONG_FLAGS else ""
         level_env = self._get_tar_level_env()
@@ -307,32 +291,6 @@ class Compressor(BaseProcessor):
         if self.include_root:
             return [f"{dir_name}/.*", f"{dir_name}/*/.*"]
         return ["./.*", "*/.*"]
-
-    def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
-        """Generate special tar command for TGZ/TBZ2/TXZ formats without root"""
-        source_path = self._resolve_source_path()
-        # Outside the checkout, and unique: this used to be a sibling of the
-        # source, so a failed tar left a full copy of it inside the user's
-        # workspace, and a destfilename carrying a slash built a nested tree.
-        temp_dir = tempfile.mkdtemp(prefix=f"compress_{self.format}_")
-        self._archive_temp_dir = temp_dir
-
-        patterns = self.parse_exclude_patterns() + self._hidden_tar_patterns(
-            os.path.basename(source_path)
-        )
-        exclude_cmd = " ".join([f'--exclude={shlex.quote(p)}' for p in patterns]) if patterns else ""
-
-        q_temp = shlex.quote(temp_dir)
-        q_src = shlex.quote(source_path)
-        q_dest = shlex.quote(full_dest)
-        level_env = self._get_tar_level_env()
-        extra = f"{_TAR_LONG_FLAGS[self.format]} " if self.format in _TAR_LONG_FLAGS else ""
-        return f"""
-            mkdir -p {q_temp} &&
-            cp -a {q_src}/. {q_temp}/ &&
-            {level_env}tar {extra}{exclude_cmd} -c{opt}f {q_dest} -C {q_temp} . &&
-            rm -rf {q_temp}
-        """
 
     def compress(self) -> ProcessResult:
         """Execute the compression process"""
@@ -477,19 +435,12 @@ class Compressor(BaseProcessor):
             self.checksum = FileUtils.sha256_of_file(self.output_path)
 
     def _cleanup_temp_directory(self) -> None:
-        """
-        Remove both temporary directories: the one glob compression copies
-        matches into, and the one the compressed-tar path stages under. The
-        latter is also removed by the command itself on success -- this is the
-        safety net for the failure path, where the `&&` chain never reaches it.
-        """
-        for temp_dir in (self.temp_dir, self._archive_temp_dir):
-            if not temp_dir or not os.path.exists(temp_dir):
-                continue
+        """Clean up the temporary directory glob compression copies matches into"""
+        if self.temp_dir and os.path.exists(self.temp_dir):
             try:
-                shutil.rmtree(temp_dir)
+                shutil.rmtree(self.temp_dir)
                 if self.verbose:
-                    logger.debug(f"Cleaned up temporary directory: {temp_dir}")
+                    logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
             except OSError as e:
                 logger.warning(f"Failed to clean up temporary directory: {str(e)}")
 
