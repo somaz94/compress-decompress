@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.13.0](https://github.com/somaz94/compress-decompress/compare/v1.12.2...v1.13.0) (2026-09-08)
+
+### Features
+
+- add dedupeExtension to opt out of destfilename extension de-duplication ([5a18c0c](https://github.com/somaz94/compress-decompress/commit/5a18c0c06e33f99c28a25932acd2a5b1f6fd707b))
+
+### Bug Fixes
+
+- append the format extension to destfilename at most once ([2e85da6](https://github.com/somaz94/compress-decompress/commit/2e85da684f96e9a967bb99352c0bb29bce330ebe))
+
+### Continuous Integration
+
+- stop asserting the includeRoot output path bug and cover it from source ([abe0f80](https://github.com/somaz94/compress-decompress/commit/abe0f80b3f1a57369afabb602b1fdbb8f473df01))
+
+### Chores
+
+- bump the action image to v1.13.0 ([02cc7ae](https://github.com/somaz94/compress-decompress/commit/02cc7ae4edf2865991bd90a13a855e67113a745d))
+- bump the action image to v1.12.3 ([eaac42b](https://github.com/somaz94/compress-decompress/commit/eaac42b4c46d3acfb8bed9c82b14ab02f331b2c2))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.12.2](https://github.com/somaz94/compress-decompress/compare/v1.12.1...v1.12.2) (2026-09-08)
 
 ### Bug Fixes
