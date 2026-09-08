@@ -83,6 +83,7 @@ class AppConfig:
     dest: str = ""
     destfilename: str = ""
     dedupe_extension: str = "true"
+    include_hidden: str = "true"
     exclude: str = ""
     compression_level: str = ""
     password: str = ""
@@ -119,6 +120,7 @@ class AppConfig:
             dest=os.getenv("DEST", ""),
             destfilename=os.getenv("DESTFILENAME", ""),
             dedupe_extension=os.getenv("DEDUPE_EXTENSION") or "true",
+            include_hidden=os.getenv("INCLUDE_HIDDEN") or "true",
             exclude=os.getenv("EXCLUDE", ""),
             compression_level=compression_level,
             password=os.getenv("PASSWORD", ""),

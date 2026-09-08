@@ -1931,6 +1931,54 @@ jobs:
           fi
           echo "✅ an unmounted runner path fails instead of archiving the workspace"
 
+      - name: Verify includeHidden Drops Dotfiles Without Emptying The Archive
+        # The tar exclusion for this is a trap: a bare `--exclude=.*` also
+        # matches the `.` that `-C <dir> .` archives and yields an EMPTY
+        # archive, silently. Both halves are asserted here, per pattern family.
+        run: |
+          set -euo pipefail
+          hidden_src=work/hidden
+          rm -rf "$hidden_src"
+          mkdir -p "$hidden_src/src" "$hidden_src/.github"
+          echo keep > "$hidden_src/README.md"
+          echo keep > "$hidden_src/src/main.py"
+          echo drop > "$hidden_src/.env"
+          echo drop > "$hidden_src/.github/ci.yml"
+          echo drop > "$hidden_src/src/.nested"
+
+          for fmt in zip tgz; do
+            for include_root in true false; do
+              rm -f "work/hidden.$fmt"
+              docker run --rm \
+                -v "$PWD/work:/github/workspace" \
+                -w /github/workspace \
+                -e GITHUB_WORKSPACE=/github/workspace \
+                -e GITHUB_OUTPUT=/github/workspace/out-hidden.txt \
+                -e COMMAND=compress -e SOURCE=./hidden -e FORMAT="$fmt" \
+                -e INCLUDEROOT="$include_root" -e INCLUDE_HIDDEN=false \
+                compress-decompress:ci
+
+              if [ "$fmt" = zip ]; then
+                entries=$(unzip -Z1 "work/hidden.$fmt")
+              else
+                entries=$(tar tzf "work/hidden.$fmt")
+              fi
+
+              # Not emptied: the two real files must still be there.
+              echo "$entries" | grep -q 'README.md' &&
+              echo "$entries" | grep -q 'main.py' || {
+                echo "❌ $fmt root=$include_root: archive lost its real files"
+                echo "$entries"; exit 1; }
+
+              # ...and no dotfile survived, nested ones included.
+              if echo "$entries" | grep -qE '(^|/)\.[^/]'; then
+                echo "❌ $fmt root=$include_root: a dotfile survived"
+                echo "$entries"; exit 1
+              fi
+              echo "✅ $fmt root=$include_root: dotfiles dropped, archive intact"
+            done
+          done
+
       - name: Reject A Tampered Archive
         run: |
           set -euo pipefail

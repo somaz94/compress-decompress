@@ -31,6 +31,10 @@ inputs:
     description: "Whether to include the root folder itself in the compressed file."
     required: false
     default: "true"
+  includeHidden:
+    description: "Whether to include dotfiles (.env, .git, .github, and nested ones) in the archive. Set to false to leave every hidden file out, across all formats."
+    required: false
+    default: "true"
   preserveGlobStructure:
     description: "When using glob patterns, preserve the directory structure in the archive. If false, all matched files are flattened to the root level."
     required: false
@@ -108,6 +112,7 @@ runs:
     EXCLUDE: ${{ inputs.exclude }}
     FORMAT: ${{ inputs.format }}
     INCLUDEROOT: ${{ inputs.includeRoot }}
+    INCLUDE_HIDDEN: ${{ inputs.includeHidden }}
     PRESERVE_GLOB_STRUCTURE: ${{ inputs.preserveGlobStructure }}
     STRIP_PREFIX: ${{ inputs.stripPrefix }}
     FAIL_ON_ERROR: ${{ inputs.fail_on_error }}

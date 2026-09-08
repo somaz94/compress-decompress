@@ -455,6 +455,62 @@ class TestDestinationFilename:
         assert name == "archive.zip"
 
 
+class TestIncludeHidden:
+    """`includeHidden` must behave identically across every format."""
+
+    @staticmethod
+    def _cmd(make_config, tmp_source, fmt, include_root, include_hidden):
+        config = make_config(
+            source=str(tmp_source), format=fmt,
+            include_root=include_root, include_hidden=include_hidden,
+        )
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        return c._get_zip_command("/out/a.zip", "a") if fmt == "zip" \
+            else c._get_tar_command(f"/out/a.{fmt}", "a")
+
+    @pytest.mark.parametrize("fmt", ["zip", "tar", "tgz", "tbz2", "txz", "tzst"])
+    @pytest.mark.parametrize("include_root", ["true", "false"])
+    def test_on_by_default_adds_no_exclusion(self, make_config, tmp_source, fmt, include_root):
+        cmd = self._cmd(make_config, tmp_source, fmt, include_root, "true")
+        assert ".*" not in cmd
+
+    @pytest.mark.parametrize("fmt", ["zip", "tar", "tgz", "tbz2", "txz", "tzst"])
+    @pytest.mark.parametrize("include_root", ["true", "false"])
+    def test_off_excludes_top_level_and_nested_dotfiles(
+        self, make_config, tmp_source, fmt, include_root
+    ):
+        cmd = self._cmd(make_config, tmp_source, fmt, include_root, "false")
+        prefix = f"{tmp_source.name}/" if include_root == "true" else ""
+        assert f"{prefix}.*" in cmd
+        assert "*/.*" in cmd
+
+    @pytest.mark.parametrize("fmt", ["tar", "tgz", "tbz2", "txz", "tzst"])
+    def test_tar_anchors_the_top_level_pattern(self, make_config, tmp_source, fmt):
+        """
+        A bare `.*` also matches the `.` that `-C <dir> .` archives, which
+        empties the archive instead of dropping dotfiles.
+        """
+        cmd = self._cmd(make_config, tmp_source, fmt, "false", "false")
+        assert "--exclude='./.*'" in cmd
+        assert "--exclude='.*'" not in cmd
+
+    def test_zip_does_not_anchor_the_top_level_pattern(self, make_config, tmp_source):
+        """zip entries carry no `./` prefix, so the tar anchoring would miss."""
+        cmd = self._cmd(make_config, tmp_source, "zip", "false", "false")
+        assert "-x '.*'" in cmd
+
+    def test_user_exclude_patterns_are_kept_alongside(self, make_config, tmp_source):
+        config = make_config(
+            source=str(tmp_source), format="zip",
+            include_root="false", include_hidden="false", exclude="*.log",
+        )
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        cmd = c._get_zip_command("/out/a.zip", "a")
+        assert "*.log" in cmd and "'.*'" in cmd
+
+
 class TestExcludePatternFormatting:
     def test_format_pattern_with_root_dir_prefix_match(self, make_config, tmp_source):
         config = make_config(

@@ -46,6 +46,7 @@ filters, and path stripping are all built in.
 | `exclude` | Filename (or pattern) to exclude from compression process. | No       | -       |
 | `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, `tbz2`, `txz`, and `tzst`.              | Yes      | -       |
 | `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | true    |
+| `includeHidden` | Whether to include dotfiles (`.env`, `.git`, `.github`, and nested ones like `src/.keep`) in the archive. Set to `false` to leave every hidden file out, identically across all formats. | No       | true    |
 | `preserveGlobStructure` | When using glob patterns, preserve the directory structure in the archive. If false, all matched files are flattened to the root level. | No       | false   |
 | `stripPrefix` | Remove this prefix from file paths when preserving directory structure. Works only with glob patterns and `preserveGlobStructure: true`. Example: `'src/'` changes `src/app/main.py` to `app/main.py` in the archive. | No       | ""      |
 | `fail_on_error` | Whether to fail the action if compression/decompression fails.                                                 | No       | true    |

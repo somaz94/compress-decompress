@@ -95,6 +95,7 @@ class Compressor(BaseProcessor):
         self.matched_files: list[str] = []
         self.compression_level = config.compression_level
         self.dedupe_extension = FileUtils.str_to_bool(config.dedupe_extension, default=True)
+        self.include_hidden = FileUtils.str_to_bool(config.include_hidden, default=True)
         self.password = config.password
         self.temp_dir = None
         self.output_path = ""
@@ -193,19 +194,29 @@ class Compressor(BaseProcessor):
 
     def _build_zip_exclude(self, source_path: str) -> str:
         """Build zip exclusion flags from parsed patterns"""
-        patterns = self.parse_exclude_patterns()
-        if not patterns:
-            return ""
-
         dir_name = os.path.basename(source_path)
         processed = []
-        for pattern in patterns:
+        for pattern in self.parse_exclude_patterns():
             if self.include_root:
                 processed.extend(self._format_pattern_with_root(pattern, source_path, dir_name))
             else:
                 processed.extend(self._format_pattern_without_root(pattern, source_path))
+        processed.extend(self._hidden_zip_patterns(dir_name))
 
+        if not processed:
+            return ""
         return " ".join([f'-x {shlex.quote(p)}' for p in processed])
+
+    def _hidden_zip_patterns(self, dir_name: str) -> list[str]:
+        """
+        Dotfile patterns for zip, shaped for the entry prefix includeRoot gives
+        the archive. Empty while includeHidden is on, which is the default.
+        """
+        if self.include_hidden:
+            return []
+        if self.include_root:
+            return [f"{dir_name}/.*", f"{dir_name}/*/.*"]
+        return [".*", "*/.*"]
 
     def _format_pattern_with_root(self, pattern: str, source_path: str, dir_name: str) -> list[str]:
         """Format exclusion pattern when includeRoot is true"""
@@ -262,26 +273,39 @@ class Compressor(BaseProcessor):
 
     def _build_tar_exclude(self, source_path: str) -> str:
         """Build tar exclusion flags from parsed patterns"""
-        patterns = self.parse_exclude_patterns()
-        if not patterns:
-            return ""
-
         dir_name = os.path.basename(source_path)
         processed = []
-        for pattern in patterns:
+        for pattern in self.parse_exclude_patterns():
             if self.include_root and not pattern.startswith(dir_name):
                 processed.append(f"{dir_name}/{pattern}")
             else:
                 processed.append(pattern)
+        processed.extend(self._hidden_tar_patterns(dir_name))
 
+        if not processed:
+            return ""
         return " ".join([f'--exclude={shlex.quote(p)}' for p in processed])
+
+    def _hidden_tar_patterns(self, dir_name: str) -> list[str]:
+        """
+        Dotfile patterns for tar. The top-level one must stay anchored: a bare
+        `.*` also matches the `.` that `-C <dir> .` archives, which silently
+        produces an EMPTY archive rather than one without dotfiles.
+        """
+        if self.include_hidden:
+            return []
+        if self.include_root:
+            return [f"{dir_name}/.*", f"{dir_name}/*/.*"]
+        return ["./.*", "*/.*"]
 
     def _get_special_tar_command(self, full_dest: str, base_name: str, opt: str) -> str:
         """Generate special tar command for TGZ/TBZ2/TXZ formats without root"""
         source_path = self._resolve_source_path()
         temp_dir = os.path.join(os.path.dirname(source_path), f"temp_{base_name}_{self.format}")
 
-        patterns = self.parse_exclude_patterns()
+        patterns = self.parse_exclude_patterns() + self._hidden_tar_patterns(
+            os.path.basename(source_path)
+        )
         exclude_cmd = " ".join([f'--exclude={shlex.quote(p)}' for p in patterns]) if patterns else ""
 
         q_temp = shlex.quote(temp_dir)

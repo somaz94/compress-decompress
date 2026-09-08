@@ -36,7 +36,7 @@ tests/
   test_summary.py
   test_masking.py
 Dockerfile                   # Multi-stage (python:3.14-slim)
-action.yml                   # GitHub Action definition (17 inputs, 7 outputs)
+action.yml                   # GitHub Action definition (18 inputs, 7 outputs)
 cliff.toml                   # git-cliff config for release notes
 .coveragerc                  # Coverage configuration
 ```
@@ -54,7 +54,7 @@ make help          # Show all available commands
 ## Key Inputs
 
 - **Required**: `command` (compress/decompress), `source`, `format` (zip/tar/tgz/tbz2/txz/tzst)
-- **Options**: `dest`, `destfilename`, `dedupeExtension`, `exclude`, `includeRoot`, `preserveGlobStructure`, `stripPrefix`
+- **Options**: `dest`, `destfilename`, `dedupeExtension`, `exclude`, `includeRoot`, `includeHidden`, `preserveGlobStructure`, `stripPrefix`
 - **Advanced**: `fail_on_error`, `compression_level`, `password`, `verbose`
 - **Integrity**: `verify_checksum`, `path_traversal_check`
 - **Reporting**: `step_summary`

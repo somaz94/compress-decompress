@@ -536,6 +536,28 @@ unpacked/
 
 <br/>
 
+### includeHidden
+
+Dotfiles -- `.env`, `.git/`, `.github/`, and nested ones such as `src/.keep` --
+are included by default, the same way for every format. Set `includeHidden` to
+`'false'` to leave all of them out:
+
+```yaml
+- name: Compress without hidden files
+  uses: somaz94/compress-decompress@v1
+  with:
+    command: compress
+    source: ./data-folder
+    format: tgz
+    includeHidden: 'false'
+```
+
+This is the option to reach for when the source is the workspace root, since
+`.git/` would otherwise be archived along with everything else. It composes
+with `exclude` rather than replacing it.
+
+<br/>
+
 ### includeRoot: false
 
 When `includeRoot` is `false`, only the contents of the directory are archived.

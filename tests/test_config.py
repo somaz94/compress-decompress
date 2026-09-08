@@ -95,6 +95,7 @@ class TestAppConfig:
         # and let a failed compression report a green job.
         ("FAIL_ON_ERROR", "fail_on_error", True),
         ("INCLUDEROOT", "include_root", "true"),
+        ("INCLUDE_HIDDEN", "include_hidden", "true"),
     ])
     def test_empty_env_falls_back_to_the_documented_default(
         self, monkeypatch, var, attr, expected
