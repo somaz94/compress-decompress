@@ -1,8 +1,9 @@
 import os
-import subprocess
 import shlex
+import subprocess
 import pytest
 from compress import Compressor, compress, _remap_runner_path
+from exceptions import ValidationError
 from config import AppConfig
 
 
@@ -453,6 +454,89 @@ class TestDestinationFilename:
     ):
         name = self._output_name(make_config, tmp_path, monkeypatch, "archive", "zip", "false")
         assert name == "archive.zip"
+
+
+class TestOutputDirectoryHandling:
+    """`destfilename` sub-paths, and the escape it must never allow."""
+
+    @staticmethod
+    def _compressor(make_config, tmp_path, monkeypatch, destfilename):
+        monkeypatch.setenv("GITHUB_WORKSPACE", str(tmp_path))
+        source = tmp_path / "app"
+        source.mkdir(exist_ok=True)
+        (source / "a.txt").write_text("a")
+        config = make_config(
+            source=str(source), format="zip", include_root="false",
+            dest=str(tmp_path), destfilename=destfilename,
+        )
+        c = Compressor(config)
+        c.source = str(source)
+        return c
+
+    def test_a_sub_path_destfilename_gets_its_directory_created(
+        self, make_config, tmp_path, monkeypatch
+    ):
+        """zip and tar do not create the directory; the command would just fail."""
+        c = self._compressor(make_config, tmp_path, monkeypatch, "nested/archive")
+        c.get_compression_command()
+        c._ensure_output_directory()
+        assert (tmp_path / "nested").is_dir()
+
+    @pytest.mark.parametrize("destfilename", ["../escape", "../../etc/passwd"])
+    def test_a_destfilename_climbing_out_of_dest_is_rejected(
+        self, make_config, tmp_path, monkeypatch, destfilename
+    ):
+        c = self._compressor(make_config, tmp_path, monkeypatch, destfilename)
+        with pytest.raises(ValidationError, match="outside the destination"):
+            c.get_compression_command()
+
+
+class TestTempDirectories:
+    def test_the_staging_directory_lives_outside_the_source(
+        self, make_config, tmp_source
+    ):
+        """
+        It used to be a sibling of the source, so a failed tar left a full copy
+        inside the user's checkout.
+        """
+        config = make_config(source=str(tmp_source), format="tgz", include_root="false")
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        try:
+            c._get_tar_command("/out/a.tgz", "a")
+            staged = c._archive_temp_dir
+            assert staged is not None
+            assert not staged.startswith(str(tmp_source.parent))
+            assert os.path.isdir(staged)
+        finally:
+            c._cleanup_temp_directory()
+        assert not os.path.exists(staged)
+
+    def test_a_destfilename_with_a_slash_does_not_nest_the_staging_directory(
+        self, make_config, tmp_source
+    ):
+        config = make_config(source=str(tmp_source), format="tgz", include_root="false")
+        c = Compressor(config)
+        c.source = str(tmp_source)
+        try:
+            c._get_tar_command("/out/a.tgz", "sub/a")
+            assert "sub" not in os.path.basename(c._archive_temp_dir)
+        finally:
+            c._cleanup_temp_directory()
+
+    def test_cleanup_removes_both_temp_directories(self, make_config, tmp_source, tmp_path):
+        config = make_config(source=str(tmp_source), format="tgz")
+        c = Compressor(config)
+        glob_dir = tmp_path / "glob"
+        glob_dir.mkdir()
+        archive_dir = tmp_path / "archive"
+        archive_dir.mkdir()
+        c.temp_dir = str(glob_dir)
+        c._archive_temp_dir = str(archive_dir)
+
+        c._cleanup_temp_directory()
+        assert not glob_dir.exists()
+        assert not archive_dir.exists()
 
 
 class TestIncludeHidden:

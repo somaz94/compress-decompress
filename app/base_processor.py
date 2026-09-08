@@ -22,6 +22,7 @@ class BaseProcessor:
         self.exclude = config.exclude
 
     def validate_path(self, path: str, error_prefix: str = "Path") -> bool:
+        # Rebound deliberately: every check below reads the stripped path.
         path = path.strip()
         if not os.path.lexists(path):
             error_msg = f"{error_prefix} '{path}' does not exist"
@@ -40,8 +41,8 @@ class BaseProcessor:
         return True
 
     def prepare_destination(self) -> None:
-        if self.dest and not os.path.exists(self.dest):
-            os.makedirs(self.dest)
+        if self.dest:
+            os.makedirs(self.dest, exist_ok=True)
 
     def handle_error(self, error: Exception, context: str = "Operation") -> ProcessResult:
         error_msg = f"{context} failed: {str(error)}"

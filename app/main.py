@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import summary
@@ -44,6 +46,8 @@ class ActionRunner:
         UI.print_kv("Source", self.config.source)
         UI.print_kv("Format", self.config.format)
         UI.print_kv("Include Root", self.config.include_root)
+        UI.print_kv("Include Hidden", self.config.include_hidden)
+        UI.print_kv("Dedupe Extension", self.config.dedupe_extension)
         UI.print_kv("Preserve Glob Structure", self.config.preserve_glob_structure)
         if self.config.strip_prefix:
             UI.print_kv("Strip Prefix", self.config.strip_prefix)
@@ -58,8 +62,11 @@ class ActionRunner:
             UI.print_kv("Exclude Pattern", self.config.exclude)
         if self.config.password:
             UI.print_kv("Password", "***")
+        if self.config.compression_level:
+            UI.print_kv("Compression Level", self.config.compression_level)
         if self.config.verify_checksum:
             UI.print_kv("Verify Checksum", self.config.verify_checksum)
+        UI.print_kv("Step Summary", self.config.step_summary)
         if self.config.command == "decompress":
             UI.print_kv("Path Traversal Check", self.config.path_traversal_check)
 

@@ -165,3 +165,17 @@ class TestInspectionAgainstRealArchives:
         entries = archive.list_entries(str(malicious), "tar")
         escaping, _ = archive.find_unsafe_entries(entries)
         assert escaping == ["../escaped.txt"]
+
+
+class TestIsAbsoluteDriveLetter:
+    @pytest.mark.parametrize("name, expected", [
+        ("C:/Windows/x", True),
+        ("C:\\Windows\\x", True),
+        ("/etc/passwd", True),
+        # An ordinary relative name that merely contains a colon.
+        ("a:b/file", False),
+        ("notes:draft.txt", False),
+        ("dir/file.txt", False),
+    ])
+    def test_only_a_real_drive_letter_counts(self, name, expected):
+        assert archive.is_absolute(name) is expected

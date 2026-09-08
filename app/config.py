@@ -38,7 +38,9 @@ class CommandConfig:
 DECOMPRESSION_COMMANDS = {
     CompressionFormat.ZIP.value: CommandConfig(
         "unzip",
-        lambda d: f"-d {shlex.quote(d)}" if d else "-j -d .",
+        # Unreachable today (effective_dest is never empty) but kept aligned
+        # with the tar branches: -j would junk paths and flatten the output.
+        lambda d: f"-d {shlex.quote(d)}" if d else "-d .",
         lambda src, opt: f"{opt} {shlex.quote(src)}"
     ),
     CompressionFormat.TAR.value: CommandConfig(

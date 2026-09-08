@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 class CompressError(Exception):
     """Base exception for compress-decompress operations"""
     pass

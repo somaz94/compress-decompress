@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 BULLET = "•"
 HEADER_ARROW = "▶️"
 SECTION_ICON = "\U0001f4cb"

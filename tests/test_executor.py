@@ -1,5 +1,5 @@
 import pytest
-from executor import ProcessResult, CommandExecutor
+from executor import retry_on_failure, ProcessResult, CommandExecutor
 from exceptions import CommandError
 
 
@@ -81,3 +81,31 @@ class TestSecretMasking:
     def test_password_is_masked_in_the_returned_result(self):
         result = CommandExecutor.run("false s3cr3t-pass", fail_on_error=False)
         assert "s3cr3t-pass" not in result.message
+
+
+class TestRetryScope:
+    def test_a_command_failure_is_still_retried(self):
+        calls = []
+
+        @retry_on_failure(max_retries=3, delay=0)
+        def flaky():
+            calls.append(1)
+            if len(calls) < 3:
+                raise CommandError("transient")
+            return "ok"
+
+        assert flaky() == "ok"
+        assert len(calls) == 3
+
+    def test_a_programming_error_is_not_retried(self):
+        """It used to be caught, retried twice, and logged as "Attempt 1/3"."""
+        calls = []
+
+        @retry_on_failure(max_retries=3, delay=0)
+        def broken():
+            calls.append(1)
+            raise TypeError("bug")
+
+        with pytest.raises(TypeError):
+            broken()
+        assert len(calls) == 1

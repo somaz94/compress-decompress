@@ -35,6 +35,8 @@ def list_entries(archive_path: str, archive_format: str) -> list[str] | None:
             with zipfile.ZipFile(archive_path) as zf:
                 return zf.namelist()
         # Transparent mode auto-detects gzip/bzip2/xz, and zstd on Python 3.14+.
+        # On 3.13 a tzst archive therefore raises here, the caller gets None,
+        # and the traversal check is skipped with a warning rather than failing.
         with tarfile.open(archive_path, "r") as tf:
             # tar stores a directory member without a trailing slash, zip with
             # one. Normalize to the zip form so `count_files` needs one rule.
@@ -76,7 +78,12 @@ def escapes_destination(name: str) -> bool:
 def is_absolute(name: str) -> bool:
     """True for members stored with an absolute path or a Windows drive letter."""
     normalized = name.replace("\\", "/")
-    return normalized.startswith("/") or (len(normalized) > 1 and normalized[1] == ":")
+    if normalized.startswith("/"):
+        return True
+    # A drive letter is one alphabetic character; `a:b/file` is an ordinary
+    # relative name and must not be reported as absolute.
+    return (len(normalized) > 2 and normalized[0].isalpha()
+            and normalized[1] == ":" and normalized[2] == "/")
 
 
 def find_unsafe_entries(entries: list[str]) -> tuple[list[str], list[str]]:
