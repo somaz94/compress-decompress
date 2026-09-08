@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.14.0](https://github.com/somaz94/compress-decompress/compare/v1.13.0...v1.14.0) (2026-09-08)
+
+### Features
+
+- add includeHidden to exclude dotfiles across every format ([a03fcc7](https://github.com/somaz94/compress-decompress/commit/a03fcc738129743096b930d51d24f5564962c9a1))
+
+### Bug Fixes
+
+- correct source path remapping, dotfile loss, and unsafe defaults ([1316d6c](https://github.com/somaz94/compress-decompress/commit/1316d6cbb0592cce7aecdbf70aca528f20fc3868))
+
+### Chores
+
+- bump the action image to v1.14.0 ([09cec27](https://github.com/somaz94/compress-decompress/commit/09cec2725e56f6c12af4d1fabb3c62dc1edb7209))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.13.0](https://github.com/somaz94/compress-decompress/compare/v1.12.2...v1.13.0) (2026-09-08)
 
 ### Features
