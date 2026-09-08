@@ -354,7 +354,7 @@ class TestDestinationFilename:
     """`destfilename` and the format extension appended to it."""
 
     @staticmethod
-    def _output_name(make_config, tmp_path, monkeypatch, destfilename, fmt):
+    def _output_name(make_config, tmp_path, monkeypatch, destfilename, fmt, dedupe="true"):
         monkeypatch.setenv("GITHUB_WORKSPACE", str(tmp_path))
         source = tmp_path / "output"
         source.mkdir(exist_ok=True)
@@ -362,6 +362,7 @@ class TestDestinationFilename:
             source=str(source), format=fmt,
             include_root="false", dest="", destfilename=destfilename,
         )
+        config.dedupe_extension = dedupe
         c = Compressor(config)
         c.source = str(source)
         c.get_compression_command()
@@ -391,6 +392,26 @@ class TestDestinationFilename:
         """Not from the working directory, which is what the README used to claim."""
         monkeypatch.chdir(tmp_path)
         assert self._output_name(make_config, tmp_path, monkeypatch, "", "zip") == "output.zip"
+
+    @pytest.mark.parametrize("dedupe, expected", [
+        # dedupeExtension is the opt-out for the de-duplication above: false
+        # restores the unconditional append.
+        ("false", "archive.zip.zip"),
+        ("true", "archive.zip"),
+        # An unset value must not read as "off" -- the default is on.
+        ("", "archive.zip"),
+    ])
+    def test_dedupe_extension_can_be_turned_off(
+        self, make_config, tmp_path, monkeypatch, dedupe, expected
+    ):
+        name = self._output_name(make_config, tmp_path, monkeypatch, "archive.zip", "zip", dedupe)
+        assert name == expected
+
+    def test_dedupe_off_does_not_touch_a_name_without_the_extension(
+        self, make_config, tmp_path, monkeypatch
+    ):
+        name = self._output_name(make_config, tmp_path, monkeypatch, "archive", "zip", "false")
+        assert name == "archive.zip"
 
 
 class TestExcludePatternFormatting:

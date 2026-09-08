@@ -81,6 +81,7 @@ class Compressor(BaseProcessor):
         self.is_glob_pattern = False
         self.matched_files: list[str] = []
         self.compression_level = config.compression_level
+        self.dedupe_extension = FileUtils.str_to_bool(config.dedupe_extension, default=True)
         self.password = config.password
         self.temp_dir = None
         self.output_path = ""
@@ -125,8 +126,11 @@ class Compressor(BaseProcessor):
         # A destfilename that already carries the format extension is taken as
         # the finished name: `archive.zip` yields archive.zip, not
         # archive.zip.zip. The length check keeps a bare `.zip` from collapsing
-        # into an extension-only dotfile.
-        if len(base_name) > len(extension) and base_name.endswith(extension):
+        # into an extension-only dotfile. dedupeExtension: false restores the
+        # unconditional append for anyone who depended on the doubled name.
+        if (self.dedupe_extension
+                and len(base_name) > len(extension)
+                and base_name.endswith(extension)):
             extension = ""
         full_dest = self._determine_destination_path(base_name, extension)
         self.output_path = full_dest

@@ -82,6 +82,7 @@ class AppConfig:
     fail_on_error: bool = True
     dest: str = ""
     destfilename: str = ""
+    dedupe_extension: str = "true"
     exclude: str = ""
     compression_level: str = ""
     password: str = ""
@@ -113,6 +114,7 @@ class AppConfig:
             fail_on_error=FileUtils.str_to_bool(os.getenv("FAIL_ON_ERROR", "true")),
             dest=os.getenv("DEST", ""),
             destfilename=os.getenv("DESTFILENAME", ""),
+            dedupe_extension=os.getenv("DEDUPE_EXTENSION", "true"),
             exclude=os.getenv("EXCLUDE", ""),
             compression_level=compression_level,
             password=os.getenv("PASSWORD", ""),

@@ -16,6 +16,10 @@ inputs:
   destfilename:
     description: "Destination filename for the compressed output."
     required: false
+  dedupeExtension:
+    description: "When destfilename already ends with the format extension, do not append it a second time, so 'archive.zip' yields archive.zip. Set to false to always append, restoring the previous archive.zip.zip behavior."
+    required: false
+    default: "true"
   exclude:
     description: "File(s) to exclude from compression process."
     required: false
@@ -100,6 +104,7 @@ runs:
     SOURCE: ${{ inputs.source }}
     DEST: ${{ inputs.dest }}
     DESTFILENAME: ${{ inputs.destfilename }}
+    DEDUPE_EXTENSION: ${{ inputs.dedupeExtension }}
     EXCLUDE: ${{ inputs.exclude }}
     FORMAT: ${{ inputs.format }}
     INCLUDEROOT: ${{ inputs.includeRoot }}

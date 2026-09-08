@@ -42,6 +42,7 @@ filters, and path stripping are all built in.
 | `source`      | The source directory, file, or glob pattern to compress or decompress. Supports glob patterns like `**/*.doc` to match multiple files. | Yes      | -       |
 | `dest`        | The destination directory for the output. If not provided, it defaults to the current working directory. | No       | -       |
 | `destfilename` | The destination filename for the output. The format extension is appended unless the name already ends with it, so both `archive` and `archive.zip` produce `archive.zip`. If not provided, it defaults to the source's base name. | No       | -       |
+| `dedupeExtension` | Whether to skip appending the format extension when `destfilename` already ends with it. Set to `false` to always append, so `archive.zip` becomes `archive.zip.zip`. | No       | true    |
 | `exclude` | Filename (or pattern) to exclude from compression process. | No       | -       |
 | `format`      | The compression format to use. Supported formats are `zip`, `tar`, `tgz`, `tbz2`, `txz`, and `tzst`.              | Yes      | -       |
 | `includeRoot` | Whether to include the root folder itself in the compressed file.                                                | No       | true    |

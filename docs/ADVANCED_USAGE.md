@@ -39,6 +39,8 @@ The location of the compressed file depends on several factors:
    - Example: `my_archive.zip` instead of `source-folder.zip`
    - The format extension is appended only when the name does not already end
      with it, so `my_archive` and `my_archive.zip` both produce `my_archive.zip`
+   - Set `dedupeExtension: 'false'` to always append it, giving back the
+     `my_archive.zip.zip` form
 
 <br/>
 

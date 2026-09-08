@@ -59,6 +59,7 @@ class TestAppConfig:
         monkeypatch.setenv("FAIL_ON_ERROR", "false")
         monkeypatch.setenv("DEST", "/output")
         monkeypatch.setenv("DESTFILENAME", "archive")
+        monkeypatch.setenv("DEDUPE_EXTENSION", "false")
         monkeypatch.setenv("EXCLUDE", "*.log node_modules")
 
         config = AppConfig.from_env()
@@ -71,6 +72,7 @@ class TestAppConfig:
         assert config.fail_on_error is False
         assert config.dest == "/output"
         assert config.destfilename == "archive"
+        assert config.dedupe_extension == "false"
         assert config.exclude == "*.log node_modules"
 
     def test_from_env_defaults(self, monkeypatch):
@@ -78,13 +80,14 @@ class TestAppConfig:
         for var in ["COMMAND", "SOURCE", "FORMAT", "INCLUDEROOT", "VERBOSE",
                      "FAIL_ON_ERROR", "DEST", "DESTFILENAME", "EXCLUDE",
                      "PRESERVE_GLOB_STRUCTURE", "STRIP_PREFIX",
-                     "COMPRESSION_LEVEL", "PASSWORD"]:
+                     "COMPRESSION_LEVEL", "PASSWORD", "DEDUPE_EXTENSION"]:
             monkeypatch.delenv(var, raising=False)
 
         config = AppConfig.from_env()
         assert config.command == ""
         assert config.verbose is False
         assert config.fail_on_error is True
+        assert config.dedupe_extension == "true"
 
     def test_valid_compression_levels(self):
         for level in "0123456789":
