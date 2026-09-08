@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.15.0](https://github.com/somaz94/compress-decompress/compare/v1.14.0...v1.15.0) (2026-09-08)
+
+### Code Refactoring
+
+- contain temp dirs, narrow retry scope, and harden destfilename ([a93666b](https://github.com/somaz94/compress-decompress/commit/a93666b3c7b0284beb0de96485ce822d12395eda))
+
+### Chores
+
+- bump the action image to v1.15.0 ([0535496](https://github.com/somaz94/compress-decompress/commit/0535496968da7b23f7f7eea99a5ad3ec14fc3de1))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.14.0](https://github.com/somaz94/compress-decompress/compare/v1.13.0...v1.14.0) (2026-09-08)
 
 ### Features
