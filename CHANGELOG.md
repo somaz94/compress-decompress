@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.15.1](https://github.com/somaz94/compress-decompress/compare/v1.15.0...v1.15.1) (2026-09-08)
+
+### Code Refactoring
+
+- drop the staging copy the compressed tar formats no longer need ([99751b8](https://github.com/somaz94/compress-decompress/commit/99751b8d5cd4f49ac4df27d425b7837dcf267279))
+
+### Chores
+
+- bump the action image to v1.15.1 ([4aa7a81](https://github.com/somaz94/compress-decompress/commit/4aa7a81b5e2c20ac4a865d937466f3d8928f487c))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.15.0](https://github.com/somaz94/compress-decompress/compare/v1.14.0...v1.15.0) (2026-09-08)
 
 ### Code Refactoring
