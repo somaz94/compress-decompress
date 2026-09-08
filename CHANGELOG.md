@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.12.2](https://github.com/somaz94/compress-decompress/compare/v1.12.1...v1.12.2) (2026-09-08)
+
+### Bug Fixes
+
+- keep the archive output path independent of includeRoot ([b82df78](https://github.com/somaz94/compress-decompress/commit/b82df787ed008e32716a58151ef53830edd4af2d))
+
+### Code Refactoring
+
+- single source for the compression ratio and secret cleanup ([137ca7d](https://github.com/somaz94/compress-decompress/commit/137ca7dee7a91dcf921d5f6abd89c1ec31af9d38))
+
+### Documentation
+
+- list every workflow and fix the glob guide anchor ([9f7b9fa](https://github.com/somaz94/compress-decompress/commit/9f7b9fa2ff1b8f814e43bf17284afc07a3884096))
+
+### Continuous Integration
+
+- retry mirror pushes on transient remote failures ([ff966d7](https://github.com/somaz94/compress-decompress/commit/ff966d7c526ad4d515949aab33aa2966cf2370be))
+- cancel superseded runs and test on the image interpreter ([1ea347a](https://github.com/somaz94/compress-decompress/commit/1ea347a111c79c84334fd253756ba8f1e279608b))
+- drop the dead issue-close trigger from changelog generation ([4f6355b](https://github.com/somaz94/compress-decompress/commit/4f6355bee828728ba1865d58497139771e8a0273))
+
+### Chores
+
+- bump the action image to v1.12.2 ([67bc307](https://github.com/somaz94/compress-decompress/commit/67bc30792261f6046fc9eeee89a24888704a3e4f))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.12.1](https://github.com/somaz94/compress-decompress/compare/v1.12.0...v1.12.1) (2026-08-20)
 
 ### Bug Fixes
