@@ -350,6 +350,49 @@ class TestDestinationPath:
         assert paths[0] == paths[1] == str(tmp_path / "archive.zip")
 
 
+class TestDestinationFilename:
+    """`destfilename` and the format extension appended to it."""
+
+    @staticmethod
+    def _output_name(make_config, tmp_path, monkeypatch, destfilename, fmt):
+        monkeypatch.setenv("GITHUB_WORKSPACE", str(tmp_path))
+        source = tmp_path / "output"
+        source.mkdir(exist_ok=True)
+        config = make_config(
+            source=str(source), format=fmt,
+            include_root="false", dest="", destfilename=destfilename,
+        )
+        c = Compressor(config)
+        c.source = str(source)
+        c.get_compression_command()
+        return os.path.basename(c.output_path)
+
+    @pytest.mark.parametrize("destfilename, fmt, expected", [
+        # The extension is appended when the name does not already carry it.
+        ("archive", "zip", "archive.zip"),
+        ("archive", "tgz", "archive.tgz"),
+        # ...and not appended twice when it does. Writing `archive.zip` is the
+        # natural thing to do and used to produce archive.zip.zip.
+        ("archive.zip", "zip", "archive.zip"),
+        ("archive.tgz", "tgz", "archive.tgz"),
+        # A different extension is left alone -- it is part of the name.
+        ("archive.tar", "zip", "archive.tar.zip"),
+        # tgz is not treated as an alias of tar.gz, so this one still doubles.
+        ("archive.tar.gz", "tgz", "archive.tar.gz.tgz"),
+        # An extension with no stem would otherwise collapse to a dotfile.
+        (".zip", "zip", ".zip.zip"),
+    ])
+    def test_extension_is_appended_at_most_once(
+        self, make_config, tmp_path, monkeypatch, destfilename, fmt, expected
+    ):
+        assert self._output_name(make_config, tmp_path, monkeypatch, destfilename, fmt) == expected
+
+    def test_default_name_comes_from_the_source(self, make_config, tmp_path, monkeypatch):
+        """Not from the working directory, which is what the README used to claim."""
+        monkeypatch.chdir(tmp_path)
+        assert self._output_name(make_config, tmp_path, monkeypatch, "", "zip") == "output.zip"
+
+
 class TestExcludePatternFormatting:
     def test_format_pattern_with_root_dir_prefix_match(self, make_config, tmp_source):
         config = make_config(

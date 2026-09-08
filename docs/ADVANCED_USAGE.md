@@ -27,8 +27,8 @@ This guide covers advanced features and usage patterns for the Compress-Decompre
 The location of the compressed file depends on several factors:
 
 1. **Default Behavior (no dest/destfilename specified)**:
-   - With `includeRoot: true`: `./source-folder.zip`
-   - With `includeRoot: false`: `./source-folder/source-folder.zip`
+   - `./source-folder.zip`, for either value of `includeRoot`
+   - `includeRoot` changes what the archive *contains*, never where it is written
 
 2. **Custom Destination**:
    - When `dest` is specified: `{dest}/{destfilename or source-name}.{format}`
@@ -37,6 +37,8 @@ The location of the compressed file depends on several factors:
 3. **Custom Filename**:
    - When `destfilename` is specified: Uses this name instead of the source folder name
    - Example: `my_archive.zip` instead of `source-folder.zip`
+   - The format extension is appended only when the name does not already end
+     with it, so `my_archive` and `my_archive.zip` both produce `my_archive.zip`
 
 <br/>
 
@@ -403,15 +405,11 @@ jobs:
           echo "Source directory contents:"
           ls -la ./${{ matrix.source }}
 
-      # Set the correct source path based on includeRoot
+      # The archive location does not depend on includeRoot
       - name: Set Source Path
         id: set-path
         run: |
-          if [ "${{ matrix.include_root }}" = "true" ]; then
-            echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
-          else
-            echo "source_path=./${{ matrix.source }}/${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
-          fi
+          echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
 
       - name: Upload Compressed Artifact
         uses: actions/upload-artifact@v4

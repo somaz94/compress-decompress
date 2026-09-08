@@ -122,6 +122,12 @@ class Compressor(BaseProcessor):
         """Generate the appropriate compression command based on format"""
         base_name = self.destfilename or os.path.basename(self.source)
         extension = f".{self.format}"
+        # A destfilename that already carries the format extension is taken as
+        # the finished name: `archive.zip` yields archive.zip, not
+        # archive.zip.zip. The length check keeps a bare `.zip` from collapsing
+        # into an extension-only dotfile.
+        if len(base_name) > len(extension) and base_name.endswith(extension):
+            extension = ""
         full_dest = self._determine_destination_path(base_name, extension)
         self.output_path = full_dest
 
