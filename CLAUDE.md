@@ -35,7 +35,7 @@ tests/
   test_stats.py
   test_summary.py
   test_masking.py
-Dockerfile                   # Multi-stage (python:3.14-slim)
+Dockerfile                   # Single stage on purpose (python:3.14-slim)
 action.yml                   # GitHub Action definition (18 inputs, 7 outputs)
 cliff.toml                   # git-cliff config for release notes
 .coveragerc                  # Coverage configuration
@@ -113,7 +113,7 @@ integration jobs therefore test the released action, not the branch.
 - **Commits**: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `ci:`, `chore:`)
 - **Branches**: `main` (production), `test` (integration tests)
 - **Secrets**: `PAT_TOKEN` (cross-repo ops), `GITHUB_TOKEN` (changelog, releases)
-- **Docker**: Multi-stage build, python:3.14-slim base
+- **Docker**: Single-stage build (pure stdlib, nothing to isolate), python:3.14-slim base
 - **Comments**: English only
 - **Testing**: pytest with conftest.py fixtures, .coveragerc for config
 - **Release**: `git switch` (not `git checkout`), git-cliff for RELEASE.md
