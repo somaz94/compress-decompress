@@ -98,7 +98,6 @@ class Compressor(BaseProcessor):
         """Validate that source path exists or glob pattern matches files"""
         self.source = _remap_runner_path(self.source.strip())
 
-        # Check if source is a glob pattern
         if FileUtils.is_glob_pattern(self.source):
             self.is_glob_pattern = True
             UI.print_section("Glob Pattern Detected")
@@ -130,11 +129,9 @@ class Compressor(BaseProcessor):
         # and name the archive ".zip".
         base_name = self.destfilename or os.path.basename(os.path.normpath(self.source))
         extension = f".{self.format}"
-        # A destfilename that already carries the format extension is taken as
-        # the finished name: `archive.zip` yields archive.zip, not
-        # archive.zip.zip. The length check keeps a bare `.zip` from collapsing
-        # into an extension-only dotfile. dedupeExtension: false restores the
-        # unconditional append for anyone who depended on the doubled name.
+        # A destfilename already ending in the extension is the finished name
+        # (archive.zip, not archive.zip.zip); the length check keeps a bare `.zip`
+        # from becoming an extension-only dotfile. dedupeExtension: false opts out.
         if (self.dedupe_extension
                 and len(base_name) > len(extension)
                 and base_name.endswith(extension)):
@@ -253,7 +250,6 @@ class Compressor(BaseProcessor):
         source_path = self._resolve_source_path()
 
         opt = _TAR_COMPRESSION_FLAGS.get(self.format, "")
-        # zstd has no single-letter tar flag; it is selected with --zstd.
         extra = f"{_TAR_LONG_FLAGS[self.format]} " if self.format in _TAR_LONG_FLAGS else ""
         level_env = self._get_tar_level_env()
         exclude_cmd = self._build_tar_exclude(source_path)

@@ -18,7 +18,6 @@ import zipfile
 from app_logger import logger
 from config import CompressionFormat
 
-# Entries whose extracted path would escape the destination directory.
 _PARENT = ".."
 _CURRENT = "."
 
