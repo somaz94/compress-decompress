@@ -779,7 +779,7 @@ class TestCompressionLevel:
         result = compress(config)
         checksum = result.checksum
         assert result
-        assert checksum  # SHA256 hash
+        assert checksum
 
 
 class TestChecksum:

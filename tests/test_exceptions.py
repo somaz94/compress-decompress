@@ -12,7 +12,6 @@ class TestExceptionHierarchy:
         assert issubclass(CompressError, Exception)
 
     def test_catch_all_with_compress_error(self):
-        """CompressError should catch both ValidationError and CommandError"""
         with pytest.raises(CompressError):
             raise ValidationError("test")
 

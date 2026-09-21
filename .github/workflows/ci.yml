@@ -130,7 +130,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== TEST CONFIGURATION ========${NC}"
           echo -e "${BOLD}Format:${NC}      ${YELLOW}${{ matrix.format }}${NC}"
@@ -205,7 +205,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== TEST CASE: EXPECTED FAILURE ========${NC}"
           echo -e "${BOLD}Test:${NC} Non-existent source with fail_on_error=true"
@@ -236,7 +236,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== TEST CASE: WARNING BEHAVIOR ========${NC}"
           echo -e "${BOLD}Test:${NC} Non-existent source with fail_on_error=false"
@@ -257,7 +257,7 @@ jobs:
           
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== PREPARING TEST CASE: EMPTY DIRECTORY ========${NC}"
           echo -e "Created empty test directory with only .gitkeep file:"
@@ -280,7 +280,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== TEST CASE: EMPTY DIRECTORY ========${NC}"
           echo -e "${BOLD}Test:${NC} Empty directory with fail_on_error=false"
@@ -299,7 +299,7 @@ jobs:
           GREEN='\033[0;32m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== ERROR HANDLING TEST SUMMARY ========${NC}"
           echo -e "${GREEN}${BOLD}✓ All error handling tests passed successfully${NC}"
@@ -354,7 +354,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== GITHUB WORKSPACE COMPRESSION TEST ========${NC}"
           echo -e "${BOLD}Output Directory Contents:${NC}"
@@ -405,7 +405,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== GITHUB WORKSPACE DECOMPRESSION TEST ========${NC}"
           
@@ -490,7 +490,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== WORKSPACE PATH VARIANTS TEST ========${NC}"
           
@@ -545,7 +545,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== WORKSPACE PATH VARIANTS EXTRACTION TEST ========${NC}"
           
@@ -671,7 +671,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== EXCLUSION FUNCTIONALITY TEST ========${NC}"
           echo -e "${BOLD}Preparing verification directories...${NC}"
@@ -870,7 +870,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== GLOB PATTERN MATCHING TEST ========${NC}"
           echo -e "${BOLD}Output Directory Contents:${NC}"
@@ -1018,7 +1018,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== TEST CASE: NO MATCH PATTERN ========${NC}"
           echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/**/*.xyz${NC}"
@@ -1053,7 +1053,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== STRIP PREFIX TEST ========${NC}"
           
@@ -1071,8 +1071,7 @@ jobs:
           echo -e "\n${BOLD}Extracted Structure:${NC}"
           find ./verify/stripped -type f | sort | sed 's/^/  /'
           
-          # With includeRoot: false, files should be directly under verify/stripped/
-          # Files should be like: docs/file1.doc (NOT test_glob/docs/file1.doc or compress_glob_*/docs/file1.doc)
+          # Expect docs/file1.doc: no test_glob/ or compress_glob_*/ prefix.
           stripped_count=$(find ./verify/stripped -path "*/docs/file*.doc" -o \
                                                    -path "*/nested/file*.doc" -o \
                                                    -path "*/nested/level1/file*.doc" -o \
@@ -1129,7 +1128,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== STRUCTURE PRESERVATION TEST ========${NC}"
           
@@ -1149,8 +1148,7 @@ jobs:
           echo -e "\n${BOLD}Extracted Structure:${NC}"
           find ./verify/preserved -type f | sort | sed 's/^/  /'
           
-          # Check if directory structure is preserved
-          # The archive includes compress_glob_* temporary directory, so we need to search within it
+          # `*/` prefix: entries nest under the compress_glob_* temp dir.
           preserved_count=$(find ./verify/preserved -path "*/test_glob/docs/file*.doc" -o \
                                                      -path "*/test_glob/nested/file*.doc" -o \
                                                      -path "*/test_glob/nested/level1/file*.doc" -o \
@@ -1189,8 +1187,7 @@ jobs:
           echo -e "\n${BOLD}Extracted Structure:${NC}"
           find ./verify/flattened -type f | sort | sed 's/^/  /'
           
-          # Check if files are flattened (all files should be in compress_glob_* directory without subdirectories)
-          # Find the temp directory first
+          # Flattened: every file sits directly in the compress_glob_* temp dir.
           temp_dir=$(find ./verify/flattened -type d -name "compress_glob_*" | head -1)
           
           if [ -z "$temp_dir" ]; then
@@ -1198,9 +1195,8 @@ jobs:
             exit 1
           fi
           
-          # Count files directly in temp directory (no subdirectories)
+          # Flattened means the maxdepth-1 count equals the recursive count.
           flattened_count=$(find "$temp_dir" -maxdepth 1 -name "*.doc" | wc -l)
-          # Count all files (should be same if truly flattened)
           total_count=$(find "$temp_dir" -name "*.doc" | wc -l)
           
           echo -e "${BOLD}Files at temp directory root:${NC} ${YELLOW}$flattened_count${NC}"
@@ -1225,7 +1221,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== SAME FILENAME CONFLICT TEST ========${NC}"
           
@@ -1269,7 +1265,7 @@ jobs:
           YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== FILENAME CONFLICT HANDLING TEST ========${NC}"
           
@@ -1322,7 +1318,7 @@ jobs:
             exit 1
           fi
           
-          # Count files directly in temp directory (should be 3 with numbered suffixes)
+          # Name clashes get numbered suffixes, so all 3 survive.
           file_count=$(find "$temp_dir" -maxdepth 1 -name "file*.txt" | wc -l)
           
           if [ "$file_count" -eq 3 ]; then
@@ -1352,7 +1348,7 @@ jobs:
           GREEN='\033[0;32m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
-          NC='\033[0m' # No Color
+          NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== GLOB PATTERN TEST SUMMARY ========${NC}"
           echo -e "${GREEN}${BOLD}✓ All glob pattern tests passed successfully${NC}"
@@ -1382,7 +1378,7 @@ jobs:
           echo "Real file 2" > real_data/file2.txt
           echo "Subdir file" > real_data/subdir/file3.txt
           
-          # Create symlink to directory (like bazel-bin)
+          # bazel-bin style symlinked output dir
           ln -s real_data symlink_dir
           
           ln -s real_data/file1.txt symlink_file.txt
@@ -1848,7 +1844,7 @@ jobs:
             echo "❌ sub-path lost; archived: $entries"; exit 1; }
           echo "✅ host runner sub-path preserved -> ./data.zip"
 
-          # ${{ runner.temp }} and _actions are never mounted into the
+          # runner.temp and _actions are never mounted into the
           # container, so the action must fail honestly rather than fall back
           # to archiving the workspace.
           if run_remap /home/runner/work/_temp/build; then

@@ -20,11 +20,9 @@ jobs:
     name: Smoke Test (${{ matrix.format }}, root=${{ matrix.include_root }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # `Create release` fires twice per release: once as workflow_dispatch, which
-    # only seeds the container image while the tag does not exist yet, and once
-    # on the tag push that actually publishes the release. Smoke-testing the
-    # first one resolves `@v1` to the PREVIOUS version, so every release left a
-    # failing run behind. Only the tag-push run is a released action.
+    # `Create release` fires twice per release: an image-seeding dispatch, then
+    # the tag push. Smoke-testing the dispatch resolves `@v1` to the PREVIOUS
+    # version, so only the tag-push run counts.
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -58,8 +56,7 @@ jobs:
       - name: Set Archive Path
         id: archive
         # includeRoot decides what goes INSIDE the archive, never where it
-        # lands, so both values write to the workspace root. This step used to
-        # branch on includeRoot and encoded the #58 bug as the expectation.
+        # lands, so both values write to the workspace root.
         run: echo "path=./testdir.${{ matrix.format }}" >> $GITHUB_OUTPUT
 
       - name: Verify Archive Created

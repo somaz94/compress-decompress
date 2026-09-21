@@ -1,8 +1,8 @@
 """
 GitHub Actions job summary rendering.
 
-Everything the action already prints to the log is written once more as a
-Markdown table to `$GITHUB_STEP_SUMMARY`, which GitHub renders on the run
+The run's metrics are also written as a Markdown table to
+`$GITHUB_STEP_SUMMARY`, which GitHub renders on the run
 page — so the archive size, ratio, and checksum are visible without opening
 the step log. Outside Actions the variable is unset and nothing is written.
 """

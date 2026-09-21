@@ -8,16 +8,12 @@ on:
       - .github/workflows/*
   workflow_dispatch:
 
-# Mirror is a one-way push to GitLab — the only GitHub-side need is
-# `actions/checkout` reading this repo's contents. Anything beyond that
-# (issues, packages, pull-requests) is left at the default (none).
+# One-way push to GitLab: checkout is the only GitHub-side need.
 permissions:
   contents: read
 
-# Serialize mirror pushes. cancel-in-progress: false because force-pushing
-# `--all` is non-atomic — interrupting a run mid-push can leave GitLab with
-# partial refs. Letting the in-flight run finish keeps the mirror
-# consistent.
+# No cancel-in-progress: force-pushing `--all` is non-atomic, so an
+# interrupted run leaves GitLab with partial refs.
 concurrency:
   group: gitlab-mirror
   cancel-in-progress: false
@@ -40,7 +36,6 @@ jobs:
           mirror_branches: 'all'
           mirror_tags: 'true'
           force_push: 'true'
-          # GitLab.com occasionally declines a mirror push with an empty
-          # pre-receive message (an internal API timeout, not a real rule
-          # violation). Retry instead of failing the backup outright.
+          # GitLab.com occasionally declines a push with an empty pre-receive
+          # message (an internal timeout, not a rule violation); retry it.
           retry_count: '2'

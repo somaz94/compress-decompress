@@ -14,12 +14,7 @@ from decompress import decompress
 
 
 class ActionRunner:
-    """
-    Main action runner for compression/decompression operations
-
-    Handles execution of compression and decompression operations
-    based on environment variables provided by the GitHub Action.
-    """
+    """Runs one compress/decompress operation from an AppConfig."""
     def __init__(self, config: AppConfig):
         self.config = config
 

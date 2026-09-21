@@ -18,7 +18,6 @@ class TestProcessResult:
     def test_default_data_is_empty_dict(self):
         r = ProcessResult(True, "ok")
         assert r.data == {}
-        # Verify not shared reference
         r2 = ProcessResult(True, "ok2")
         assert r.data is not r2.data
 

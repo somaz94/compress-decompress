@@ -6,12 +6,7 @@ from dataclasses import dataclass
 
 @dataclass
 class OperationStats:
-    """
-    Result of one operation.
-
-    Truthiness follows `success`, so callers can keep writing
-    `if result:` the way they did with the old boolean-ish return value.
-    """
+    """Result of one operation. Truthiness follows `success`."""
     command: str = ""
     format: str = ""
     success: bool = False

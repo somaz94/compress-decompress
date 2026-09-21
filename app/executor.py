@@ -28,9 +28,8 @@ def retry_on_failure(max_retries: int = 3, delay: int = 1):
             for attempt in range(max_retries):
                 try:
                     return func(*args, **kwargs)
-                # Narrow on purpose: `run` converts every command failure into
-                # CommandError, so catching bare Exception also swallowed
-                # programming errors and reported them as "Attempt 1/3 failed".
+                # Narrow on purpose: bare Exception also retried programming
+                # errors and reported them as "Attempt 1/3 failed".
                 except (CommandError, OSError) as e:
                     if attempt == max_retries - 1:
                         raise

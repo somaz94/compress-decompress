@@ -1,5 +1,4 @@
-# GitHub auto-generated release notes configuration
-# Categorizes merged PRs by label in release notes
+# Label categories for GitHub-generated release notes (not the release workflow).
 changelog:
   categories:
     - title: "Features"

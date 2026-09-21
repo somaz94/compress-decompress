@@ -7,7 +7,6 @@ LABEL org.opencontainers.image.source="https://github.com/somaz94/compress-decom
 LABEL org.opencontainers.image.description="Compress and decompress files in CI/CD"
 LABEL org.opencontainers.image.licenses="MIT"
 
-# Install only necessary system utilities (avoid unnecessary dependencies).
 # Kept above the source COPY so editing app/ does not re-run apt.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

@@ -295,7 +295,7 @@ class TestChecksumVerification:
             dest=str(dest), verify_checksum="b" * 64, fail_on_error=False,
         ))
         assert not result
-        assert not list(dest.rglob("*.txt"))  # nothing was extracted
+        assert not list(dest.rglob("*.txt"))
 
     def test_no_checksum_skips_verification(self, make_config, tmp_archive_zip, tmp_path):
         dest = tmp_path / "extracted"

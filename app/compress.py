@@ -68,13 +68,7 @@ def _remap_runner_path(source: str) -> str:
 
 
 class Compressor(BaseProcessor):
-    """
-    Handles file/directory compression operations
-
-    Supports compression using zip, tar, tgz, tbz2, txz, tzst formats with options
-    like preserving root directory structure, excluding files, and
-    glob patterns for matching multiple files.
-    """
+    """Handles file/directory compression operations."""
     def __init__(self, config: AppConfig):
         super().__init__(config)
         self.source = config.source
