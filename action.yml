@@ -88,20 +88,13 @@ outputs:
     description: "Seconds the operation took, e.g. \"1.42\"."
 runs:
   using: "docker"
-  # A prebuilt image rather than `Dockerfile`. With `Dockerfile`, every consumer
-  # workflow builds this image before the action can start — measured at 31s per
-  # run. Pulling costs a few seconds.
-  #
-  # The Dockerfile is still the source this image is built from, and ci.yml
-  # keeps building it on every pull request, so the build path cannot rot.
-  #
-  # Two things this trades away, both deliberate:
-  #   1. The tag must not be pushed before the image exists. release.yml
-  #      publishes the image in a job the release job depends on, and the very
-  #      first version is seeded by hand via its workflow_dispatch.
-  #   2. `Dockerfile` built for whatever architecture the runner was; a registry
-  #      reference resolves only to what was pushed. The image is published
-  #      linux/amd64 + linux/arm64 so arm64 runners keep working.
+  # A prebuilt image, not `Dockerfile`: building it on every consumer run cost
+  # 31s, pulling costs a few. ci.yml still builds the Dockerfile on every PR.
+  # Two deliberate trade-offs:
+  #   1. The image must exist before the tag, so every release seeds it through
+  #      release.yml's workflow_dispatch and only then pushes the tag.
+  #   2. A registry reference resolves only to what was pushed, so the image is
+  #      published linux/amd64 + linux/arm64 for arm64 runners.
   image: docker://ghcr.io/somaz94/compress-decompress:v1.15.1
   env:
     COMMAND: ${{ inputs.command }}
