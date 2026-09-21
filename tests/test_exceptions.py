@@ -1,3 +1,4 @@
+import pytest
 from exceptions import CompressError, ValidationError, CommandError
 
 
@@ -17,6 +18,3 @@ class TestExceptionHierarchy:
 
         with pytest.raises(CompressError):
             raise CommandError("test")
-
-
-import pytest

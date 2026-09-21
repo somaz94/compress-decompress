@@ -78,7 +78,9 @@ class TestAppConfig:
         for var in ["COMMAND", "SOURCE", "FORMAT", "INCLUDEROOT", "VERBOSE",
                      "FAIL_ON_ERROR", "DEST", "DESTFILENAME", "EXCLUDE",
                      "PRESERVE_GLOB_STRUCTURE", "STRIP_PREFIX",
-                     "COMPRESSION_LEVEL", "PASSWORD", "DEDUPE_EXTENSION"]:
+                     "COMPRESSION_LEVEL", "PASSWORD", "DEDUPE_EXTENSION",
+                     "INCLUDE_HIDDEN", "VERIFY_CHECKSUM",
+                     "PATH_TRAVERSAL_CHECK", "STEP_SUMMARY"]:
             monkeypatch.delenv(var, raising=False)
 
         config = AppConfig.from_env()

@@ -83,7 +83,7 @@ class TestDecompressorListContents:
         d.dest = "/nonexistent"
         d.list_contents()  # Should return early without error
 
-    def test_list_contents_with_files(self, make_config, tmp_path):
+    def test_list_contents_with_files(self, make_config, tmp_path, capsys):
         dest = tmp_path / "contents"
         dest.mkdir()
         (dest / "file.txt").write_text("hello")
@@ -92,7 +92,10 @@ class TestDecompressorListContents:
         config = make_config(source="/dummy.zip", format="zip", dest=str(dest))
         d = Decompressor(config)
         d.dest = str(dest)
-        d.list_contents()  # Should print file and directory
+        d.list_contents()
+        out = capsys.readouterr().out
+        assert "file.txt" in out
+        assert "subdir/ (directory)" in out
 
     def test_list_contents_error(self, make_config, tmp_path, monkeypatch):
         dest = tmp_path / "errdir"

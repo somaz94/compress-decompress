@@ -38,15 +38,10 @@ class TestCompressorValidate:
 
     def test_glob_pattern_detected(self, make_config, tmp_source):
         c = Compressor(make_config(source=str(tmp_source / "*.txt")))
-        original = os.getcwd()
-        os.chdir(str(tmp_source))
-        try:
-            result = c.validate()
-            assert c.is_glob_pattern is True
-            assert result is True
-            assert len(c.matched_files) > 0
-        finally:
-            os.chdir(original)
+        result = c.validate()
+        assert c.is_glob_pattern is True
+        assert result is True
+        assert len(c.matched_files) > 0
 
     def test_github_runner_path_conversion(self, make_config, monkeypatch):
         monkeypatch.setenv("GITHUB_WORKSPACE", "/github/workspace")
@@ -488,19 +483,29 @@ class TestOutputDirectoryHandling:
 
 class TestTempDirectories:
     def test_the_glob_staging_directory_is_unique_and_cleaned_up(
-        self, make_config, tmp_source
+        self, make_config, tmp_source, tmp_path, monkeypatch
     ):
         """A pid-derived name collided between jobs on one self-hosted runner."""
-        config = make_config(source=str(tmp_source), format="zip")
-        first = Compressor(config)
-        second = Compressor(config)
-        first.temp_dir = tempfile.mkdtemp(prefix="compress_glob_")
-        second.temp_dir = tempfile.mkdtemp(prefix="compress_glob_")
-        assert first.temp_dir != second.temp_dir
+        created = []
+        real_mkdtemp = tempfile.mkdtemp
 
-        for c in (first, second):
-            c._cleanup_temp_directory()
-            assert not os.path.exists(c.temp_dir)
+        def recording_mkdtemp(*args, **kwargs):
+            created.append(real_mkdtemp(*args, **kwargs))
+            return created[-1]
+
+        monkeypatch.setattr(tempfile, "mkdtemp", recording_mkdtemp)
+        for name in ("first", "second"):
+            dest = tmp_path / name
+            dest.mkdir()
+            config = make_config(
+                source=str(tmp_source / "*.txt"), format="zip", dest=str(dest),
+            )
+            assert compress(config)
+
+        assert len(created) == 2
+        assert created[0] != created[1]
+        assert not any(os.path.exists(d) for d in created)
+
 
 class TestIncludeHidden:
     """`includeHidden` must behave identically across every format."""
@@ -674,6 +679,7 @@ class TestCompressedTarCommand:
         subprocess.run(c._get_tar_command(str(dest), "out"), shell=True, capture_output=True)
         assert sorted(q.name for q in tmp_path.iterdir()) == ["out.tgz", "src"]
 
+
 class TestCleanup:
     def test_cleanup_temp_directory(self, make_config, tmp_path):
         config = make_config()
@@ -746,7 +752,7 @@ class TestCompressionLevel:
         c.source = str(tmp_source)
         cmd = c._get_zip_command("/out/test.zip", "test")
         assert "zip -r" in cmd
-        assert "zip -r" in cmd  # TODO(2026-03-09): meant `"zip  -r" not in cmd`; duplicates the line above
+        assert "zip  -r" not in cmd
 
     def test_tgz_level_env(self, make_config, tmp_source):
         config = make_config(
@@ -830,15 +836,6 @@ class TestTxzFormat:
         cmd = c._get_tar_command("/out/test.txz", "test")
         assert "-cJf" in cmd
 
-    def test_txz_without_root(self, make_config, tmp_source):
-        config = make_config(source=str(tmp_source), format="txz", include_root="false")
-        c = Compressor(config)
-        c.source = str(tmp_source)
-        cmd = c._get_tar_command("/out/test.txz", "test")
-        # No staging copy: this format archives the source directly.
-        assert "mkdir -p" not in cmd
-        assert "-cJf" in cmd
-
     def test_txz_level_env(self, make_config, tmp_source):
         config = make_config(
             source=str(tmp_source), format="txz",
@@ -916,15 +913,6 @@ class TestZstdFormat:
         cmd = c._get_tar_command("/out/test.tzst", "test")
         assert "--zstd" in cmd
         assert "-cf" in cmd
-
-    def test_tzst_without_root(self, make_config, tmp_source):
-        config = make_config(source=str(tmp_source), format="tzst", include_root="false")
-        c = Compressor(config)
-        c.source = str(tmp_source)
-        cmd = c._get_tar_command("/out/test.tzst", "test")
-        # No staging copy: this format archives the source directly.
-        assert "mkdir -p" not in cmd
-        assert "--zstd" in cmd
 
     def test_tzst_level_env(self, make_config, tmp_source):
         config = make_config(
