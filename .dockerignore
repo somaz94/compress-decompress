@@ -11,10 +11,7 @@ __pycache__/
 .gitattributes
 
 # Documentation
-README.md
-CHANGELOG.md
 LICENSE
-CONTRIBUTORS.md
 *.md
 docs/
 
@@ -39,7 +36,6 @@ Makefile
 
 # Environment files
 .env
-.env.test
 .env.local
 
 # OS files
