@@ -97,7 +97,6 @@ jobs:
           destfilename: ${{ matrix.dest_config.destfilename }}
           verbose: 'true'
 
-      # Set the correct source path based on configuration
       - name: Set Source Path
         id: set-path
         run: |
@@ -126,7 +125,6 @@ jobs:
 
       - name: Verify Contents
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -141,7 +139,6 @@ jobs:
           echo -e "${BOLD}Source Path:${NC}  ${YELLOW}${{ steps.set-path.outputs.source_path }}${NC}"
           echo -e "${BOLD}Extract Path:${NC} ${YELLOW}./unpacked-${{ matrix.format }}-${{ matrix.source }}${NC}\n"
           
-          # Check if unpacked directory exists
           if [ ! -d "./unpacked-${{ matrix.format }}-${{ matrix.source }}" ]; then
             echo -e "${RED}❌ FAILED: Unpacked directory does not exist!${NC}"
             exit 1
@@ -151,7 +148,6 @@ jobs:
           find "./unpacked-${{ matrix.format }}-${{ matrix.source }}" -type f | sort | sed 's/^/  /'
           echo ""
           
-          # Different verification based on includeRoot setting
           if [ "${{ matrix.include_root }}" = "true" ]; then
             echo -e "${BOLD}${BLUE}======== VERIFYING WITH ROOT DIRECTORY ========${NC}"
             expected_path="./unpacked-${{ matrix.format }}-${{ matrix.source }}/${{ matrix.source }}/${{ matrix.source }}.txt"
@@ -191,11 +187,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # Case 1: Should fail (fail_on_error: true)
       - name: Test Non-existent Source (with fail_on_error)
         id: test_fail
         uses: ./
-        continue-on-error: true  # Allow the workflow to continue even if this step fails
+        continue-on-error: true
         with:
           command: 'compress'
           source: './nonexistent'
@@ -205,7 +200,6 @@ jobs:
 
       - name: Verify Expected Failure
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -225,7 +219,6 @@ jobs:
             echo -e "${GREEN}✅ TEST PASSED: Action failed as expected with fail_on_error=true${NC}"
           fi
 
-      # Case 2: Should complete with warning (fail_on_error: false)
       - name: Test Non-existent Source (without fail_on_error)
         id: test_no_fail
         uses: ./
@@ -238,7 +231,6 @@ jobs:
 
       - name: Verify Warning Behavior
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -258,13 +250,11 @@ jobs:
             exit 1
           fi
 
-      # Additional test case for valid source but with warning
       - name: Create Test Directory with Warning Case
         run: |
           mkdir -p test_warning
           touch test_warning/.gitkeep
           
-          # Define colors for better readability
           BLUE='\033[0;34m'
           BOLD='\033[1m'
           NC='\033[0m' # No Color
@@ -285,7 +275,6 @@ jobs:
 
       - name: Verify Warning Case
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -307,7 +296,6 @@ jobs:
           
       - name: Test Summary
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
@@ -336,7 +324,6 @@ jobs:
           ls -la
           ls -la subdir/
 
-      # Case 1: GitHub Workspace with default settings
       - name: Test GitHub Workspace Path (Default)
         id: test_workspace_default
         uses: ./
@@ -348,7 +335,6 @@ jobs:
           destfilename: 'workspace_default'
           verbose: 'true'
 
-      # Case 2: GitHub Workspace with includeRoot false
       - name: Test GitHub Workspace Path (No Root)
         id: test_workspace_no_root
         uses: ./
@@ -361,10 +347,8 @@ jobs:
           destfilename: 'workspace_no_root'
           verbose: 'true'
 
-      # Verify the results
       - name: Verify Compression Results
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -376,7 +360,6 @@ jobs:
           echo -e "${BOLD}Output Directory Contents:${NC}"
           ls -la ./output/ | sed 's/^/  /'
           
-          # Test default case (includeRoot: true)
           echo -e "\n${BOLD}${BLUE}======== CASE 1: DEFAULT WORKSPACE COMPRESSION ========${NC}"
           if [ -f "./output/workspace_default.zip" ]; then
             echo -e "${GREEN}✅ SUCCESS: Default workspace compression${NC}"
@@ -387,7 +370,6 @@ jobs:
             exit 1
           fi
           
-          # Test no root case (includeRoot: false)
           echo -e "\n${BOLD}${BLUE}======== CASE 2: NO ROOT WORKSPACE COMPRESSION ========${NC}"
           if [ -f "./output/workspace_no_root.zip" ]; then
             echo -e "${GREEN}✅ SUCCESS: No root workspace compression${NC}"
@@ -398,7 +380,6 @@ jobs:
             exit 1
           fi
 
-      # Test decompression
       - name: Test Decompression (Default)
         uses: ./
         with:
@@ -419,7 +400,6 @@ jobs:
 
       - name: Verify Decompression Results
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -429,7 +409,6 @@ jobs:
           
           echo -e "\n${BOLD}${BLUE}======== GITHUB WORKSPACE DECOMPRESSION TEST ========${NC}"
           
-          # Check default case (with root directory)
           echo -e "\n${BOLD}${BLUE}======== CASE 1: DEFAULT WORKSPACE EXTRACTION ========${NC}"
           echo -e "${BOLD}Extracted Contents:${NC}"
           find "./extracted_default" -type f | sort | sed 's/^/  /'
@@ -445,7 +424,6 @@ jobs:
             exit 1
           fi
           
-          # Check no root case (files directly in directory)
           echo -e "\n${BOLD}${BLUE}======== CASE 2: NO ROOT WORKSPACE EXTRACTION ========${NC}"
           echo -e "${BOLD}Extracted Contents:${NC}"
           find "./extracted_no_root" -type f | sort | sed 's/^/  /'
@@ -481,7 +459,6 @@ jobs:
           ls -la
           ls -la subdir/
 
-      # Case 1: Direct github.workspace variable
       - name: Test Direct Workspace Path
         id: test_direct
         uses: ./
@@ -494,7 +471,6 @@ jobs:
           verbose: 'true'
           includeRoot: 'false'
 
-      # Case 2: Workspace path with space
       - name: Test Workspace Path with Space
         id: test_with_space
         uses: ./
@@ -507,10 +483,8 @@ jobs:
           verbose: 'true'
           includeRoot: 'false'
 
-      # Verify both archives
       - name: Verify Compression Results
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -526,7 +500,6 @@ jobs:
           echo -e "\n${BOLD}Output2 Directory:${NC}"
           ls -la ./output2/ | sed 's/^/  /'
           
-          # Test direct case
           echo -e "\n${BOLD}${BLUE}======== CASE 1: DIRECT WORKSPACE PATH ========${NC}"
           if [ -f "./output1/direct_workspace.zip" ]; then
             echo -e "${GREEN}✅ SUCCESS: Direct workspace compression${NC}"
@@ -537,7 +510,6 @@ jobs:
             exit 1
           fi
           
-          # Test space case
           echo -e "\n${BOLD}${BLUE}======== CASE 2: WORKSPACE PATH WITH SPACE ========${NC}"
           if [ -f "./output2/space_workspace.zip" ]; then
             echo -e "${GREEN}✅ SUCCESS: Space-padded workspace compression${NC}"
@@ -548,7 +520,6 @@ jobs:
             exit 1
           fi
 
-      # Test decompression for both cases
       - name: Test Decompression (Direct)
         uses: ./
         with:
@@ -569,7 +540,6 @@ jobs:
 
       - name: Verify Decompression Results
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -585,7 +555,6 @@ jobs:
           echo -e "\n${BOLD}Space-padded Extraction Directory:${NC}"
           find "./extracted_space" -type f | sort | sed 's/^/  /'
           
-          # Verify file contents for both cases
           extraction_success=true
           
           for dir in "./extracted_direct" "./extracted_space"; do
@@ -620,23 +589,18 @@ jobs:
 
       - name: Create Test Structure
         run: |
-          # Creating a Test Directory Structure
           mkdir -p test_exclude/include_folder test_exclude/exclude_folder
           mkdir -p test_exclude/mixed_folder
           
-          # Create a file to be included
           echo "File to include" > test_exclude/include_file.txt
           echo "Folder file to include" > test_exclude/include_folder/include.txt
           
-          # Create a file to be excluded
           echo "File to exclude" > test_exclude/exclude_file.txt
           echo "Folder file to exclude" > test_exclude/exclude_folder/exclude.txt
           
-          # Create a mixed file
           echo "Mixed file 1 - include" > test_exclude/mixed_folder/file1.txt
           echo "Mixed file 2 - exclude" > test_exclude/mixed_folder/file2.log
           
-          # Check the created structure
           echo "Created test structure:"
           find test_exclude -type f | sort
 
@@ -702,7 +666,6 @@ jobs:
 
       - name: Verify Exclusion Results
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -714,7 +677,6 @@ jobs:
           echo -e "${BOLD}Preparing verification directories...${NC}"
           mkdir -p verify
           
-          # Check single file exclusion
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 1: SINGLE FILE EXCLUSION ========${NC}"
           echo -e "${BOLD}Archive Contents:${NC}"
           unzip -l ./output/single_file_exclude.zip | sed 's/^/  /'
@@ -730,7 +692,6 @@ jobs:
             echo -e "${GREEN}✅ SUCCESS: Single file exclusion verified${NC}"
           fi
           
-          # Check directory exclusion
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 2: DIRECTORY EXCLUSION ========${NC}"
           echo -e "${BOLD}Archive Contents:${NC}"
           unzip -l ./output/directory_exclude.zip | sed 's/^/  /'
@@ -746,7 +707,6 @@ jobs:
             echo -e "${GREEN}✅ SUCCESS: Directory exclusion verified${NC}"
           fi
           
-          # Check multiple exclusion
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 3: MULTIPLE EXCLUSIONS ========${NC}"
           echo -e "${BOLD}Archive Contents:${NC}"
           unzip -l ./output/multiple_exclude.zip | sed 's/^/  /'
@@ -777,7 +737,6 @@ jobs:
             exit 1
           fi
           
-          # Check pattern exclusion
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 4: WILDCARD PATTERN EXCLUSION ========${NC}"
           echo -e "${BOLD}Archive Contents:${NC}"
           unzip -l ./output/pattern_exclude.zip | sed 's/^/  /'
@@ -793,7 +752,6 @@ jobs:
             echo -e "${GREEN}✅ SUCCESS: Pattern exclusion verified${NC}"
           fi
           
-          # TAR format exclusion verification
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 5: TAR FORMAT EXCLUSION ========${NC}"
           echo -e "${BOLD}Archive Contents:${NC}"
           tar -tvf ./output/tar_exclude.tar | sed 's/^/  /'
@@ -831,23 +789,19 @@ jobs:
 
       - name: Create Test Files for Glob Patterns
         run: |
-          # Create directory structure with various file types
           mkdir -p test_glob/docs test_glob/images test_glob/data
           mkdir -p test_glob/nested/level1/level2
           
-          # Create .doc files
           echo "Document 1" > test_glob/docs/file1.doc
           echo "Document 2" > test_glob/docs/file2.doc
           echo "Document 3" > test_glob/nested/file3.doc
           echo "Document 4" > test_glob/nested/level1/file4.doc
           echo "Document 5" > test_glob/nested/level1/level2/file5.doc
           
-          # Create other file types
           echo "Text file" > test_glob/data/data.txt
           echo "Image file" > test_glob/images/image.jpg
           echo "Another text" > test_glob/nested/readme.txt
           
-          # Create files with multiple extensions
           echo "Markdown 1" > test_glob/docs/readme.md
           echo "Markdown 2" > test_glob/nested/level1/guide.md
           
@@ -911,7 +865,6 @@ jobs:
 
       - name: Verify Glob Pattern Results
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -923,7 +876,6 @@ jobs:
           echo -e "${BOLD}Output Directory Contents:${NC}"
           ls -la ./glob_output/ | sed 's/^/  /'
           
-          # Test Case 1: All .doc files
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 1: ALL .doc FILES PATTERN ========${NC}"
           echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/**/*.doc${NC}"
           
@@ -948,7 +900,6 @@ jobs:
             exit 1
           fi
           
-          # Test Case 2: Single directory wildcard
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 2: SINGLE DIRECTORY WILDCARD ========${NC}"
           echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/docs/*.doc${NC}"
           
@@ -973,7 +924,6 @@ jobs:
             exit 1
           fi
           
-          # Test Case 3: All .txt files
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 3: ALL .txt FILES PATTERN ========${NC}"
           echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/**/*.txt${NC}"
           
@@ -998,7 +948,6 @@ jobs:
             exit 1
           fi
           
-          # Test Case 4: All .md files
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 4: ALL .md FILES PATTERN ========${NC}"
           echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/**/*.md${NC}"
           
@@ -1023,7 +972,6 @@ jobs:
             exit 1
           fi
           
-          # Test Case 5: Specific nested path
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 5: NESTED PATH PATTERN ========${NC}"
           echo -e "${BOLD}Pattern:${NC} ${YELLOW}test_glob/nested/**/*.doc${NC}"
           
@@ -1065,7 +1013,6 @@ jobs:
 
       - name: Verify No Match Behavior
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -1101,7 +1048,6 @@ jobs:
 
       - name: Verify Strip Prefix
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -1132,13 +1078,11 @@ jobs:
                                                    -path "*/nested/level1/file*.doc" -o \
                                                    -path "*/nested/level1/level2/file*.doc" | wc -l)
           
-          # Check that test_glob directory does NOT exist (prefix was stripped)
           if find ./verify/stripped -type d -name "test_glob" | grep -q .; then
             echo -e "${RED}❌ FAILED: test_glob directory found - prefix was not stripped${NC}"
             exit 1
           fi
           
-          # Check that compress_glob_* directory does NOT exist (includeRoot: false)
           if find ./verify/stripped -type d -name "compress_glob_*" | grep -q .; then
             echo -e "${RED}❌ FAILED: compress_glob_* directory found - includeRoot should be false${NC}"
             exit 1
@@ -1180,7 +1124,6 @@ jobs:
 
       - name: Verify Structure Preservation
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -1190,7 +1133,6 @@ jobs:
           
           echo -e "\n${BOLD}${BLUE}======== STRUCTURE PRESERVATION TEST ========${NC}"
           
-          # Test Case 1: Preserved Structure
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 1: PRESERVED STRUCTURE (preserveGlobStructure: true) ========${NC}"
           
           if [ ! -f "./glob_output/preserved_structure.zip" ]; then
@@ -1216,9 +1158,7 @@ jobs:
           
           echo -e "${BOLD}Files found with preserved structure:${NC} ${YELLOW}$preserved_count${NC}"
           
-          # Verify structure is maintained (not flattened)
           if [ "$preserved_count" -eq 5 ]; then
-            # Check that subdirectories exist
             if find ./verify/preserved -type d -name "test_glob" | grep -q .; then
               echo -e "${GREEN}  ✓ Found test_glob directory structure${NC}"
               echo -e "${GREEN}  ✓ All 5 files with preserved paths:${NC}"
@@ -1233,7 +1173,6 @@ jobs:
             exit 1
           fi
           
-          # Test Case 2: Flattened Structure
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 2: FLATTENED STRUCTURE (preserveGlobStructure: false) ========${NC}"
           
           if [ ! -f "./glob_output/flattened_structure.zip" ]; then
@@ -1270,7 +1209,6 @@ jobs:
           if [ "$flattened_count" -eq "$total_count" ] && [ "$total_count" -eq 5 ]; then
             echo -e "${GREEN}✅ SUCCESS: All files flattened to root level (5 files without subdirectories)${NC}"
             
-            # List flattened files
             echo -e "\n${BOLD}Flattened files:${NC}"
             find "$temp_dir" -maxdepth 1 -name "*.doc" -exec basename {} \; | sort | sed 's/^/  /'
           else
@@ -1282,7 +1220,6 @@ jobs:
 
       - name: Test Same Filename Conflict with Preserved Structure
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -1292,7 +1229,6 @@ jobs:
           
           echo -e "\n${BOLD}${BLUE}======== SAME FILENAME CONFLICT TEST ========${NC}"
           
-          # Create test structure with same filename in different directories
           mkdir -p conflict_test/dir1 conflict_test/dir2 conflict_test/dir3
           echo "File in dir1" > conflict_test/dir1/file.txt
           echo "File in dir2" > conflict_test/dir2/file.txt
@@ -1328,7 +1264,6 @@ jobs:
 
       - name: Verify Conflict Handling
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           RED='\033[0;31m'
           YELLOW='\033[0;33m'
@@ -1338,7 +1273,6 @@ jobs:
           
           echo -e "\n${BOLD}${BLUE}======== FILENAME CONFLICT HANDLING TEST ========${NC}"
           
-          # Test Case 1: Preserved structure (no conflicts)
           echo -e "\n${BOLD}${BLUE}======== PRESERVED STRUCTURE (No Conflicts) ========${NC}"
           
           mkdir -p verify/conflict_preserved
@@ -1347,13 +1281,11 @@ jobs:
           echo -e "${BOLD}Extracted Structure:${NC}"
           find ./verify/conflict_preserved -type f | sort | sed 's/^/  /'
           
-          # Verify all 3 files exist with their paths (accounting for temp directory)
           preserved_files=$(find ./verify/conflict_preserved -path "*/conflict_test/dir*/file.txt" | wc -l)
           
           if [ "$preserved_files" -eq 3 ]; then
             echo -e "${GREEN}✅ SUCCESS: All 3 files preserved with directory structure (no conflicts)${NC}"
             
-            # Verify content is different
             echo -e "\n${BOLD}File Contents:${NC}"
             file1=$(find ./verify/conflict_preserved -path "*/dir1/file.txt")
             file2=$(find ./verify/conflict_preserved -path "*/dir2/file.txt")
@@ -1375,7 +1307,6 @@ jobs:
             exit 1
           fi
           
-          # Test Case 2: Flattened structure (handles conflicts)
           echo -e "\n${BOLD}${BLUE}======== FLATTENED STRUCTURE (With Conflict Handling) ========${NC}"
           
           mkdir -p verify/conflict_flattened
@@ -1384,7 +1315,6 @@ jobs:
           echo -e "${BOLD}Extracted Files:${NC}"
           find ./verify/conflict_flattened -type f | sort | sed 's/^/  /'
           
-          # Find the temp directory first
           temp_dir=$(find ./verify/conflict_flattened -type d -name "compress_glob_*" | head -1)
           
           if [ -z "$temp_dir" ]; then
@@ -1419,7 +1349,6 @@ jobs:
 
       - name: Glob Pattern Test Summary
         run: |
-          # Define colors for better readability
           GREEN='\033[0;32m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
@@ -1448,7 +1377,6 @@ jobs:
 
       - name: Create Test Structure with Symlinks
         run: |
-          # Create real directories and files
           mkdir -p real_data/subdir
           echo "Real file 1" > real_data/file1.txt
           echo "Real file 2" > real_data/file2.txt
@@ -1457,7 +1385,6 @@ jobs:
           # Create symlink to directory (like bazel-bin)
           ln -s real_data symlink_dir
           
-          # Create symlink to file
           ln -s real_data/file1.txt symlink_file.txt
           
           echo "Created test structure with symlinks:"
@@ -1608,7 +1535,6 @@ jobs:
           if [ "$file_count" -eq 3 ]; then
             echo -e "${GREEN}✅ SUCCESS: All files from symlink directory compressed${NC}"
             
-            # Verify file contents
             if [ -f "./verify/symlink_directory/file1.txt" ] && \
                [ -f "./verify/symlink_directory/file2.txt" ] && \
                [ -f "./verify/symlink_directory/subdir/file3.txt" ]; then
@@ -1715,7 +1641,7 @@ jobs:
           fi
           echo -e "${GREEN}✅ Encrypted archive created${NC}"
 
-          # Verify archive is password-protected (unzip without password should fail)
+          # Soft check: a miss only logs a note; the wrong-password step below is the real gate.
           if unzip -t ./output/encrypted.zip 2>&1 | grep -q "incorrect password"; then
             echo -e "${GREEN}✅ Archive is password-protected${NC}"
           else
