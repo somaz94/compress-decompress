@@ -4,11 +4,9 @@ on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
-  # Seeds the container image for a version whose tag does not exist yet.
-  # action.yml resolves `docker://ghcr.io/...:<version>` at the moment a
-  # consumer runs the action, and it reads that from the tag being released —
-  # so on the FIRST docker:// release the image has to already be in the
-  # registry before the tag is pushed, or the tag is briefly broken.
+  # Seeds the image for a version before its tag exists: action.yml at that tag
+  # pins `docker://ghcr.io/...:<version>`, so every release dispatches this
+  # first, then pushes the tag.
   workflow_dispatch:
     inputs:
       image_tag:
