@@ -38,7 +38,6 @@ class TestCommandExecutor:
 
     def test_verbose_mode(self, capsys):
         CommandExecutor.run("echo verbose_test", verbose=True)
-        # Command should have been printed
         captured = capsys.readouterr()
         assert "echo verbose_test" in captured.out
 

@@ -63,7 +63,6 @@ class TestDecompressIntegration:
         config = make_config(source=tmp_archive_zip, format="zip", dest=str(dest))
         result = decompress(config)
         assert result
-        # Verify files were extracted
         extracted = list(dest.rglob("*.txt"))
         assert len(extracted) > 0
 
@@ -142,7 +141,6 @@ class TestTxzDecompression:
 
     def test_decompress_txz_integration(self, make_config, tmp_source, tmp_path):
         from compress import compress
-        # First compress as txz
         dest = tmp_path / "compressed"
         dest.mkdir()
         config = make_config(
@@ -152,7 +150,6 @@ class TestTxzDecompression:
         output_path = compress(config).output_path
         assert output_path
 
-        # Then decompress
         extract_dest = tmp_path / "extracted"
         extract_dest.mkdir()
         config2 = make_config(
@@ -199,7 +196,6 @@ class TestPasswordDecompression:
 
     def test_compress_decompress_with_password(self, make_config, tmp_source, tmp_path):
         from compress import compress
-        # Compress with password
         dest = tmp_path / "compressed"
         dest.mkdir()
         config = make_config(
@@ -211,7 +207,6 @@ class TestPasswordDecompression:
         assert output_path
         assert checksum
 
-        # Decompress with password
         extract_dest = tmp_path / "extracted"
         extract_dest.mkdir()
         config2 = make_config(

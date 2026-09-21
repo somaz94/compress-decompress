@@ -42,7 +42,6 @@ class TestAppConfig:
 
     def test_effective_dest_fallback_to_cwd(self):
         config = AppConfig(dest="")
-        # Should fall back to GITHUB_WORKSPACE or cwd
         assert config.effective_dest == os.getenv("GITHUB_WORKSPACE", os.getcwd())
 
     def test_effective_dest_fallback_to_github_workspace(self, monkeypatch):
@@ -76,7 +75,6 @@ class TestAppConfig:
         assert config.exclude == "*.log node_modules"
 
     def test_from_env_defaults(self, monkeypatch):
-        # Clear all relevant env vars
         for var in ["COMMAND", "SOURCE", "FORMAT", "INCLUDEROOT", "VERBOSE",
                      "FAIL_ON_ERROR", "DEST", "DESTFILENAME", "EXCLUDE",
                      "PRESERVE_GLOB_STRUCTURE", "STRIP_PREFIX",

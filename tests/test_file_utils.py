@@ -46,7 +46,7 @@ class TestGetSize:
         assert "KB" in result
 
     def test_nonexistent_path(self):
-        # Should return the number as-is since path doesn't exist
+        # A missing path stays a str, which the size math rejects.
         result = FileUtils.get_size("/nonexistent/path")
         assert result == "Unknown size"
 
@@ -174,7 +174,6 @@ class TestCopyFilesToTempDirectory:
         FileUtils.copy_files_to_temp_directory(
             [str(src1 / "file.txt"), str(src2 / "file.txt")], str(dest)
         )
-        # Should have file.txt and file_1.txt
         assert (dest / "file.txt").exists()
         assert (dest / "file_1.txt").exists()
 

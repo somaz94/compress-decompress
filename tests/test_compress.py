@@ -38,7 +38,6 @@ class TestCompressorValidate:
 
     def test_glob_pattern_detected(self, make_config, tmp_source):
         c = Compressor(make_config(source=str(tmp_source / "*.txt")))
-        # Change working dir to source for glob to work
         original = os.getcwd()
         os.chdir(str(tmp_source))
         try:
@@ -53,8 +52,7 @@ class TestCompressorValidate:
         monkeypatch.setenv("GITHUB_WORKSPACE", "/github/workspace")
         c = Compressor(make_config(source="/home/runner/work/repo/repo", fail_on_error=False))
         c.source = "/home/runner/work/repo/repo"
-        # After validate, source should be converted to GITHUB_WORKSPACE
-        c.validate()  # will fail since path doesn't exist, but source is converted
+        c.validate()  # path is missing; only the remap matters
         assert c.source == '/github/workspace'
 
     @pytest.mark.parametrize("host_path, expected", [
@@ -64,10 +62,8 @@ class TestCompressorValidate:
         # root makes the action archive the whole repository instead.
         ("/home/runner/work/repo/repo/dist", "/github/workspace/dist"),
         ("/home/runner/work/repo/repo/build/out", "/github/workspace/build/out"),
-        # Not the <repo>/<repo> layout: ${{ runner.temp }} and _actions are
-        # not mounted into the container, so the path is left alone and
-        # validate_path reports it honestly instead of silently archiving
-        # the whole workspace.
+        # Not <repo>/<repo> (runner.temp, _actions): unmounted, so left as-is for
+        # validate_path to reject rather than archiving the whole workspace.
         ("/home/runner/work/_temp/build", "/home/runner/work/_temp/build"),
         ("/home/runner/work/a/b/c", "/home/runner/work/a/b/c"),
         ("/some/other/path", "/some/other/path"),
@@ -154,7 +150,6 @@ class TestExcludePatterns:
         c.source = str(tmp_source)
         result = c._build_zip_exclude(str(tmp_source))
         dir_name = os.path.basename(str(tmp_source))
-        # Should prefix with dir_name
         assert dir_name in result
 
     def test_zip_exclude_without_root(self, make_config, tmp_source):
@@ -196,7 +191,6 @@ class TestCompressIntegration:
         )
         result = compress(config)
         assert result
-        # Verify archive was created
         archives = list(dest.glob("*.zip"))
         assert len(archives) == 1
 
@@ -752,7 +746,7 @@ class TestCompressionLevel:
         c.source = str(tmp_source)
         cmd = c._get_zip_command("/out/test.zip", "test")
         assert "zip -r" in cmd
-        assert "zip -r" in cmd  # no double space
+        assert "zip -r" in cmd  # TODO(2026-03-09): meant `"zip  -r" not in cmd`; duplicates the line above
 
     def test_tgz_level_env(self, make_config, tmp_source):
         config = make_config(
@@ -811,7 +805,6 @@ class TestChecksum:
         )
         result = compress(config)
         output_path, checksum = result.output_path, result.checksum
-        # Verify checksum manually
         sha256 = hashlib.sha256()
         with open(output_path, "rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
