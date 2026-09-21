@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        format: [zip, tar, tgz, tbz2, txz]
+        format: [zip, tar, tgz, tbz2, txz, tzst]
         include_root: [true, false]
         source: [test2]
         dest_config:
@@ -1628,7 +1628,6 @@ jobs:
         run: |
           GREEN='\033[0;32m'
           RED='\033[0;31m'
-          BOLD='\033[1m'
           NC='\033[0m'
 
           if [ ! -f "./output/encrypted.zip" ]; then
@@ -1637,11 +1636,13 @@ jobs:
           fi
           echo -e "${GREEN}✅ Encrypted archive created${NC}"
 
-          # Soft check: a miss only logs a note; the wrong-password step below is the real gate.
-          if unzip -t ./output/encrypted.zip 2>&1 | grep -q "incorrect password"; then
+          # A wrong -P, not none: without a tty unzip says "unable to get password".
+          out=$(unzip -t -P not-the-password ./output/encrypted.zip 2>&1 || true)
+          if grep -q "incorrect password" <<<"$out"; then
             echo -e "${GREEN}✅ Archive is password-protected${NC}"
           else
-            echo -e "${BOLD}Note: Archive created with password flag${NC}"
+            echo -e "${RED}❌ FAILED: Archive is not password-protected${NC}"
+            exit 1
           fi
 
       - name: Decompress with Correct Password
