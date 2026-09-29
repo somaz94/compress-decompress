@@ -107,11 +107,11 @@ jobs:
         id: set-path
         run: |
           if [ "${{ matrix.dest_config.type }}" = "custom" ]; then
-            echo "source_path=${{ matrix.dest_config.dest }}/${{ matrix.dest_config.destfilename }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+            echo "source_path=${{ matrix.dest_config.dest }}/${{ matrix.dest_config.destfilename }}.${{ matrix.format }}" >> "$GITHUB_OUTPUT"
           else
             # includeRoot decides what goes INSIDE the archive, never where it
             # lands, so both values write to the workspace root (#58).
-            echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> $GITHUB_OUTPUT
+            echo "source_path=./${{ matrix.source }}.${{ matrix.format }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload Compressed Artifact
@@ -357,13 +357,13 @@ jobs:
         run: |
           GREEN='\033[0;32m'
           RED='\033[0;31m'
-          YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
           NC='\033[0m'
           
           echo -e "\n${BOLD}${BLUE}======== GITHUB WORKSPACE COMPRESSION TEST ========${NC}"
           echo -e "${BOLD}Output Directory Contents:${NC}"
+          # shellcheck disable=SC2012
           ls -la ./output/ | sed 's/^/  /'
           
           echo -e "\n${BOLD}${BLUE}======== CASE 1: DEFAULT WORKSPACE COMPRESSION ========${NC}"
@@ -493,7 +493,6 @@ jobs:
         run: |
           GREEN='\033[0;32m'
           RED='\033[0;31m'
-          YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
           NC='\033[0m'
@@ -502,8 +501,10 @@ jobs:
           
           echo -e "${BOLD}${BLUE}======== OUTPUT DIRECTORIES CONTENTS ========${NC}"
           echo -e "${BOLD}Output1 Directory:${NC}"
+          # shellcheck disable=SC2012
           ls -la ./output1/ | sed 's/^/  /'
           echo -e "\n${BOLD}Output2 Directory:${NC}"
+          # shellcheck disable=SC2012
           ls -la ./output2/ | sed 's/^/  /'
           
           echo -e "\n${BOLD}${BLUE}======== CASE 1: DIRECT WORKSPACE PATH ========${NC}"
@@ -674,7 +675,6 @@ jobs:
         run: |
           GREEN='\033[0;32m'
           RED='\033[0;31m'
-          YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
           NC='\033[0m'
@@ -880,6 +880,7 @@ jobs:
           
           echo -e "\n${BOLD}${BLUE}======== GLOB PATTERN MATCHING TEST ========${NC}"
           echo -e "${BOLD}Output Directory Contents:${NC}"
+          # shellcheck disable=SC2012
           ls -la ./glob_output/ | sed 's/^/  /'
           
           echo -e "\n${BOLD}${BLUE}======== TEST CASE 1: ALL .doc FILES PATTERN ========${NC}"
@@ -1056,7 +1057,6 @@ jobs:
         run: |
           GREEN='\033[0;32m'
           RED='\033[0;31m'
-          YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
           NC='\033[0m'
@@ -1222,9 +1222,6 @@ jobs:
 
       - name: Test Same Filename Conflict with Preserved Structure
         run: |
-          GREEN='\033[0;32m'
-          RED='\033[0;31m'
-          YELLOW='\033[0;33m'
           BLUE='\033[0;34m'
           BOLD='\033[1m'
           NC='\033[0m'
@@ -1894,10 +1891,11 @@ jobs:
               fi
 
               # Not emptied: the two real files must still be there.
-              echo "$entries" | grep -q 'README.md' &&
-              echo "$entries" | grep -q 'main.py' || {
+              if ! echo "$entries" | grep -q 'README.md' ||
+                 ! echo "$entries" | grep -q 'main.py'; then
                 echo "❌ $fmt root=$include_root: archive lost its real files"
-                echo "$entries"; exit 1; }
+                echo "$entries"; exit 1
+              fi
 
               # ...and no dotfile survived, nested ones included.
               if echo "$entries" | grep -qE '(^|/)\.[^/]'; then

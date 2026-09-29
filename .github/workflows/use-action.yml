@@ -57,7 +57,7 @@ jobs:
         id: archive
         # includeRoot decides what goes INSIDE the archive, never where it
         # lands, so both values write to the workspace root.
-        run: echo "path=./testdir.${{ matrix.format }}" >> $GITHUB_OUTPUT
+        run: echo "path=./testdir.${{ matrix.format }}" >> "$GITHUB_OUTPUT"
 
       - name: Verify Archive Created
         run: |
