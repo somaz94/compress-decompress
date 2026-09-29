@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.15.2](https://github.com/somaz94/compress-decompress/compare/v1.15.1...v1.15.2) (2026-09-29)
+
+### Bug Fixes
+
+- measure durations with a monotonic clock ([98b92a2](https://github.com/somaz94/compress-decompress/commit/98b92a2ab5ead2f577830a248bf61b3add953732))
+
+### Code Refactoring
+
+- drop an unused import from base_processor ([d0f242a](https://github.com/somaz94/compress-decompress/commit/d0f242ae729e64c734d6847f0efc6312726ef8b8))
+- trim restating and stale comments in the app modules ([8da5eb3](https://github.com/somaz94/compress-decompress/commit/8da5eb381a8a47ab4087db82c1186c4ac63d6547))
+
+### Documentation
+
+- correct the Dockerfile description in CLAUDE.md ([5c35d92](https://github.com/somaz94/compress-decompress/commit/5c35d9203a3e711cf8583b0ae964c8315b1cca08))
+
+### Tests
+
+- fix tests that asserted nothing, duplicated coverage, or pinned the stdlib ([c35c0c5](https://github.com/somaz94/compress-decompress/commit/c35c0c57daf78b1b808a941235e1e911a409e798))
+- trim restating and stale comments in the unit tests ([9526e11](https://github.com/somaz94/compress-decompress/commit/9526e11b72b0fb63785737a7b71790da5c52f98d))
+
+### Continuous Integration
+
+- lint with ruff 0.16 and fix its findings ([d8b5a3d](https://github.com/somaz94/compress-decompress/commit/d8b5a3dd7db75f39c728ed9eba84edfe867639eb))
+- make the password-protection check fail and add tzst to the format matrix ([7ca43f0](https://github.com/somaz94/compress-decompress/commit/7ca43f0bdee2ea66917639d49f221de14ab9dd56))
+- correct the image-seeding comment in the release workflow ([01dd392](https://github.com/somaz94/compress-decompress/commit/01dd39284f1b16b0453b0e2161e4b612197c4184))
+- drop restating and stale comments from the CI workflow ([ace74a5](https://github.com/somaz94/compress-decompress/commit/ace74a5094f653bd31fceb236e61c65103a2b9b7))
+
+### Styles
+
+- apply ruff format ([7f9b7cc](https://github.com/somaz94/compress-decompress/commit/7f9b7cc2dce097f5fe98e38348683b9dd80d27f5))
+
+### Chores
+
+- bump the action image to v1.15.2 ([f562ddb](https://github.com/somaz94/compress-decompress/commit/f562ddb00221260e63c5c3a3f8c0c15f56aaa5c7))
+- remove the unused .env.test and redundant .dockerignore entries ([5208aa0](https://github.com/somaz94/compress-decompress/commit/5208aa0444e5488ca4efcd3298e271b4adb3dcc7))
+- drop the Node boilerplate from .gitignore ([9439f51](https://github.com/somaz94/compress-decompress/commit/9439f514ec14700836710d7d43893ac32dd9e80b))
+- trim the remaining cosmetic comments and docstrings ([0421d73](https://github.com/somaz94/compress-decompress/commit/0421d73794b1457d01dad1c061b257698c6b7112))
+- correct the image-seeding comment and drop dead config comments ([039c73b](https://github.com/somaz94/compress-decompress/commit/039c73bf458d10f8a1d4e787e2544c68a26742a8))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.15.1](https://github.com/somaz94/compress-decompress/compare/v1.15.0...v1.15.1) (2026-09-08)
 
 ### Code Refactoring
