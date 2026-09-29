@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
 import os
 import shlex
+import time
 from typing import TYPE_CHECKING
 from ui import UI
 import archive
@@ -29,7 +29,7 @@ class Decompressor(BaseProcessor):
         self.verify_checksum = config.verify_checksum
         self.path_traversal_check = config.path_traversal_check
         self.stats = OperationStats(command="decompress", format=self.format)
-        self._start_time = datetime.now()
+        self._start_time = time.monotonic()
 
     def validate(self) -> bool:
         """Validate source archive file exists"""
@@ -131,7 +131,7 @@ class Decompressor(BaseProcessor):
         read and the time it spent rather than zeroes.
         """
         self.stats.success = success
-        self.stats.duration = (datetime.now() - self._start_time).total_seconds()
+        self.stats.duration = time.monotonic() - self._start_time
         if success:
             self.stats.output_path = self.dest
 
@@ -141,7 +141,7 @@ class Decompressor(BaseProcessor):
         # on the path where `handle_error` re-raises.
         result = ProcessResult(False, "Decompression did not run")
         try:
-            self._start_time = datetime.now()
+            self._start_time = time.monotonic()
             UI.print_header("Decompression Process Started")
             if not self.validate():
                 return result
@@ -166,7 +166,7 @@ class Decompressor(BaseProcessor):
             result = CommandExecutor.run(command, self.verbose, self.fail_on_error)
 
             if result.success:
-                duration = (datetime.now() - start_time).total_seconds()
+                duration = time.monotonic() - start_time
                 UI.print_section("Decompression Results")
                 UI.print_kv("Original Archive Size", FileUtils.get_size(source_size))
                 UI.print_kv("Duration", f"{duration:.2f} seconds")

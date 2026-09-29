@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 import os
 import shlex
 import shutil
 import tempfile
+import time
 from typing import TYPE_CHECKING
 from config import CompressionFormat
 from ui import UI
@@ -92,7 +92,7 @@ class Compressor(BaseProcessor):
         self.output_path = ""
         self.checksum = ""
         self.stats = OperationStats(command="compress", format=self.format)
-        self._start_time = datetime.now()
+        self._start_time = time.monotonic()
 
     def validate(self) -> bool:
         """Validate that source path exists or glob pattern matches files"""
@@ -310,7 +310,7 @@ class Compressor(BaseProcessor):
         # on the path where `handle_error` re-raises.
         result = ProcessResult(False, "Compression did not run")
         try:
-            self._start_time = datetime.now()
+            self._start_time = time.monotonic()
             UI.print_header("Compression Process Started")
             if not self.validate():
                 return result
@@ -355,14 +355,14 @@ class Compressor(BaseProcessor):
         if self.exclude:
             UI.print_kv("Exclude Pattern", self.exclude)
 
-    def _print_results(self, start_time: datetime, source_size: int) -> None:
+    def _print_results(self, start_time: float, source_size: int) -> None:
         """
         Print compression results.
 
         Reads the ratio off `OperationStats` rather than recomputing it, so the
         number on screen and the `compression_ratio` output cannot disagree.
         """
-        duration = (datetime.now() - start_time).total_seconds()
+        duration = time.monotonic() - start_time
 
         if self.output_path and os.path.exists(self.output_path):
             compressed_size = os.path.getsize(self.output_path)
@@ -428,7 +428,7 @@ class Compressor(BaseProcessor):
         reports the size it read and the time it spent rather than zeroes.
         """
         self.stats.success = success
-        self.stats.duration = (datetime.now() - self._start_time).total_seconds()
+        self.stats.duration = time.monotonic() - self._start_time
         if success:
             self.stats.output_path = self.output_path
             self.stats.checksum = self.checksum
