@@ -22,6 +22,7 @@ class ProcessResult:
 
 def retry_on_failure(max_retries: int = 3, delay: int = 1):
     """Decorator to retry a function on failure with increasing delay"""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -37,7 +38,9 @@ def retry_on_failure(max_retries: int = 3, delay: int = 1):
                         f"Attempt {attempt + 1}/{max_retries} failed: {mask(str(e))}"
                     )
                     time.sleep(delay * (attempt + 1))
+
         return wrapper
+
     return decorator
 
 
@@ -46,8 +49,12 @@ class CommandExecutor:
 
     @staticmethod
     @retry_on_failure()
-    def run(command: str, verbose: bool = False, fail_on_error: bool = True,
-            timeout: int = DEFAULT_TIMEOUT) -> ProcessResult:
+    def run(
+        command: str,
+        verbose: bool = False,
+        fail_on_error: bool = True,
+        timeout: int = DEFAULT_TIMEOUT,
+    ) -> ProcessResult:
         print(f"{GEAR_ICON}  Executing: {mask(command)}")
         try:
             result = subprocess.run(
@@ -56,7 +63,7 @@ class CommandExecutor:
                 text=True,
                 capture_output=True,
                 check=True,
-                timeout=timeout
+                timeout=timeout,
             )
             if result.stdout and verbose:
                 logger.debug(f"Command output:\n{mask(result.stdout.strip())}")

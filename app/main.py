@@ -15,6 +15,7 @@ from decompress import decompress
 
 class ActionRunner:
     """Runs one compress/decompress operation from an AppConfig."""
+
     def __init__(self, config: AppConfig):
         self.config = config
 

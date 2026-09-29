@@ -11,12 +11,13 @@ from file_utils import FileUtils
 
 class CompressionFormat(Enum):
     """Supported compression formats"""
-    ZIP = 'zip'
-    TAR = 'tar'
-    TGZ = 'tgz'
-    TBZ2 = 'tbz2'
-    TXZ = 'txz'
-    TZST = 'tzst'
+
+    ZIP = "zip"
+    TAR = "tar"
+    TGZ = "tgz"
+    TBZ2 = "tbz2"
+    TXZ = "txz"
+    TZST = "tzst"
 
     @classmethod
     def list(cls) -> list[str]:
@@ -30,6 +31,7 @@ class CompressionFormat(Enum):
 @dataclass
 class CommandConfig:
     """Configuration for format-specific decompression commands"""
+
     command: str
     options: Callable[[str | None], str]
     format: Callable[[str, str], str]
@@ -40,39 +42,40 @@ DECOMPRESSION_COMMANDS = {
         "unzip",
         # Normally unreachable (effective_dest is set); no -j, which would flatten paths.
         lambda d: f"-d {shlex.quote(d)}" if d else "-d .",
-        lambda src, opt: f"{opt} {shlex.quote(src)}"
+        lambda src, opt: f"{opt} {shlex.quote(src)}",
     ),
     CompressionFormat.TAR.value: CommandConfig(
         "tar",
         lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
-        lambda src, opt: f"-xf {shlex.quote(src)} {opt}"
+        lambda src, opt: f"-xf {shlex.quote(src)} {opt}",
     ),
     CompressionFormat.TGZ.value: CommandConfig(
         "tar",
         lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
-        lambda src, opt: f"-xzf {shlex.quote(src)} {opt}"
+        lambda src, opt: f"-xzf {shlex.quote(src)} {opt}",
     ),
     CompressionFormat.TBZ2.value: CommandConfig(
         "tar",
         lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
-        lambda src, opt: f"-xjf {shlex.quote(src)} {opt}"
+        lambda src, opt: f"-xjf {shlex.quote(src)} {opt}",
     ),
     CompressionFormat.TXZ.value: CommandConfig(
         "tar",
         lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
-        lambda src, opt: f"-xJf {shlex.quote(src)} {opt}"
+        lambda src, opt: f"-xJf {shlex.quote(src)} {opt}",
     ),
     CompressionFormat.TZST.value: CommandConfig(
         "tar",
         lambda d: f"-C {shlex.quote(d)}" if d else "-C .",
-        lambda src, opt: f"--zstd -xf {shlex.quote(src)} {opt}"
-    )
+        lambda src, opt: f"--zstd -xf {shlex.quote(src)} {opt}",
+    ),
 }
 
 
 @dataclass
 class AppConfig:
     """Centralized application configuration from environment variables"""
+
     command: str = ""
     source: str = ""
     format: str = ""
@@ -93,7 +96,7 @@ class AppConfig:
     step_summary: bool = True
 
     @classmethod
-    def from_env(cls) -> 'AppConfig':
+    def from_env(cls) -> "AppConfig":
         compression_level = os.getenv("COMPRESSION_LEVEL", "")
         if compression_level and not cls._is_valid_compression_level(compression_level):
             raise ValidationError(

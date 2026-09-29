@@ -43,7 +43,9 @@ class BaseProcessor:
         if self.dest:
             os.makedirs(self.dest, exist_ok=True)
 
-    def handle_error(self, error: Exception, context: str = "Operation") -> ProcessResult:
+    def handle_error(
+        self, error: Exception, context: str = "Operation"
+    ) -> ProcessResult:
         error_msg = f"{context} failed: {str(error)}"
         if self.fail_on_error:
             raise CompressError(error_msg) from error

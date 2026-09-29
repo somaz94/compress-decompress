@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 class Decompressor(BaseProcessor):
     """Handles archive decompression operations."""
+
     def __init__(self, config: AppConfig):
         super().__init__(config)
         self.source = config.source

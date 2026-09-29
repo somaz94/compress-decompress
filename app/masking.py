@@ -6,6 +6,7 @@ string, the `CalledProcessError` repr, and the retry log line all carry it.
 Registering the value once here keeps a secret out of the job log even when
 the leak happens deep inside an exception message nobody formats by hand.
 """
+
 from __future__ import annotations
 
 from app_logger import logger

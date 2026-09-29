@@ -6,6 +6,7 @@ The run's metrics are also written as a Markdown table to
 page — so the archive size, ratio, and checksum are visible without opening
 the step log. Outside Actions the variable is unset and nothing is written.
 """
+
 from __future__ import annotations
 
 import os
@@ -55,8 +56,11 @@ def render(stats: OperationStats) -> str:
     """Render the run as a GitHub-flavored Markdown section."""
     title = "Compress" if stats.command == "compress" else "Decompress"
     icon = "✅" if stats.success else "❌"
-    rows = (_rows_for_compress(stats) if stats.command == "compress"
-            else _rows_for_decompress(stats))
+    rows = (
+        _rows_for_compress(stats)
+        if stats.command == "compress"
+        else _rows_for_decompress(stats)
+    )
 
     lines = [
         f"### {icon} {title} — `{stats.format}`",

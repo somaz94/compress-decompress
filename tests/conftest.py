@@ -3,7 +3,7 @@ import sys
 import pytest
 
 # Add app directory to path so tests can import modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
 
 @pytest.fixture(autouse=True)
@@ -13,6 +13,7 @@ def _clean_secret_registry():
     test would mask substrings in another test's captured output.
     """
     from masking import clear_secrets
+
     clear_secrets()
     yield
     clear_secrets()
@@ -37,7 +38,10 @@ def tmp_source(tmp_path):
 def tmp_archive_zip(tmp_path, tmp_source):
     """Create a test zip archive"""
     import shutil
-    archive = shutil.make_archive(str(tmp_path / "test_archive"), 'zip', str(tmp_source))
+
+    archive = shutil.make_archive(
+        str(tmp_path / "test_archive"), "zip", str(tmp_source)
+    )
     return archive
 
 
@@ -45,7 +49,10 @@ def tmp_archive_zip(tmp_path, tmp_source):
 def tmp_archive_tar(tmp_path, tmp_source):
     """Create a test tar archive"""
     import shutil
-    archive = shutil.make_archive(str(tmp_path / "test_archive"), 'tar', str(tmp_source))
+
+    archive = shutil.make_archive(
+        str(tmp_path / "test_archive"), "tar", str(tmp_source)
+    )
     return archive
 
 

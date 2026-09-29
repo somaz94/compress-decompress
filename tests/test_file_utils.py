@@ -70,7 +70,6 @@ class TestGetPathSize:
         size = FileUtils.get_path_size(str(link))
         assert size == 7
 
-
     def test_circular_symlink_no_hang(self, tmp_path):
         sub = tmp_path / "dir"
         sub.mkdir()

@@ -15,10 +15,16 @@ class TestOperationStats:
         assert stats.compression_ratio == 75.0
 
     def test_ratio_zero_when_original_unknown(self):
-        assert OperationStats(original_size=0, compressed_size=100).compression_ratio == 0.0
+        assert (
+            OperationStats(original_size=0, compressed_size=100).compression_ratio
+            == 0.0
+        )
 
     def test_ratio_zero_when_compressed_unknown(self):
-        assert OperationStats(original_size=100, compressed_size=0).compression_ratio == 0.0
+        assert (
+            OperationStats(original_size=100, compressed_size=0).compression_ratio
+            == 0.0
+        )
 
     def test_ratio_negative_when_archive_grew(self):
         stats = OperationStats(original_size=100, compressed_size=150)

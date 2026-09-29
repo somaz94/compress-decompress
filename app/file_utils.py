@@ -30,10 +30,12 @@ class FileUtils:
     @staticmethod
     def get_size(size_or_path: int | str) -> str:
         try:
-            size = (os.path.getsize(size_or_path)
-                    if isinstance(size_or_path, str) and os.path.exists(size_or_path)
-                    else size_or_path)
-            units = ['B', 'KB', 'MB', 'GB', 'TB']
+            size = (
+                os.path.getsize(size_or_path)
+                if isinstance(size_or_path, str) and os.path.exists(size_or_path)
+                else size_or_path
+            )
+            units = ["B", "KB", "MB", "GB", "TB"]
             for unit in units:
                 if size < 1024:
                     return f"{size:.2f} {unit}"
@@ -82,7 +84,7 @@ class FileUtils:
 
     @staticmethod
     def is_glob_pattern(path: str) -> bool:
-        glob_chars = ['*', '?', '[', ']']
+        glob_chars = ["*", "?", "[", "]"]
         return any(char in path for char in glob_chars)
 
     @staticmethod
@@ -102,9 +104,12 @@ class FileUtils:
             os.chdir(original_dir)
 
     @staticmethod
-    def copy_files_to_temp_directory(file_paths: list[str], temp_dir: str,
-                                      preserve_structure: bool = False,
-                                      strip_prefix: str = "") -> None:
+    def copy_files_to_temp_directory(
+        file_paths: list[str],
+        temp_dir: str,
+        preserve_structure: bool = False,
+        strip_prefix: str = "",
+    ) -> None:
         os.makedirs(temp_dir, exist_ok=True)
         if strip_prefix:
             strip_prefix = strip_prefix.rstrip(os.sep) + os.sep
@@ -112,7 +117,7 @@ class FileUtils:
             if preserve_structure:
                 relative_path = os.path.relpath(file_path)
                 if strip_prefix and relative_path.startswith(strip_prefix):
-                    relative_path = relative_path[len(strip_prefix):]
+                    relative_path = relative_path[len(strip_prefix) :]
                 dest_path = os.path.join(temp_dir, relative_path)
                 os.makedirs(os.path.dirname(dest_path), exist_ok=True)
                 shutil.copy2(file_path, dest_path)

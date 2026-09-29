@@ -63,6 +63,7 @@ class TestSecretMasking:
     @pytest.fixture(autouse=True)
     def _registered_secret(self):
         from masking import register_secret
+
         register_secret("s3cr3t-pass")
 
     def test_password_is_masked_in_the_echoed_command(self, capsys):

@@ -4,11 +4,15 @@ from stats import OperationStats
 
 def _compress_stats(**overrides):
     base = dict(
-        command="compress", format="zip", success=True,
+        command="compress",
+        format="zip",
+        success=True,
         output_path="/out/archive.zip",
         checksum="a" * 64,
-        original_size=2048, compressed_size=512,
-        file_count=7, duration=1.25,
+        original_size=2048,
+        compressed_size=512,
+        file_count=7,
+        duration=1.25,
     )
     base.update(overrides)
     return OperationStats(**base)
@@ -40,8 +44,12 @@ class TestRender:
 
     def test_failed_decompress_omits_the_empty_destination_row(self):
         stats = OperationStats(
-            command="decompress", format="zip", success=False,
-            output_path="", original_size=2048, duration=0.1,
+            command="decompress",
+            format="zip",
+            success=False,
+            output_path="",
+            original_size=2048,
+            duration=0.1,
         )
         rendered = summary.render(stats)
         assert "Extracted to" not in rendered
@@ -49,9 +57,13 @@ class TestRender:
 
     def test_decompress_summary(self):
         stats = OperationStats(
-            command="decompress", format="tgz", success=True,
-            output_path="/unpacked", original_size=4096,
-            file_count=3, duration=0.5,
+            command="decompress",
+            format="tgz",
+            success=True,
+            output_path="/unpacked",
+            original_size=4096,
+            file_count=3,
+            duration=0.5,
         )
         rendered = summary.render(stats)
         assert "### ✅ Decompress — `tgz`" in rendered
@@ -85,5 +97,7 @@ class TestWrite:
         assert summary.write(_compress_stats()) is False
 
     def test_unwritable_path_is_not_fatal(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(tmp_path / "missing-dir" / "s.md"))
+        monkeypatch.setenv(
+            "GITHUB_STEP_SUMMARY", str(tmp_path / "missing-dir" / "s.md")
+        )
         assert summary.write(_compress_stats()) is False

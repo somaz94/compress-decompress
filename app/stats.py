@@ -1,4 +1,5 @@
 """Metrics for a single compress/decompress run, surfaced as action outputs."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from dataclasses import dataclass
 @dataclass
 class OperationStats:
     """Result of one operation. Truthiness follows `success`."""
+
     command: str = ""
     format: str = ""
     success: bool = False

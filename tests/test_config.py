@@ -6,19 +6,19 @@ from config import AppConfig, CompressionFormat
 class TestCompressionFormat:
     def test_list_returns_all_formats(self):
         formats = CompressionFormat.list()
-        assert formats == ['zip', 'tar', 'tgz', 'tbz2', 'txz', 'tzst']
+        assert formats == ["zip", "tar", "tgz", "tbz2", "txz", "tzst"]
 
     def test_get_extension_valid(self):
-        assert CompressionFormat.get_extension('zip') == '.zip'
-        assert CompressionFormat.get_extension('tar') == '.tar'
-        assert CompressionFormat.get_extension('tgz') == '.tgz'
-        assert CompressionFormat.get_extension('tbz2') == '.tbz2'
-        assert CompressionFormat.get_extension('txz') == '.txz'
-        assert CompressionFormat.get_extension('tzst') == '.tzst'
+        assert CompressionFormat.get_extension("zip") == ".zip"
+        assert CompressionFormat.get_extension("tar") == ".tar"
+        assert CompressionFormat.get_extension("tgz") == ".tgz"
+        assert CompressionFormat.get_extension("tbz2") == ".tbz2"
+        assert CompressionFormat.get_extension("txz") == ".txz"
+        assert CompressionFormat.get_extension("tzst") == ".tzst"
 
     def test_get_extension_invalid(self):
-        assert CompressionFormat.get_extension('rar') == ''
-        assert CompressionFormat.get_extension('') == ''
+        assert CompressionFormat.get_extension("rar") == ""
+        assert CompressionFormat.get_extension("") == ""
 
 
 class TestAppConfig:
@@ -75,12 +75,26 @@ class TestAppConfig:
         assert config.exclude == "*.log node_modules"
 
     def test_from_env_defaults(self, monkeypatch):
-        for var in ["COMMAND", "SOURCE", "FORMAT", "INCLUDEROOT", "VERBOSE",
-                     "FAIL_ON_ERROR", "DEST", "DESTFILENAME", "EXCLUDE",
-                     "PRESERVE_GLOB_STRUCTURE", "STRIP_PREFIX",
-                     "COMPRESSION_LEVEL", "PASSWORD", "DEDUPE_EXTENSION",
-                     "INCLUDE_HIDDEN", "VERIFY_CHECKSUM",
-                     "PATH_TRAVERSAL_CHECK", "STEP_SUMMARY"]:
+        for var in [
+            "COMMAND",
+            "SOURCE",
+            "FORMAT",
+            "INCLUDEROOT",
+            "VERBOSE",
+            "FAIL_ON_ERROR",
+            "DEST",
+            "DESTFILENAME",
+            "EXCLUDE",
+            "PRESERVE_GLOB_STRUCTURE",
+            "STRIP_PREFIX",
+            "COMPRESSION_LEVEL",
+            "PASSWORD",
+            "DEDUPE_EXTENSION",
+            "INCLUDE_HIDDEN",
+            "VERIFY_CHECKSUM",
+            "PATH_TRAVERSAL_CHECK",
+            "STEP_SUMMARY",
+        ]:
             monkeypatch.delenv(var, raising=False)
 
         config = AppConfig.from_env()
@@ -89,14 +103,17 @@ class TestAppConfig:
         assert config.fail_on_error is True
         assert config.dedupe_extension == "true"
 
-    @pytest.mark.parametrize("var, attr, expected", [
-        # An input wired to an unset expression arrives as "", not as absent.
-        # Reading that as "off" would silently invert the action.yml default
-        # and let a failed compression report a green job.
-        ("FAIL_ON_ERROR", "fail_on_error", True),
-        ("INCLUDEROOT", "include_root", "true"),
-        ("INCLUDE_HIDDEN", "include_hidden", "true"),
-    ])
+    @pytest.mark.parametrize(
+        "var, attr, expected",
+        [
+            # An input wired to an unset expression arrives as "", not as absent.
+            # Reading that as "off" would silently invert the action.yml default
+            # and let a failed compression report a green job.
+            ("FAIL_ON_ERROR", "fail_on_error", True),
+            ("INCLUDEROOT", "include_root", "true"),
+            ("INCLUDE_HIDDEN", "include_hidden", "true"),
+        ],
+    )
     def test_empty_env_falls_back_to_the_documented_default(
         self, monkeypatch, var, attr, expected
     ):
@@ -113,6 +130,7 @@ class TestAppConfig:
 
     def test_from_env_invalid_compression_level(self, monkeypatch):
         from exceptions import ValidationError
+
         monkeypatch.setenv("COMPRESSION_LEVEL", "9;rm -rf /")
         with pytest.raises(ValidationError, match="Invalid compression_level"):
             AppConfig.from_env()
@@ -137,6 +155,7 @@ class TestChecksumValidation:
 
     def test_from_env_rejects_malformed_checksum(self, monkeypatch):
         from exceptions import ValidationError
+
         monkeypatch.setenv("VERIFY_CHECKSUM", "not-a-digest")
         with pytest.raises(ValidationError, match="Invalid verify_checksum"):
             AppConfig.from_env()

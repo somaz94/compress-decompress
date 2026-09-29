@@ -33,6 +33,7 @@ class TestCompressorValidate:
     def test_invalid_source_fail(self, make_config):
         c = Compressor(make_config(source="/nonexistent", fail_on_error=True))
         from exceptions import ValidationError
+
         with pytest.raises(ValidationError):
             c.validate()
 
@@ -45,32 +46,39 @@ class TestCompressorValidate:
 
     def test_github_runner_path_conversion(self, make_config, monkeypatch):
         monkeypatch.setenv("GITHUB_WORKSPACE", "/github/workspace")
-        c = Compressor(make_config(source="/home/runner/work/repo/repo", fail_on_error=False))
+        c = Compressor(
+            make_config(source="/home/runner/work/repo/repo", fail_on_error=False)
+        )
         c.source = "/home/runner/work/repo/repo"
         c.validate()  # path is missing; only the remap matters
-        assert c.source == '/github/workspace'
+        assert c.source == "/github/workspace"
 
-    @pytest.mark.parametrize("host_path, expected", [
-        # The repo root maps to the workspace root.
-        ("/home/runner/work/repo/repo", "/github/workspace"),
-        # A sub-path must survive the remap. Collapsing it to the workspace
-        # root makes the action archive the whole repository instead.
-        ("/home/runner/work/repo/repo/dist", "/github/workspace/dist"),
-        ("/home/runner/work/repo/repo/build/out", "/github/workspace/build/out"),
-        # Not <repo>/<repo> (runner.temp, _actions): unmounted, so left as-is for
-        # validate_path to reject rather than archiving the whole workspace.
-        ("/home/runner/work/_temp/build", "/home/runner/work/_temp/build"),
-        ("/home/runner/work/a/b/c", "/home/runner/work/a/b/c"),
-        ("/some/other/path", "/some/other/path"),
-    ])
+    @pytest.mark.parametrize(
+        "host_path, expected",
+        [
+            # The repo root maps to the workspace root.
+            ("/home/runner/work/repo/repo", "/github/workspace"),
+            # A sub-path must survive the remap. Collapsing it to the workspace
+            # root makes the action archive the whole repository instead.
+            ("/home/runner/work/repo/repo/dist", "/github/workspace/dist"),
+            ("/home/runner/work/repo/repo/build/out", "/github/workspace/build/out"),
+            # Not <repo>/<repo> (runner.temp, _actions): unmounted, so left as-is for
+            # validate_path to reject rather than archiving the whole workspace.
+            ("/home/runner/work/_temp/build", "/home/runner/work/_temp/build"),
+            ("/home/runner/work/a/b/c", "/home/runner/work/a/b/c"),
+            ("/some/other/path", "/some/other/path"),
+        ],
+    )
     def test_runner_path_keeps_the_sub_path(self, monkeypatch, host_path, expected):
         monkeypatch.setenv("GITHUB_WORKSPACE", "/github/workspace")
         assert _remap_runner_path(host_path) == expected
 
     def test_runner_path_unchanged_without_a_workspace(self, monkeypatch):
         monkeypatch.delenv("GITHUB_WORKSPACE", raising=False)
-        assert _remap_runner_path("/home/runner/work/repo/repo/dist") == \
-            "/home/runner/work/repo/repo/dist"
+        assert (
+            _remap_runner_path("/home/runner/work/repo/repo/dist")
+            == "/home/runner/work/repo/repo/dist"
+        )
 
 
 class TestZipCommand:
@@ -92,8 +100,10 @@ class TestZipCommand:
 
     def test_with_exclude(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
-            include_root="true", exclude="*.log *.tmp"
+            source=str(tmp_source),
+            format="zip",
+            include_root="true",
+            exclude="*.log *.tmp",
         )
         c = Compressor(config)
         c.source = str(tmp_source)
@@ -126,8 +136,7 @@ class TestTarCommand:
 
     def test_tar_with_exclude(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="tar",
-            include_root="true", exclude="*.log"
+            source=str(tmp_source), format="tar", include_root="true", exclude="*.log"
         )
         c = Compressor(config)
         c.source = str(tmp_source)
@@ -138,8 +147,7 @@ class TestTarCommand:
 class TestExcludePatterns:
     def test_zip_exclude_with_root(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
-            include_root="true", exclude="subdir"
+            source=str(tmp_source), format="zip", include_root="true", exclude="subdir"
         )
         c = Compressor(config)
         c.source = str(tmp_source)
@@ -149,8 +157,7 @@ class TestExcludePatterns:
 
     def test_zip_exclude_without_root(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
-            include_root="false", exclude="subdir"
+            source=str(tmp_source), format="zip", include_root="false", exclude="subdir"
         )
         c = Compressor(config)
         c.source = str(tmp_source)
@@ -159,8 +166,7 @@ class TestExcludePatterns:
 
     def test_tar_exclude_with_root(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="tar",
-            include_root="true", exclude="*.log"
+            source=str(tmp_source), format="tar", include_root="true", exclude="*.log"
         )
         c = Compressor(config)
         c.source = str(tmp_source)
@@ -181,8 +187,7 @@ class TestCompressIntegration:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="zip",
-            include_root="true", dest=str(dest)
+            source=str(tmp_source), format="zip", include_root="true", dest=str(dest)
         )
         result = compress(config)
         assert result
@@ -193,8 +198,7 @@ class TestCompressIntegration:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="tar",
-            include_root="true", dest=str(dest)
+            source=str(tmp_source), format="tar", include_root="true", dest=str(dest)
         )
         result = compress(config)
         assert result
@@ -205,8 +209,7 @@ class TestCompressIntegration:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="zip",
-            include_root="false", dest=str(dest)
+            source=str(tmp_source), format="zip", include_root="false", dest=str(dest)
         )
         result = compress(config)
         assert result
@@ -215,8 +218,10 @@ class TestCompressIntegration:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="zip",
-            dest=str(dest), destfilename="my_archive"
+            source=str(tmp_source),
+            format="zip",
+            dest=str(dest),
+            destfilename="my_archive",
         )
         result = compress(config)
         assert result
@@ -226,8 +231,7 @@ class TestCompressIntegration:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="tgz",
-            include_root="true", dest=str(dest)
+            source=str(tmp_source), format="tgz", include_root="true", dest=str(dest)
         )
         result = compress(config)
         assert result
@@ -238,8 +242,7 @@ class TestCompressIntegration:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="tgz",
-            include_root="false", dest=str(dest)
+            source=str(tmp_source), format="tgz", include_root="false", dest=str(dest)
         )
         result = compress(config)
         assert result
@@ -248,8 +251,7 @@ class TestCompressIntegration:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="tar",
-            include_root="false", dest=str(dest)
+            source=str(tmp_source), format="tar", include_root="false", dest=str(dest)
         )
         result = compress(config)
         assert result
@@ -268,6 +270,7 @@ class TestGlobPatternEdgeCases:
 
     def test_glob_no_match_fail(self, make_config, tmp_source):
         from exceptions import ValidationError
+
         config = make_config(
             source=str(tmp_source / "*.xyz"),
             fail_on_error=True,
@@ -317,8 +320,10 @@ class TestGlobPatternEdgeCases:
 class TestDestinationPath:
     def test_default_destination_with_root(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
-            include_root="true", dest="",
+            source=str(tmp_source),
+            format="zip",
+            include_root="true",
+            dest="",
         )
         c = Compressor(config)
         c.source = str(tmp_source)
@@ -328,8 +333,10 @@ class TestDestinationPath:
 
     def test_default_destination_without_root(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
-            include_root="false", dest="",
+            source=str(tmp_source),
+            format="zip",
+            include_root="false",
+            dest="",
         )
         c = Compressor(config)
         c.source = str(tmp_source)
@@ -338,7 +345,9 @@ class TestDestinationPath:
         assert path == os.path.join(os.getcwd(), "source.zip")
 
     @pytest.mark.parametrize("depth", ["direct-child", "nested"])
-    def test_include_root_does_not_move_the_output(self, make_config, tmp_path, monkeypatch, depth):
+    def test_include_root_does_not_move_the_output(
+        self, make_config, tmp_path, monkeypatch, depth
+    ):
         """
         Regression for #58: includeRoot decides what goes INSIDE the archive,
         never where the archive lands. With no `dest`, both values must land
@@ -350,14 +359,18 @@ class TestDestinationPath:
         """
         monkeypatch.setenv("GITHUB_WORKSPACE", str(tmp_path))
         monkeypatch.chdir(tmp_path)
-        source = tmp_path / "build" / "dist" if depth == "nested" else tmp_path / "output"
+        source = (
+            tmp_path / "build" / "dist" if depth == "nested" else tmp_path / "output"
+        )
         source.mkdir(parents=True)
 
         paths = []
         for include_root in ("true", "false"):
             config = make_config(
-                source=str(source), format="zip",
-                include_root=include_root, dest="",
+                source=str(source),
+                format="zip",
+                include_root=include_root,
+                dest="",
             )
             c = Compressor(config)
             c.source = str(source)
@@ -370,13 +383,18 @@ class TestDestinationFilename:
     """`destfilename` and the format extension appended to it."""
 
     @staticmethod
-    def _output_name(make_config, tmp_path, monkeypatch, destfilename, fmt, dedupe="true"):
+    def _output_name(
+        make_config, tmp_path, monkeypatch, destfilename, fmt, dedupe="true"
+    ):
         monkeypatch.setenv("GITHUB_WORKSPACE", str(tmp_path))
         source = tmp_path / "output"
         source.mkdir(exist_ok=True)
         config = make_config(
-            source=str(source), format=fmt,
-            include_root="false", dest="", destfilename=destfilename,
+            source=str(source),
+            format=fmt,
+            include_root="false",
+            dest="",
+            destfilename=destfilename,
         )
         config.dedupe_extension = dedupe
         c = Compressor(config)
@@ -384,25 +402,31 @@ class TestDestinationFilename:
         c.get_compression_command()
         return os.path.basename(c.output_path)
 
-    @pytest.mark.parametrize("destfilename, fmt, expected", [
-        # The extension is appended when the name does not already carry it.
-        ("archive", "zip", "archive.zip"),
-        ("archive", "tgz", "archive.tgz"),
-        # ...and not appended twice when it does. Writing `archive.zip` is the
-        # natural thing to do and used to produce archive.zip.zip.
-        ("archive.zip", "zip", "archive.zip"),
-        ("archive.tgz", "tgz", "archive.tgz"),
-        # A different extension is left alone -- it is part of the name.
-        ("archive.tar", "zip", "archive.tar.zip"),
-        # tgz is not treated as an alias of tar.gz, so this one still doubles.
-        ("archive.tar.gz", "tgz", "archive.tar.gz.tgz"),
-        # An extension with no stem would otherwise collapse to a dotfile.
-        (".zip", "zip", ".zip.zip"),
-    ])
+    @pytest.mark.parametrize(
+        "destfilename, fmt, expected",
+        [
+            # The extension is appended when the name does not already carry it.
+            ("archive", "zip", "archive.zip"),
+            ("archive", "tgz", "archive.tgz"),
+            # ...and not appended twice when it does. Writing `archive.zip` is the
+            # natural thing to do and used to produce archive.zip.zip.
+            ("archive.zip", "zip", "archive.zip"),
+            ("archive.tgz", "tgz", "archive.tgz"),
+            # A different extension is left alone -- it is part of the name.
+            ("archive.tar", "zip", "archive.tar.zip"),
+            # tgz is not treated as an alias of tar.gz, so this one still doubles.
+            ("archive.tar.gz", "tgz", "archive.tar.gz.tgz"),
+            # An extension with no stem would otherwise collapse to a dotfile.
+            (".zip", "zip", ".zip.zip"),
+        ],
+    )
     def test_extension_is_appended_at_most_once(
         self, make_config, tmp_path, monkeypatch, destfilename, fmt, expected
     ):
-        assert self._output_name(make_config, tmp_path, monkeypatch, destfilename, fmt) == expected
+        assert (
+            self._output_name(make_config, tmp_path, monkeypatch, destfilename, fmt)
+            == expected
+        )
 
     @pytest.mark.parametrize("suffix", ["", "/"])
     def test_a_trailing_slash_does_not_empty_the_name(
@@ -413,36 +437,51 @@ class TestDestinationFilename:
         source = tmp_path / "output"
         source.mkdir(exist_ok=True)
         config = make_config(
-            source=str(source), format="zip", include_root="false", dest="",
+            source=str(source),
+            format="zip",
+            include_root="false",
+            dest="",
         )
         c = Compressor(config)
         c.source = f"{source}{suffix}"
         c.get_compression_command()
         assert os.path.basename(c.output_path) == "output.zip"
 
-    def test_default_name_comes_from_the_source(self, make_config, tmp_path, monkeypatch):
+    def test_default_name_comes_from_the_source(
+        self, make_config, tmp_path, monkeypatch
+    ):
         """Not from the working directory, which is what the README used to claim."""
         monkeypatch.chdir(tmp_path)
-        assert self._output_name(make_config, tmp_path, monkeypatch, "", "zip") == "output.zip"
+        assert (
+            self._output_name(make_config, tmp_path, monkeypatch, "", "zip")
+            == "output.zip"
+        )
 
-    @pytest.mark.parametrize("dedupe, expected", [
-        # dedupeExtension is the opt-out for the de-duplication above: false
-        # restores the unconditional append.
-        ("false", "archive.zip.zip"),
-        ("true", "archive.zip"),
-        # An unset value must not read as "off" -- the default is on.
-        ("", "archive.zip"),
-    ])
+    @pytest.mark.parametrize(
+        "dedupe, expected",
+        [
+            # dedupeExtension is the opt-out for the de-duplication above: false
+            # restores the unconditional append.
+            ("false", "archive.zip.zip"),
+            ("true", "archive.zip"),
+            # An unset value must not read as "off" -- the default is on.
+            ("", "archive.zip"),
+        ],
+    )
     def test_dedupe_extension_can_be_turned_off(
         self, make_config, tmp_path, monkeypatch, dedupe, expected
     ):
-        name = self._output_name(make_config, tmp_path, monkeypatch, "archive.zip", "zip", dedupe)
+        name = self._output_name(
+            make_config, tmp_path, monkeypatch, "archive.zip", "zip", dedupe
+        )
         assert name == expected
 
     def test_dedupe_off_does_not_touch_a_name_without_the_extension(
         self, make_config, tmp_path, monkeypatch
     ):
-        name = self._output_name(make_config, tmp_path, monkeypatch, "archive", "zip", "false")
+        name = self._output_name(
+            make_config, tmp_path, monkeypatch, "archive", "zip", "false"
+        )
         assert name == "archive.zip"
 
 
@@ -456,8 +495,11 @@ class TestOutputDirectoryHandling:
         source.mkdir(exist_ok=True)
         (source / "a.txt").write_text("a")
         config = make_config(
-            source=str(source), format="zip", include_root="false",
-            dest=str(tmp_path), destfilename=destfilename,
+            source=str(source),
+            format="zip",
+            include_root="false",
+            dest=str(tmp_path),
+            destfilename=destfilename,
         )
         c = Compressor(config)
         c.source = str(source)
@@ -498,7 +540,9 @@ class TestTempDirectories:
             dest = tmp_path / name
             dest.mkdir()
             config = make_config(
-                source=str(tmp_source / "*.txt"), format="zip", dest=str(dest),
+                source=str(tmp_source / "*.txt"),
+                format="zip",
+                dest=str(dest),
             )
             assert compress(config)
 
@@ -513,17 +557,24 @@ class TestIncludeHidden:
     @staticmethod
     def _cmd(make_config, tmp_source, fmt, include_root, include_hidden):
         config = make_config(
-            source=str(tmp_source), format=fmt,
-            include_root=include_root, include_hidden=include_hidden,
+            source=str(tmp_source),
+            format=fmt,
+            include_root=include_root,
+            include_hidden=include_hidden,
         )
         c = Compressor(config)
         c.source = str(tmp_source)
-        return c._get_zip_command("/out/a.zip", "a") if fmt == "zip" \
+        return (
+            c._get_zip_command("/out/a.zip", "a")
+            if fmt == "zip"
             else c._get_tar_command(f"/out/a.{fmt}", "a")
+        )
 
     @pytest.mark.parametrize("fmt", ["zip", "tar", "tgz", "tbz2", "txz", "tzst"])
     @pytest.mark.parametrize("include_root", ["true", "false"])
-    def test_on_by_default_adds_no_exclusion(self, make_config, tmp_source, fmt, include_root):
+    def test_on_by_default_adds_no_exclusion(
+        self, make_config, tmp_source, fmt, include_root
+    ):
         cmd = self._cmd(make_config, tmp_source, fmt, include_root, "true")
         assert ".*" not in cmd
 
@@ -554,8 +605,11 @@ class TestIncludeHidden:
 
     def test_user_exclude_patterns_are_kept_alongside(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
-            include_root="false", include_hidden="false", exclude="*.log",
+            source=str(tmp_source),
+            format="zip",
+            include_root="false",
+            include_hidden="false",
+            exclude="*.log",
         )
         c = Compressor(config)
         c.source = str(tmp_source)
@@ -566,17 +620,21 @@ class TestIncludeHidden:
 class TestExcludePatternFormatting:
     def test_format_pattern_with_root_dir_prefix_match(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
+            source=str(tmp_source),
+            format="zip",
             include_root="true",
         )
         c = Compressor(config)
         dir_name = os.path.basename(str(tmp_source))
-        result = c._format_pattern_with_root(f"{dir_name}/subdir", str(tmp_source), dir_name)
+        result = c._format_pattern_with_root(
+            f"{dir_name}/subdir", str(tmp_source), dir_name
+        )
         assert result == [f"{dir_name}/subdir"]
 
     def test_format_pattern_with_root_trailing_slash(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
+            source=str(tmp_source),
+            format="zip",
             include_root="true",
         )
         c = Compressor(config)
@@ -586,7 +644,8 @@ class TestExcludePatternFormatting:
 
     def test_format_pattern_without_root_non_dir(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
+            source=str(tmp_source),
+            format="zip",
             include_root="false",
         )
         c = Compressor(config)
@@ -595,8 +654,10 @@ class TestExcludePatternFormatting:
 
     def test_tar_exclude_without_root(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="tar",
-            include_root="false", exclude="*.log",
+            source=str(tmp_source),
+            format="tar",
+            include_root="false",
+            exclude="*.log",
         )
         c = Compressor(config)
         result = c._build_tar_exclude(str(tmp_source))
@@ -620,9 +681,15 @@ class TestCompressedTarCommand:
         c.source = str(source)
         return c, c._get_tar_command(f"/out/test.{fmt}", "test")
 
-    @pytest.mark.parametrize("fmt, flag", [
-        ("tgz", "-czf"), ("tbz2", "-cjf"), ("txz", "-cJf"), ("tzst", "-cf"),
-    ])
+    @pytest.mark.parametrize(
+        "fmt, flag",
+        [
+            ("tgz", "-czf"),
+            ("tbz2", "-cjf"),
+            ("txz", "-cJf"),
+            ("tzst", "-cf"),
+        ],
+    )
     def test_no_staging_copy_is_made(self, make_config, tmp_source, fmt, flag):
         c, cmd = self._cmd(make_config, tmp_source, fmt)
         for staging in ("mkdir -p", "cp -a", "cp -r", "rm -rf"):
@@ -649,8 +716,9 @@ class TestCompressedTarCommand:
         cmd = c._get_tar_command(str(dest), "out")
         assert subprocess.run(cmd, shell=True, capture_output=True).returncode == 0
 
-        listed = subprocess.run(["tar", f"-t{flag}f", str(dest)],
-                                capture_output=True, text=True).stdout.split()
+        listed = subprocess.run(
+            ["tar", f"-t{flag}f", str(dest)], capture_output=True, text=True
+        ).stdout.split()
         assert "./.hidden" in listed
         assert "./visible.txt" in listed
 
@@ -676,7 +744,9 @@ class TestCompressedTarCommand:
         config = make_config(source=str(source), format="tgz", include_root="false")
         c = Compressor(config)
         c.source = str(source)
-        subprocess.run(c._get_tar_command(str(dest), "out"), shell=True, capture_output=True)
+        subprocess.run(
+            c._get_tar_command(str(dest), "out"), shell=True, capture_output=True
+        )
         assert sorted(q.name for q in tmp_path.iterdir()) == ["out.tgz", "src"]
 
 
@@ -715,7 +785,8 @@ class TestCleanup:
 class TestCompressErrorHandling:
     def test_compress_validation_failed(self, make_config):
         config = make_config(
-            source="/nonexistent/path", format="zip",
+            source="/nonexistent/path",
+            format="zip",
             fail_on_error=False,
         )
         c = Compressor(config)
@@ -724,11 +795,16 @@ class TestCompressErrorHandling:
 
     def test_compress_exception_handling(self, make_config, tmp_source, monkeypatch):
         config = make_config(
-            source=str(tmp_source), format="zip",
+            source=str(tmp_source),
+            format="zip",
             fail_on_error=False,
         )
         c = Compressor(config)
-        monkeypatch.setattr(c, 'get_compression_command', lambda: (_ for _ in ()).throw(OSError("test error")))
+        monkeypatch.setattr(
+            c,
+            "get_compression_command",
+            lambda: (_ for _ in ()).throw(OSError("test error")),
+        )
         result = c.compress()
         assert result.success is False
 
@@ -736,7 +812,8 @@ class TestCompressErrorHandling:
 class TestCompressionLevel:
     def test_zip_with_level(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
+            source=str(tmp_source),
+            format="zip",
             compression_level="9",
         )
         c = Compressor(config)
@@ -756,7 +833,8 @@ class TestCompressionLevel:
 
     def test_tgz_level_env(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="tgz",
+            source=str(tmp_source),
+            format="tgz",
             compression_level="9",
         )
         c = Compressor(config)
@@ -764,7 +842,8 @@ class TestCompressionLevel:
 
     def test_tbz2_level_env(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="tbz2",
+            source=str(tmp_source),
+            format="tbz2",
             compression_level="5",
         )
         c = Compressor(config)
@@ -779,8 +858,10 @@ class TestCompressionLevel:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="zip",
-            dest=str(dest), compression_level="1",
+            source=str(tmp_source),
+            format="zip",
+            dest=str(dest),
+            compression_level="1",
         )
         result = compress(config)
         checksum = result.checksum
@@ -793,7 +874,8 @@ class TestChecksum:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="zip",
+            source=str(tmp_source),
+            format="zip",
             dest=str(dest),
         )
         result = compress(config)
@@ -803,10 +885,12 @@ class TestChecksum:
 
     def test_checksum_matches_file(self, make_config, tmp_source, tmp_path):
         import hashlib
+
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="zip",
+            source=str(tmp_source),
+            format="zip",
             dest=str(dest),
         )
         result = compress(config)
@@ -819,7 +903,8 @@ class TestChecksum:
 
     def test_no_checksum_on_failure(self, make_config):
         config = make_config(
-            source="/nonexistent", format="zip",
+            source="/nonexistent",
+            format="zip",
             fail_on_error=False,
         )
         result = compress(config)
@@ -838,7 +923,8 @@ class TestTxzFormat:
 
     def test_txz_level_env(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="txz",
+            source=str(tmp_source),
+            format="txz",
             compression_level="6",
         )
         c = Compressor(config)
@@ -848,8 +934,10 @@ class TestTxzFormat:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="txz",
-            include_root="true", dest=str(dest),
+            source=str(tmp_source),
+            format="txz",
+            include_root="true",
+            dest=str(dest),
         )
         result = compress(config)
         output_path, checksum = result.output_path, result.checksum
@@ -862,8 +950,10 @@ class TestTxzFormat:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="txz",
-            include_root="false", dest=str(dest),
+            source=str(tmp_source),
+            format="txz",
+            include_root="false",
+            dest=str(dest),
         )
         result = compress(config)
         output_path, checksum = result.output_path, result.checksum
@@ -874,7 +964,8 @@ class TestTxzFormat:
 class TestPasswordEncryption:
     def test_zip_command_with_password(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="zip",
+            source=str(tmp_source),
+            format="zip",
             password="secret123",
         )
         c = Compressor(config)
@@ -894,8 +985,10 @@ class TestPasswordEncryption:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="zip",
-            dest=str(dest), password="testpass",
+            source=str(tmp_source),
+            format="zip",
+            dest=str(dest),
+            password="testpass",
         )
         result = compress(config)
         output_path, checksum = result.output_path, result.checksum
@@ -916,7 +1009,9 @@ class TestZstdFormat:
 
     def test_tzst_level_env(self, make_config, tmp_source):
         config = make_config(
-            source=str(tmp_source), format="tzst", compression_level="9",
+            source=str(tmp_source),
+            format="tzst",
+            compression_level="9",
         )
         c = Compressor(config)
         assert "ZSTD_CLEVEL=9" in c._get_tar_level_env()
@@ -925,20 +1020,26 @@ class TestZstdFormat:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="tzst",
-            include_root="true", dest=str(dest),
+            source=str(tmp_source),
+            format="tzst",
+            include_root="true",
+            dest=str(dest),
         )
         result = compress(config)
         assert result
         assert result.checksum
         assert len(list(dest.glob("*.tzst"))) == 1
 
-    def test_compress_tzst_without_root_integration(self, make_config, tmp_source, tmp_path):
+    def test_compress_tzst_without_root_integration(
+        self, make_config, tmp_source, tmp_path
+    ):
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="tzst",
-            include_root="false", dest=str(dest),
+            source=str(tmp_source),
+            format="tzst",
+            include_root="false",
+            dest=str(dest),
         )
         result = compress(config)
         assert result
@@ -971,7 +1072,9 @@ class TestCompressStats:
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source / "*.txt"), format="zip", dest=str(dest),
+            source=str(tmp_source / "*.txt"),
+            format="zip",
+            dest=str(dest),
         )
         result = compress(config)
         assert result.file_count == 2  # file1.txt and file2.txt, not the nested one
@@ -979,25 +1082,35 @@ class TestCompressStats:
 
 class TestStatsOnFailurePaths:
     def test_validation_failure_still_records_a_duration(self, make_config):
-        result = compress(make_config(
-            source="/nonexistent", format="zip", fail_on_error=False,
-        ))
+        result = compress(
+            make_config(
+                source="/nonexistent",
+                format="zip",
+                fail_on_error=False,
+            )
+        )
         assert not result
         assert result.duration >= 0
         assert result.original_size == 0
 
-    def test_command_failure_reports_the_source_size(self, make_config, tmp_source,
-                                                     tmp_path):
+    def test_command_failure_reports_the_source_size(
+        self, make_config, tmp_source, tmp_path
+    ):
         """A failing command must not zero out what was already measured."""
         from unittest.mock import patch
         from executor import ProcessResult
+
         dest = tmp_path / "output"
         dest.mkdir()
         config = make_config(
-            source=str(tmp_source), format="zip", dest=str(dest), fail_on_error=False,
+            source=str(tmp_source),
+            format="zip",
+            dest=str(dest),
+            fail_on_error=False,
         )
-        with patch("compress.CommandExecutor.run",
-                   return_value=ProcessResult(False, "boom")):
+        with patch(
+            "compress.CommandExecutor.run", return_value=ProcessResult(False, "boom")
+        ):
             result = compress(config)
         assert not result
         assert result.original_size > 0

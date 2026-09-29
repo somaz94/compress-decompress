@@ -10,6 +10,7 @@ Inspection is best-effort — an archive the standard library cannot open
 than an error, so a readable archive is never rejected for being unreadable
 *here* while the real `tar`/`unzip` handles it fine.
 """
+
 from __future__ import annotations
 
 import tarfile
@@ -81,8 +82,12 @@ def is_absolute(name: str) -> bool:
         return True
     # A drive letter is one alphabetic character; `a:b/file` is an ordinary
     # relative name and must not be reported as absolute.
-    return (len(normalized) > 2 and normalized[0].isalpha()
-            and normalized[1] == ":" and normalized[2] == "/")
+    return (
+        len(normalized) > 2
+        and normalized[0].isalpha()
+        and normalized[1] == ":"
+        and normalized[2] == "/"
+    )
 
 
 def find_unsafe_entries(entries: list[str]) -> tuple[list[str], list[str]]:

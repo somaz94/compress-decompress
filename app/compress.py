@@ -35,6 +35,7 @@ _TAR_LONG_FLAGS = {
     CompressionFormat.TZST.value: "--zstd",
 }
 
+
 def _remap_runner_path(source: str) -> str:
     """
     Step 1 of the two-step GitHub Actions workspace remap.
@@ -61,7 +62,7 @@ def _remap_runner_path(source: str) -> str:
     # else under /home/runner/work -- ${{ runner.temp }}, _actions -- is not
     # mounted at all, so remapping it would silently archive the workspace
     # instead of failing honestly in validate_path.
-    parts = source[len(_RUNNER_WORK_PREFIX):].split("/")
+    parts = source[len(_RUNNER_WORK_PREFIX) :].split("/")
     if len(parts) >= 2 and parts[0] == parts[1]:
         return os.path.join(workspace, *parts[2:])
     return source
@@ -69,17 +70,22 @@ def _remap_runner_path(source: str) -> str:
 
 class Compressor(BaseProcessor):
     """Handles file/directory compression operations."""
+
     def __init__(self, config: AppConfig):
         super().__init__(config)
         self.source = config.source
         self.format = config.format
         self.include_root = FileUtils.str_to_bool(config.include_root)
-        self.preserve_glob_structure = FileUtils.str_to_bool(config.preserve_glob_structure)
+        self.preserve_glob_structure = FileUtils.str_to_bool(
+            config.preserve_glob_structure
+        )
         self.strip_prefix = config.strip_prefix
         self.is_glob_pattern = False
         self.matched_files: list[str] = []
         self.compression_level = config.compression_level
-        self.dedupe_extension = FileUtils.str_to_bool(config.dedupe_extension, default=True)
+        self.dedupe_extension = FileUtils.str_to_bool(
+            config.dedupe_extension, default=True
+        )
         self.include_hidden = FileUtils.str_to_bool(config.include_hidden, default=True)
         self.password = config.password
         self.temp_dir: str | None = None
@@ -126,9 +132,11 @@ class Compressor(BaseProcessor):
         # A destfilename already ending in the extension is the finished name
         # (archive.zip, not archive.zip.zip); the length check keeps a bare `.zip`
         # from becoming an extension-only dotfile. dedupeExtension: false opts out.
-        if (self.dedupe_extension
-                and len(base_name) > len(extension)
-                and base_name.endswith(extension)):
+        if (
+            self.dedupe_extension
+            and len(base_name) > len(extension)
+            and base_name.endswith(extension)
+        ):
             extension = ""
         full_dest = self._determine_destination_path(base_name, extension)
         self.output_path = full_dest
@@ -172,7 +180,9 @@ class Compressor(BaseProcessor):
         """Generate zip compression command"""
         source_path = self._resolve_source_path()
         exclude_cmd = self._build_zip_exclude(source_path)
-        level_flag = f" -{shlex.quote(self.compression_level)}" if self.compression_level else ""
+        level_flag = (
+            f" -{shlex.quote(self.compression_level)}" if self.compression_level else ""
+        )
         password_flag = f" -P {shlex.quote(self.password)}" if self.password else ""
 
         if self.include_root:
@@ -188,14 +198,18 @@ class Compressor(BaseProcessor):
         processed = []
         for pattern in self.parse_exclude_patterns():
             if self.include_root:
-                processed.extend(self._format_pattern_with_root(pattern, source_path, dir_name))
+                processed.extend(
+                    self._format_pattern_with_root(pattern, source_path, dir_name)
+                )
             else:
-                processed.extend(self._format_pattern_without_root(pattern, source_path))
+                processed.extend(
+                    self._format_pattern_without_root(pattern, source_path)
+                )
         processed.extend(self._hidden_zip_patterns(dir_name))
 
         if not processed:
             return ""
-        return " ".join([f'-x {shlex.quote(p)}' for p in processed])
+        return " ".join([f"-x {shlex.quote(p)}" for p in processed])
 
     def _hidden_zip_patterns(self, dir_name: str) -> list[str]:
         """
@@ -208,19 +222,25 @@ class Compressor(BaseProcessor):
             return [f"{dir_name}/.*", f"{dir_name}/*/.*"]
         return [".*", "*/.*"]
 
-    def _format_pattern_with_root(self, pattern: str, source_path: str, dir_name: str) -> list[str]:
+    def _format_pattern_with_root(
+        self, pattern: str, source_path: str, dir_name: str
+    ) -> list[str]:
         """Format exclusion pattern when includeRoot is true"""
         if pattern.startswith(f"{dir_name}/") or pattern == dir_name:
             return [pattern]
-        if os.path.isdir(os.path.join(source_path, pattern)) and not pattern.endswith('/*'):
-            if pattern.endswith('/'):
+        if os.path.isdir(os.path.join(source_path, pattern)) and not pattern.endswith(
+            "/*"
+        ):
+            if pattern.endswith("/"):
                 return [f"{dir_name}/{pattern}*"]
             return [f"{dir_name}/{pattern}/*", f"{dir_name}/{pattern}/"]
         return [f"{dir_name}/{pattern}"]
 
     def _format_pattern_without_root(self, pattern: str, source_path: str) -> list[str]:
         """Format exclusion pattern when includeRoot is false"""
-        if os.path.isdir(os.path.join(source_path, pattern)) and not pattern.endswith('/*'):
+        if os.path.isdir(os.path.join(source_path, pattern)) and not pattern.endswith(
+            "/*"
+        ):
             return [f"{pattern}/*", f"{pattern}/"]
         return [pattern]
 
@@ -244,7 +264,9 @@ class Compressor(BaseProcessor):
         source_path = self._resolve_source_path()
 
         opt = _TAR_COMPRESSION_FLAGS.get(self.format, "")
-        extra = f"{_TAR_LONG_FLAGS[self.format]} " if self.format in _TAR_LONG_FLAGS else ""
+        extra = (
+            f"{_TAR_LONG_FLAGS[self.format]} " if self.format in _TAR_LONG_FLAGS else ""
+        )
         level_env = self._get_tar_level_env()
         exclude_cmd = self._build_tar_exclude(source_path)
 
@@ -268,7 +290,7 @@ class Compressor(BaseProcessor):
 
         if not processed:
             return ""
-        return " ".join([f'--exclude={shlex.quote(p)}' for p in processed])
+        return " ".join([f"--exclude={shlex.quote(p)}" for p in processed])
 
     def _hidden_tar_patterns(self, dir_name: str) -> list[str]:
         """
@@ -355,7 +377,9 @@ class Compressor(BaseProcessor):
     def _compress_glob_pattern(self) -> ProcessResult:
         """Compress files matched by glob pattern"""
         start_time = self._start_time
-        source_size = sum(os.path.getsize(f) for f in self.matched_files if os.path.exists(f))
+        source_size = sum(
+            os.path.getsize(f) for f in self.matched_files if os.path.exists(f)
+        )
         self.stats.original_size = source_size
         self.stats.file_count = len(self.matched_files)
 
@@ -374,7 +398,7 @@ class Compressor(BaseProcessor):
             self.matched_files,
             self.temp_dir,
             preserve_structure=self.preserve_glob_structure,
-            strip_prefix=self.strip_prefix
+            strip_prefix=self.strip_prefix,
         )
 
         original_source = self.source
@@ -390,7 +414,9 @@ class Compressor(BaseProcessor):
         if result.success:
             self._print_results(start_time, source_size)
             self._compute_checksum()
-            UI.print_success(f"Successfully compressed {len(self.matched_files)} file(s) matching pattern: {original_source}")
+            UI.print_success(
+                f"Successfully compressed {len(self.matched_files)} file(s) matching pattern: {original_source}"
+            )
 
         return result
 
