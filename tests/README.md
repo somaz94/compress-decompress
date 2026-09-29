@@ -11,6 +11,9 @@ cd /path/to/compress-decompress
 make venv          # Create virtualenv and install dev dependencies
 make test          # Run unit tests with coverage
 make coverage      # Generate HTML coverage report (+ terminal output)
+make lint          # Lint with ruff (make lint-fix to auto-fix)
+make format        # Format with ruff (make format-check to verify)
+make ci            # Lint + format check + unit tests
 make clean         # Remove venv, cache, and build artifacts
 make help          # Show all available commands
 ```
@@ -22,7 +25,7 @@ make help          # Show all available commands
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install pytest pytest-cov
+pip install -r requirements-dev.txt
 ```
 
 <br/>

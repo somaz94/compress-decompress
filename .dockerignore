@@ -33,6 +33,7 @@ CODEOWNERS
 .prettierrc.json
 .coveragerc
 Makefile
+requirements-dev.txt
 
 # Environment files
 .env

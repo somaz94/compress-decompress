@@ -3,17 +3,17 @@ from stats import OperationStats
 
 
 def _compress_stats(**overrides):
-    base = dict(
-        command="compress",
-        format="zip",
-        success=True,
-        output_path="/out/archive.zip",
-        checksum="a" * 64,
-        original_size=2048,
-        compressed_size=512,
-        file_count=7,
-        duration=1.25,
-    )
+    base = {
+        "command": "compress",
+        "format": "zip",
+        "success": True,
+        "output_path": "/out/archive.zip",
+        "checksum": "a" * 64,
+        "original_size": 2048,
+        "compressed_size": 512,
+        "file_count": 7,
+        "duration": 1.25,
+    }
     base.update(overrides)
     return OperationStats(**base)
 

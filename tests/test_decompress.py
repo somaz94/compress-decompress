@@ -1,7 +1,8 @@
 import os
+
 import pytest
+from config import DECOMPRESSION_COMMANDS, CommandConfig
 from decompress import Decompressor, decompress
-from config import AppConfig, CommandConfig, DECOMPRESSION_COMMANDS
 
 
 class TestDecompressorInit:
@@ -456,6 +457,7 @@ class TestPathTraversalProtection:
     def test_absolute_entries_only_warn(self, make_config, tmp_path):
         """An absolute member is stripped by tar/unzip, so it warns instead of failing."""
         import zipfile
+
         from decompress import Decompressor
 
         archive_path = tmp_path / "absolute.zip"

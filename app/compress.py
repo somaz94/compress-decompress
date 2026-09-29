@@ -6,14 +6,15 @@ import shutil
 import tempfile
 import time
 from typing import TYPE_CHECKING
-from config import CompressionFormat
-from ui import UI
-from file_utils import FileUtils
-from executor import CommandExecutor, ProcessResult
-from base_processor import BaseProcessor
+
 from app_logger import logger
-from exceptions import ValidationError, CompressError, CommandError
+from base_processor import BaseProcessor
+from config import CompressionFormat
+from exceptions import CommandError, CompressError, ValidationError
+from executor import CommandExecutor, ProcessResult
+from file_utils import FileUtils
 from stats import OperationStats
+from ui import UI
 
 if TYPE_CHECKING:
     from config import AppConfig
@@ -458,7 +459,7 @@ class Compressor(BaseProcessor):
                 if self.verbose:
                     logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
             except OSError as e:
-                logger.warning(f"Failed to clean up temporary directory: {str(e)}")
+                logger.warning(f"Failed to clean up temporary directory: {e!s}")
 
 
 def compress(config: AppConfig) -> OperationStats:

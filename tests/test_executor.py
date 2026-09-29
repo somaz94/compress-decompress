@@ -1,6 +1,6 @@
 import pytest
-from executor import retry_on_failure, ProcessResult, CommandExecutor
 from exceptions import CommandError
+from executor import CommandExecutor, ProcessResult, retry_on_failure
 
 
 class TestProcessResult:

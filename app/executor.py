@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 import time
 from functools import wraps
+
 from app_logger import logger
 from exceptions import CommandError
 from masking import mask

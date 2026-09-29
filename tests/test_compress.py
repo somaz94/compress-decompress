@@ -2,10 +2,10 @@ import os
 import shlex
 import subprocess
 import tempfile
+
 import pytest
-from compress import Compressor, compress, _remap_runner_path
+from compress import Compressor, _remap_runner_path, compress
 from exceptions import ValidationError
-from config import AppConfig
 
 
 class TestCompressorInit:
@@ -691,7 +691,7 @@ class TestCompressedTarCommand:
         ],
     )
     def test_no_staging_copy_is_made(self, make_config, tmp_source, fmt, flag):
-        c, cmd = self._cmd(make_config, tmp_source, fmt)
+        _, cmd = self._cmd(make_config, tmp_source, fmt)
         for staging in ("mkdir -p", "cp -a", "cp -r", "rm -rf"):
             assert staging not in cmd
         assert flag in cmd
@@ -714,10 +714,16 @@ class TestCompressedTarCommand:
         c = Compressor(config)
         c.source = str(source)
         cmd = c._get_tar_command(str(dest), "out")
-        assert subprocess.run(cmd, shell=True, capture_output=True).returncode == 0
+        assert (
+            subprocess.run(cmd, shell=True, capture_output=True, check=False).returncode
+            == 0
+        )
 
         listed = subprocess.run(
-            ["tar", f"-t{flag}f", str(dest)], capture_output=True, text=True
+            ["tar", f"-t{flag}f", str(dest)],
+            capture_output=True,
+            text=True,
+            check=False,
         ).stdout.split()
         assert "./.hidden" in listed
         assert "./visible.txt" in listed
@@ -731,7 +737,10 @@ class TestCompressedTarCommand:
         c = Compressor(config)
         c.source = str(source)
         cmd = c._get_tar_command(str(dest), "out")
-        assert subprocess.run(cmd, shell=True, capture_output=True).returncode == 0
+        assert (
+            subprocess.run(cmd, shell=True, capture_output=True, check=False).returncode
+            == 0
+        )
         assert dest.exists()
 
     def test_nothing_is_written_beside_the_source(self, make_config, tmp_path):
@@ -745,7 +754,10 @@ class TestCompressedTarCommand:
         c = Compressor(config)
         c.source = str(source)
         subprocess.run(
-            c._get_tar_command(str(dest), "out"), shell=True, capture_output=True
+            c._get_tar_command(str(dest), "out"),
+            shell=True,
+            capture_output=True,
+            check=False,
         )
         assert sorted(q.name for q in tmp_path.iterdir()) == ["out.tgz", "src"]
 
@@ -1098,6 +1110,7 @@ class TestStatsOnFailurePaths:
     ):
         """A failing command must not zero out what was already measured."""
         from unittest.mock import patch
+
         from executor import ProcessResult
 
         dest = tmp_path / "output"

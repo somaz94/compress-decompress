@@ -4,15 +4,16 @@ import os
 import shlex
 import time
 from typing import TYPE_CHECKING
-from ui import UI
+
 import archive
-from file_utils import FileUtils
-from executor import CommandExecutor, ProcessResult
-from config import DECOMPRESSION_COMMANDS, CommandConfig, CompressionFormat
 from app_logger import logger
 from base_processor import BaseProcessor
-from exceptions import ValidationError, CompressError, CommandError
+from config import DECOMPRESSION_COMMANDS, CommandConfig, CompressionFormat
+from exceptions import CommandError, CompressError, ValidationError
+from executor import CommandExecutor, ProcessResult
+from file_utils import FileUtils
 from stats import OperationStats
+from ui import UI
 
 if TYPE_CHECKING:
     from config import AppConfig
@@ -120,8 +121,8 @@ class Decompressor(BaseProcessor):
                     UI.print_bullet(f"{item}/ (directory)")
         except OSError as e:
             if self.verbose:
-                logger.error(f"Failed to list contents: {str(e)}")
-            UI.print_error(f"Failed to list contents: {str(e)}")
+                logger.error(f"Failed to list contents: {e!s}")
+            UI.print_error(f"Failed to list contents: {e!s}")
 
     def _record_stats(self, success: bool) -> None:
         """

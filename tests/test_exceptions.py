@@ -1,5 +1,5 @@
 import pytest
-from exceptions import CompressError, ValidationError, CommandError
+from exceptions import CommandError, CompressError, ValidationError
 
 
 class TestExceptionHierarchy:

@@ -1,7 +1,6 @@
-import os
 import pytest
 from base_processor import BaseProcessor
-from exceptions import ValidationError, CompressError
+from exceptions import CompressError, ValidationError
 from executor import ProcessResult
 
 

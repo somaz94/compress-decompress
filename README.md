@@ -474,7 +474,7 @@ Contributions welcome! Please:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install pytest
+pip install -r requirements-dev.txt
 python -m pytest tests/ -v
 ```
 

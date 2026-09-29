@@ -5,6 +5,7 @@ import shlex
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
+
 from exceptions import ValidationError
 from file_utils import FileUtils
 
@@ -96,7 +97,7 @@ class AppConfig:
     step_summary: bool = True
 
     @classmethod
-    def from_env(cls) -> "AppConfig":
+    def from_env(cls) -> AppConfig:
         compression_level = os.getenv("COMPRESSION_LEVEL", "")
         if compression_level and not cls._is_valid_compression_level(compression_level):
             raise ValidationError(

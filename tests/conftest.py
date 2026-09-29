@@ -1,5 +1,6 @@
 import os
 import sys
+
 import pytest
 
 # Add app directory to path so tests can import modules

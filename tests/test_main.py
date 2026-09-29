@@ -1,8 +1,8 @@
+from unittest.mock import mock_open, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, mock_open
-from config import AppConfig
+from exceptions import ValidationError
 from main import ActionRunner, main
-from exceptions import ValidationError, CompressError
 
 
 class TestActionRunnerValidation:

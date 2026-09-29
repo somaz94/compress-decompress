@@ -1,5 +1,5 @@
 import os
-import pytest
+
 from file_utils import FileUtils
 
 

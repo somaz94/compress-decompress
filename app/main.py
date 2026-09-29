@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import os
 import sys
+
 import summary
-from config import CompressionFormat, AppConfig
+from app_logger import logger
+from compress import compress
+from config import AppConfig, CompressionFormat
+from decompress import decompress
+from exceptions import CompressError, ValidationError
 from masking import register_secret
 from stats import OperationStats
 from ui import UI
-from app_logger import logger
-from exceptions import CompressError, ValidationError
-from compress import compress
-from decompress import decompress
 
 
 class ActionRunner:
@@ -137,8 +138,8 @@ def main():
     except CompressError as e:
         UI.print_error(str(e))
         sys.exit(1)
-    except Exception as e:
-        UI.print_error(f"An unexpected error occurred: {str(e)}")
+    except Exception as e:  # noqa: BLE001
+        UI.print_error(f"An unexpected error occurred: {e!s}")
         sys.exit(1)
 
 

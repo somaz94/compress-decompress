@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import os
 from typing import TYPE_CHECKING
+
 from app_logger import logger
-from exceptions import ValidationError, CompressError
+from exceptions import CompressError, ValidationError
 from executor import ProcessResult
 
 if TYPE_CHECKING:
@@ -46,10 +47,10 @@ class BaseProcessor:
     def handle_error(
         self, error: Exception, context: str = "Operation"
     ) -> ProcessResult:
-        error_msg = f"{context} failed: {str(error)}"
+        error_msg = f"{context} failed: {error!s}"
         if self.fail_on_error:
             raise CompressError(error_msg) from error
-        logger.warning(f"{context} warning: {str(error)}")
+        logger.warning(f"{context} warning: {error!s}")
         return ProcessResult(False, str(error))
 
     def parse_exclude_patterns(self) -> list[str]:

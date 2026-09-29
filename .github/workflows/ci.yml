@@ -42,7 +42,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install pytest pytest-cov
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        if: matrix.python-version == '3.14'
+        run: |
+          ruff check app tests
+          ruff format --check app tests
 
       - name: Run tests with coverage
         run: |

@@ -39,6 +39,7 @@ Dockerfile                   # Single stage on purpose (python:3.14-slim)
 action.yml                   # GitHub Action definition (18 inputs, 7 outputs)
 cliff.toml                   # git-cliff config for release notes
 .coveragerc                  # Coverage configuration
+requirements-dev.txt         # pytest, pytest-cov, ruff (pinned)
 ```
 
 ## Build & Test
@@ -47,6 +48,9 @@ cliff.toml                   # git-cliff config for release notes
 make venv          # Create virtualenv and install dev dependencies
 make test          # Run unit tests with coverage
 make coverage      # Generate HTML coverage report
+make lint          # Lint with ruff (make lint-fix to auto-fix)
+make format        # Format with ruff (make format-check to verify)
+make ci            # Lint + format check + unit tests
 make clean         # Remove venv, cache, and build artifacts
 make help          # Show all available commands
 ```

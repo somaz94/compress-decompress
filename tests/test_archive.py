@@ -1,9 +1,8 @@
 import tarfile
 import zipfile
 
-import pytest
-
 import archive
+import pytest
 
 
 class TestListEntries:
