@@ -9,7 +9,7 @@ import archive
 from app_logger import logger
 from base_processor import BaseProcessor
 from config import DECOMPRESSION_COMMANDS, CommandConfig, CompressionFormat
-from exceptions import CommandError, CompressError, ValidationError
+from exceptions import CommandError, CompressError, IntegrityError, ValidationError
 from executor import CommandExecutor, ProcessResult
 from file_utils import FileUtils
 from stats import OperationStats
@@ -68,7 +68,7 @@ class Decompressor(BaseProcessor):
         UI.print_kv("Expected", self.verify_checksum)
         UI.print_kv("Actual", actual)
         if actual.lower() != self.verify_checksum.lower():
-            raise ValidationError(
+            raise IntegrityError(
                 "Checksum mismatch: archive does not match the expected SHA256 "
                 f"(expected {self.verify_checksum}, got {actual})"
             )
@@ -100,7 +100,7 @@ class Decompressor(BaseProcessor):
                 f"the leading separator is stripped on extraction (e.g. '{absolute[0]}')"
             )
         if escaping:
-            raise ValidationError(
+            raise IntegrityError(
                 f"Unsafe archive: {len(escaping)} entry/entries would extract outside "
                 f"the destination directory (e.g. '{escaping[0]}'). "
                 "Set path_traversal_check: 'false' to extract anyway."

@@ -1,6 +1,6 @@
 import pytest
 from base_processor import BaseProcessor
-from exceptions import CompressError, ValidationError
+from exceptions import CompressError, IntegrityError, ValidationError
 from executor import ProcessResult
 
 
@@ -96,6 +96,11 @@ class TestHandleError:
         result = bp.handle_error(RuntimeError("something broke"), "Operation")
         assert isinstance(result, ProcessResult)
         assert result.success is False
+
+    def test_integrity_error_raises_without_fail_on_error(self, make_config):
+        bp = BaseProcessor(make_config(fail_on_error=False))
+        with pytest.raises(CompressError, match="Operation failed: tampered"):
+            bp.handle_error(IntegrityError("tampered"), "Operation")
 
 
 class TestParseExcludePatterns:

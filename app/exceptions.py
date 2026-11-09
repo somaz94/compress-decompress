@@ -11,3 +11,7 @@ class ValidationError(CompressError):
 
 class CommandError(CompressError):
     """Raised when a shell command fails"""
+
+
+class IntegrityError(ValidationError):
+    """An archive failed a check the caller asked for; fail_on_error never downgrades it"""

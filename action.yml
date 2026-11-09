@@ -44,7 +44,7 @@ inputs:
     required: false
     default: ""
   fail_on_error:
-    description: "Whether to fail the action if compression/decompression fails."
+    description: "Whether to fail the action if compression/decompression fails. A failed verify_checksum or path traversal check fails the step regardless."
     required: false
     default: "true"
   compression_level:
@@ -52,7 +52,7 @@ inputs:
     required: false
     default: ""
   password:
-    description: "Password for zip encryption/decryption. Use with secrets for security. Only applies to zip format."
+    description: "Password for zip encryption/decryption. Use with secrets for security. Only applies to zip format. Uses legacy ZipCrypto, which is not strong encryption."
     required: false
     default: ""
   verbose:
@@ -60,7 +60,7 @@ inputs:
     required: false
     default: "false"
   verify_checksum:
-    description: "Expected SHA256 of the archive. Decompression aborts before extracting anything when it does not match. Decompress only."
+    description: "Expected SHA256 of the archive. Decompression aborts before extracting anything when it does not match, even with fail_on_error false. Decompress only."
     required: false
     default: ""
   path_traversal_check:

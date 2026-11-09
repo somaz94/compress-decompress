@@ -3,6 +3,7 @@ import os
 import pytest
 from config import DECOMPRESSION_COMMANDS, CommandConfig
 from decompress import Decompressor, decompress
+from exceptions import CompressError
 
 
 class TestDecompressorInit:
@@ -348,22 +349,22 @@ class TestChecksumVerification:
         with pytest.raises(CompressError, match="Checksum mismatch"):
             decompress(config)
 
-    def test_mismatched_checksum_without_fail_on_error(
+    def test_mismatched_checksum_fails_even_without_fail_on_error(
         self, make_config, tmp_archive_zip, tmp_path
     ):
         dest = tmp_path / "extracted"
         dest.mkdir()
-        result = decompress(
-            make_config(
-                command="decompress",
-                source=tmp_archive_zip,
-                format="zip",
-                dest=str(dest),
-                verify_checksum="b" * 64,
-                fail_on_error=False,
+        with pytest.raises(CompressError, match="Checksum mismatch"):
+            decompress(
+                make_config(
+                    command="decompress",
+                    source=tmp_archive_zip,
+                    format="zip",
+                    dest=str(dest),
+                    verify_checksum="b" * 64,
+                    fail_on_error=False,
+                )
             )
-        )
-        assert not result
         assert not list(dest.rglob("*.txt"))
 
     def test_no_checksum_skips_verification(
@@ -412,16 +413,16 @@ class TestPathTraversalProtection:
         self, make_config, zip_slip_archive, tmp_path
     ):
         dest = tmp_path / "extracted"
-        result = decompress(
-            make_config(
-                command="decompress",
-                source=zip_slip_archive,
-                format="zip",
-                dest=str(dest),
-                fail_on_error=False,
+        with pytest.raises(CompressError, match="Unsafe archive"):
+            decompress(
+                make_config(
+                    command="decompress",
+                    source=zip_slip_archive,
+                    format="zip",
+                    dest=str(dest),
+                    fail_on_error=False,
+                )
             )
-        )
-        assert not result
         assert not (tmp_path / "escaped.txt").exists()
 
     def test_check_can_be_disabled(self, make_config, zip_slip_archive, tmp_path):
@@ -567,16 +568,18 @@ class TestStatsOnRejectedArchive:
         self, make_config, tmp_archive_zip, tmp_path
     ):
         dest = tmp_path / "extracted"
-        result = decompress(
+        d = Decompressor(
             make_config(
                 command="decompress",
                 source=tmp_archive_zip,
                 format="zip",
                 dest=str(dest),
                 verify_checksum="b" * 64,
-                fail_on_error=False,
             )
         )
+        with pytest.raises(CompressError):
+            d.decompress()
+        result = d.stats
         assert not result
         assert result.original_size > 0  # the archive was read, not zero
         assert result.output_path == ""

@@ -1,10 +1,13 @@
 import pytest
-from exceptions import CommandError, CompressError, ValidationError
+from exceptions import CommandError, CompressError, IntegrityError, ValidationError
 
 
 class TestExceptionHierarchy:
     def test_validation_error_is_compress_error(self):
         assert issubclass(ValidationError, CompressError)
+
+    def test_integrity_error_is_validation_error(self):
+        assert issubclass(IntegrityError, ValidationError)
 
     def test_command_error_is_compress_error(self):
         assert issubclass(CommandError, CompressError)

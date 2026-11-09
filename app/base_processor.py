@@ -4,7 +4,7 @@ import os
 from typing import TYPE_CHECKING
 
 from app_logger import logger
-from exceptions import CompressError, ValidationError
+from exceptions import CompressError, IntegrityError, ValidationError
 from executor import ProcessResult
 
 if TYPE_CHECKING:
@@ -48,7 +48,7 @@ class BaseProcessor:
         self, error: Exception, context: str = "Operation"
     ) -> ProcessResult:
         error_msg = f"{context} failed: {error!s}"
-        if self.fail_on_error:
+        if self.fail_on_error or isinstance(error, IntegrityError):
             raise CompressError(error_msg) from error
         logger.warning(f"{context} warning: {error!s}")
         return ProcessResult(False, str(error))
