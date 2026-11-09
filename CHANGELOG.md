@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.15.3](https://github.com/somaz94/compress-decompress/compare/v1.15.2...v1.15.3) (2026-11-09)
+
+### Bug Fixes
+
+- fail a checksum mismatch or zip slip rejection even with fail_on_error false ([40d75e7](https://github.com/somaz94/compress-decompress/commit/40d75e762ec9ff24e75caa1c4f04eaba4bec394e))
+
+### Documentation
+
+- note the Linux runner requirement and the ZipCrypto weakness ([b26199a](https://github.com/somaz94/compress-decompress/commit/b26199a164cd705742746e8e8da41fc5d05da43c))
+
+### Continuous Integration
+
+- deduplicate identical commit lines in release notes ([2fe8515](https://github.com/somaz94/compress-decompress/commit/2fe85154ff375b12ac5a9c6478f4ff7500ef2421))
+- fix the shellcheck findings in the CI scripts ([3a26c93](https://github.com/somaz94/compress-decompress/commit/3a26c9345b68a61514331da1dcfc8a9025a4f343))
+
+### Chores
+
+- bump the action image to v1.15.3 ([297e919](https://github.com/somaz94/compress-decompress/commit/297e919c44f28398a954ef803e5b2c8b4eb6a003))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.15.2](https://github.com/somaz94/compress-decompress/compare/v1.15.1...v1.15.2) (2026-09-29)
 
 ### Bug Fixes
