@@ -25,7 +25,7 @@ filters, and path stripping are all built in.
 - **Rich Outputs** - `checksum`, `original_size`, `compressed_size`, `compression_ratio`, `file_count`, `duration`
 - **Verified Decompression** - Pass `verify_checksum` and a tampered or truncated archive is rejected before anything is written to disk
 - **Zip-Slip Protection** - Archives whose entries would escape the destination directory are refused
-- **Password-Protected Zip** - Encrypt and decrypt `zip` archives with a secret, kept masked in the log
+- **Password-Protected Zip** - Encrypt and decrypt `zip` archives with a secret, kept masked in the log (legacy ZipCrypto, see [Passwords](docs/ADVANCED_USAGE.md#passwords-in-logs))
 - **Compression Level Control** - Tune from `0` (store only) to `9` (maximum) for size vs. speed
 - **Glob Pattern Support** - Match multiple files with patterns like `**/*.doc`
 - **Symbolic Link Support** - Automatically follows symlinks (Bazel, Buck, and build tool integration)
@@ -49,11 +49,11 @@ filters, and path stripping are all built in.
 | `includeHidden` | Whether to include dotfiles (`.env`, `.git`, `.github`, and nested ones like `src/.keep`) in the archive. Set to `false` to leave every hidden file out, identically across all formats. | No       | true    |
 | `preserveGlobStructure` | When using glob patterns, preserve the directory structure in the archive. If false, all matched files are flattened to the root level. | No       | false   |
 | `stripPrefix` | Remove this prefix from file paths when preserving directory structure. Works only with glob patterns and `preserveGlobStructure: true`. Example: `'src/'` changes `src/app/main.py` to `app/main.py` in the archive. | No       | ""      |
-| `fail_on_error` | Whether to fail the action if compression/decompression fails.                                                 | No       | true    |
+| `fail_on_error` | Whether to fail the action if compression/decompression fails. A failed `verify_checksum` or path traversal check fails the step regardless. | No       | true    |
 | `compression_level` | Compression level from `0` (store only) to `9` (maximum). Applies to `zip`, `tgz`, `tbz2`, `txz`, and `tzst`. | No   | -       |
-| `password`    | Password for `zip` encryption/decryption. Pass it via a secret. Only applies to the `zip` format.                | No       | ""      |
+| `password`    | Password for `zip` encryption/decryption. Pass it via a secret. Only applies to the `zip` format. Uses legacy ZipCrypto, which a known-plaintext attack can break, so do not rely on it alone for sensitive data. | No       | ""      |
 | `verbose`     | Enable verbose logging for debugging purposes.                                                                   | No       | false   |
-| `verify_checksum` | Expected SHA256 of the archive. Decompression aborts **before extracting anything** when it does not match. Decompress only. | No | ""      |
+| `verify_checksum` | Expected SHA256 of the archive. Decompression aborts **before extracting anything** when it does not match, even with `fail_on_error: false`. Decompress only. | No | ""      |
 | `path_traversal_check` | Reject archives whose entries would extract outside the destination directory (zip slip). Decompress only. | No  | true    |
 | `step_summary` | Write the result table to the workflow job summary (`$GITHUB_STEP_SUMMARY`).                                    | No       | true    |
 
@@ -77,6 +77,10 @@ filters, and path stripping are all built in.
 
 You can use this action in your GitHub workflow by specifying the action with
 its required inputs.
+
+This is a Docker container action, so it runs only on Linux runners
+(`ubuntu-*`, or a self-hosted Linux runner with Docker). macOS and Windows
+runners cannot start it.
 
 <br/>
 

@@ -283,7 +283,7 @@ The `stripPrefix` option allows you to remove a common path prefix from all matc
 - ✅ Trailing slash is optional: `'src/'` and `'src'` both work
 - ✅ **Highly Recommended**: Use `includeRoot: false` to avoid including the temporary directory in the archive
 - ⚠️ If a file doesn't start with the prefix, it's archived with its full path
-- ⚠️ Case-sensitive on Linux/macOS, case-insensitive on Windows
+- ⚠️ Case-sensitive: matching runs inside the action's Linux container
 
 <br/>
 

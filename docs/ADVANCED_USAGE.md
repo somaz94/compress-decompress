@@ -774,8 +774,9 @@ reaches the filesystem:
     verify_checksum: ${{ secrets.BUNDLE_SHA256 }}
 ```
 
-A mismatch fails the step with both digests in the message. With
-`fail_on_error: 'false'` it degrades to a warning and still extracts nothing.
+A mismatch fails the step with both digests in the message, even with
+`fail_on_error: 'false'`: the check was asked for, so its failure is never
+downgraded to a warning.
 
 The value must be a 64-character hex digest — anything else is rejected as a
 configuration error before the action does any work.
@@ -793,7 +794,8 @@ written outside `dest` — `../../etc/cron.d/payload` and friends — fails the 
 ```
 
 This is on by default and costs one pass over the archive index, not over its
-contents. Two things it deliberately does **not** do:
+contents. Like a checksum mismatch, a rejection fails the step even with
+`fail_on_error: 'false'`. Two things it deliberately does **not** do:
 
 - An **absolute** member (`/etc/passwd`) is only a warning — `tar` and `unzip`
   both strip the leading separator, so it cannot escape.
@@ -818,6 +820,11 @@ masks it in every command line and error message it prints itself, so the
 
 Always pass the value from a secret (`password: ${{ secrets.ZIP_PASSWORD }}`)
 rather than a literal.
+
+The encryption is `zip`'s legacy ZipCrypto, the only scheme `zip -P` writes. It
+keeps casual readers out, but a known-plaintext attack recovers the key, so for
+sensitive data encrypt the payload with a stronger tool (`age`, `gpg`) before
+archiving it.
 
 <br/>
 
@@ -861,6 +868,7 @@ The action supports flexible error handling through the `fail_on_error` option.
 **Behavior:**
 - Continues workflow despite errors
 - Logs warnings instead of failing
+- Still fails on a `verify_checksum` mismatch or a path traversal rejection
 - Useful for non-critical operations
 - Allows custom error handling in workflow
 
