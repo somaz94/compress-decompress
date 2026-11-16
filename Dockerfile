@@ -1,7 +1,7 @@
 # Single stage on purpose: the app is pure stdlib, so there is no dependency
 # install or compile step for a builder stage to isolate — it would only copy
 # app/ twice.
-FROM python:3.14-slim
+FROM python:3.15-slim
 
 LABEL org.opencontainers.image.source="https://github.com/somaz94/compress-decompress"
 LABEL org.opencontainers.image.description="Compress and decompress files in CI/CD"
